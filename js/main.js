@@ -137,55 +137,70 @@ document.addEventListener("DOMContentLoaded", () => {
   currentPlayer = loadPlayer();
 
   document.addEventListener("click", (e) => {
-    const target = e.target;
+  const target = e.target;
 
-    // Zone card click
-    const card = target.closest(".zone-card");
-    if (card) {
-      const zoneId = card.dataset.zoneId;
-      const zone = zones.find(z => z.id === zoneId);
-      if (isZoneUnlocked(zone)) {
-        currentView = "zone:" + zoneId;
-        renderView();
-      } else {
-        alert("This zone is locked! Restore the previous zone first.");
-      }
-      return;
-    }
-
-    // Invasive tap
-    const invEl = target.closest(".invasive-item");
-    if (invEl) {
-      const zoneId = currentView.split(":")[1];
-      const invId = invEl.dataset.invId;
-
-      const invasives = invasivesByZone[zoneId] || [];
-      const inv = invasives.find(i => i.id === invId);
-      if (inv) {
-        // Reward
-        const changes = {
-          coins: currentPlayer.coins + inv.coins,
-          zones: { ...currentPlayer.zones, [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + inv.health) }
-        };
-
-        updatePlayer(changes);
-
-        // Remove the item visually
-        invEl.remove();
-
-        // Optional: if all removed, alert or something
-        renderView();  // refresh to update progress bar & coins
-      }
-      return;
-    }
-
-    // Test-progress removed, now using invasives
-
-    if (target.id === "back-to-overview") {
-      currentView = "overview";
+  // Zone card click (unchanged)
+  const card = target.closest(".zone-card");
+  if (card) {
+    const zoneId = card.dataset.zoneId;
+    const zone = zones.find(z => z.id === zoneId);
+    if (isZoneUnlocked(zone)) {
+      currentView = "zone:" + zoneId;
       renderView();
+    } else {
+      alert("This zone is locked! Restore the previous zone first.");
     }
-  });
+    return;
+  }
+
+  // Invasive tap – fixed version
+  const invEl = target.closest(".invasive-item");
+  if (invEl) {
+    const zoneId = currentView.split(":")[1];
+    const invId = invEl.dataset.invId;
+
+    const invasives = invasivesByZone[zoneId] || [];
+    const inv = invasives.find(i => i.id === invId);
+
+    if (inv) {
+      // Give reward
+      const changes = {
+        coins: currentPlayer.coins + inv.coins,
+        zones: {
+          ...currentPlayer.zones,
+          [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + inv.health)
+        }
+      };
+
+      updatePlayer(changes);
+
+      // Visually remove immediately (don't rebuild whole view yet)
+      invEl.remove();
+
+      // Only update coins & progress bar (fast & no flicker)
+      updateCoinsDisplay();
+      const progressFill = document.querySelector(".progress-fill");
+      const healthDisplay = document.querySelector(".progress-bar + p"); // Health: XX%
+      if (progressFill && healthDisplay) {
+        const newHealth = changes.zones[zoneId];
+        progressFill.style.width = newHealth + "%";
+        healthDisplay.textContent = "Health: " + newHealth + "%";
+      }
+
+      // Optional: check if all gone
+      if (document.querySelectorAll(".invasive-item").length === 0) {
+        alert(zone.name + " cleared of invasives! 🌿");
+      }
+    }
+    return;
+  }
+
+  // Back button
+  if (target.id === "back-to-overview") {
+    currentView = "overview";
+    renderView();
+  }
+});
 
   renderView();
   console.log("Step 10 loaded");
