@@ -1,5 +1,5 @@
 // js/main.js
-import { loadPlayer, savePlayer, updatePlayer } from './player.js';
+import { loadPlayer, savePlayer, updatePlayer, resetPlayer} from './player.js';
 
 console.log("Guerrilla Gardening starting... 🌱");
 
