@@ -1,58 +1,149 @@
 // js/main.js
-import { loadPlayer, savePlayer, updatePlayer, resetPlayer} from './player.js';
+import { loadPlayer, savePlayer, updatePlayer, resetPlayer } from './player.js';
+import { zones } from '../data/zones.js';  // ← new import
 
 console.log("Guerrilla Gardening starting... 🌱");
 
 let currentPlayer;
+let currentView = "overview";  // "overview" or "zone:<id>"
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("Page loaded!");
-
-  // Load saved player data (or use defaults)
   currentPlayer = loadPlayer();
+  renderView();  // initial render
 
-  // For testing: show current coins in the page
-  const container = document.getElementById("game-container");
-  if (container) {
-    container.innerHTML = `
-      <p>Welcome back, gardener! 🌿</p>
-      <p>Coins: <span id="coins-display">${currentPlayer.coins}</span></p>
-      <p>Energy: ${currentPlayer.energy}/${currentPlayer.maxEnergy}</p>
-      <button id="test-earn">Earn 10 coins (test)</button>
-      <button id="test-spend">Spend 20 coins (test)</button>
-      <button id="reset-game">Reset game (clear save)</button>
-    `;
-  }
+  // Global click handler (delegation for dynamic elements)
+  document.addEventListener("click", (e) => {
+    const target = e.target;
 
-  // Test buttons — remove later
-  document.getElementById("test-earn")?.addEventListener("click", () => {
-    updatePlayer({ coins: currentPlayer.coins + 10 });
-    document.getElementById("coins-display").textContent = currentPlayer.coins;
-  });
-
-  document.getElementById("test-spend")?.addEventListener("click", () => {
-    if (currentPlayer.coins >= 20) {
-      updatePlayer({ coins: currentPlayer.coins - 20 });
-      document.getElementById("coins-display").textContent = currentPlayer.coins;
-    } else {
-      alert("Not enough coins!");
+    // Zone card click → enter zone
+    if (target.classList.contains("zone-card")) {
+      const zoneId = target.dataset.zoneId;
+      enterZone(zoneId);
     }
-  });
 
-  document.getElementById("reset-game")?.addEventListener("click", () => {
-    if (confirm("Really reset all progress?")) {
-      resetPlayer();
-      location.reload(); // refresh to show defaults
+    // Test: increase health in current zone
+    if (target.id === "test-progress") {
+      progressCurrentZone(10);  // +10% for testing
     }
-  });
 
-  // Debug: type debugPlayer() in browser console to see full state
-
-// Reset button – this was probably missing resetPlayer in scope
-  document.getElementById("reset-game")?.addEventListener("click", () => {
-    if (confirm("Really reset all progress? This cannot be undone.")) {
-      resetPlayer();           // ← must be imported
-      location.reload();       // refresh page to show fresh defaults
+    // Back to overview
+    if (target.id === "back-to-overview") {
+      currentView = "overview";
+      renderView();
     }
   });
 });
+
+// ─── Render current view ────────────────────────────
+function renderView() {
+  const container = document.getElementById("game-container");
+  if (!container) return;
+
+  container.innerHTML = ""; // clear
+
+  if (currentView === "overview") {
+    container.innerHTML = `
+      <h2>Island Overview</h2>
+      <p>Coins: <span id="coins-display">${currentPlayer.coins}</span> | 
+         Energy: ${currentPlayer.energy}/${currentPlayer.maxEnergy}</p>
+      <div id="zones-grid"></div>
+      <button id="reset-game">Reset game</button>
+    `;
+
+    const grid = document.getElementById("zones-grid");
+    zones.forEach(zone => {
+      const isUnlocked = isZoneUnlocked(zone);
+      const health = currentPlayer.zones[zone.id] || 0;
+
+      const card = document.createElement("div");
+      card.className = "zone-card";
+      card.dataset.zoneId = zone.id;
+      card.style.backgroundColor = isUnlocked ? zone.bgColor : "#eeeeee";
+      card.style.opacity = isUnlocked ? "1" : "0.6";
+      card.innerHTML = `
+        <h3>${zone.name}</h3>
+        <p>${zone.description}</p>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: ${health}%"></div>
+        </div>
+        <p>Health: ${health}%</p>
+        ${!isUnlocked ? '<small>(Locked)</small>' : ''}
+      `;
+      grid.appendChild(card);
+    });
+
+    // Keep reset button working
+    document.getElementById("reset-game")?.addEventListener("click", () => {
+      if (confirm("Really reset all progress?")) {
+        resetPlayer();
+        location.reload();
+      }
+    });
+
+  } else if (currentView.startsWith("zone:")) {
+    const zoneId = currentView.split(":")[1];
+    const zone = zones.find(z => z.id === zoneId);
+
+    if (!zone || !isZoneUnlocked(zone)) {
+      currentView = "overview";
+      renderView();
+      return;
+    }
+
+    const health = currentPlayer.zones[zoneId] || 0;
+
+    container.innerHTML = `
+      <h2>${zone.name}</h2>
+      <p>${zone.description}</p>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: ${health}%"></div>
+      </div>
+      <p>Health: ${health}%</p>
+      <button id="test-progress">Restore +10% (test tap)</button>
+      <button id="back-to-overview">Back to Overview</button>
+    `;
+  }
+
+  // Update coins display if exists
+  document.getElementById("coins-display")?.textContent = currentPlayer.coins;
+}
+
+// ─── Check if zone is unlocked ──────────────────────
+function isZoneUnlocked(zone) {
+  if (!zone.unlockRequirement) return true;
+  const req = zone.unlockRequirement;
+  const reqHealth = currentPlayer.zones[req.zone] || 0;
+  return reqHealth >= req.health;
+}
+
+// ─── Enter a zone ───────────────────────────────────
+function enterZone(zoneId) {
+  const zone = zones.find(z => z.id === zoneId);
+  if (!zone || !isZoneUnlocked(zone)) {
+    alert("This zone is locked! Restore previous zones first.");
+    return;
+  }
+  currentView = `zone:${zoneId}`;
+  renderView();
+}
+
+// ─── Progress current zone (test / later real actions) ───
+function progressCurrentZone(amount) {
+  if (!currentView.startsWith("zone:")) return;
+
+  const zoneId = currentView.split(":")[1];
+  let health = currentPlayer.zones[zoneId] || 0;
+  health = Math.min(100, health + amount);
+
+  updatePlayer({
+    zones: { ...currentPlayer.zones, [zoneId]: health }
+  });
+
+  // Simple unlock feedback (later: unlock new zone visual)
+  if (health >= 100) {
+    alert(`${zones.find(z => z.id === zoneId).name} fully restored! 🌿`);
+  }
+
+  renderView();  // refresh UI
+}
