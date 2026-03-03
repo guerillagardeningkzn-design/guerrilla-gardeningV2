@@ -1,7 +1,7 @@
-// Step 5 – safe version without nested quote + interpolation conflict
 import { loadPlayer } from './player.js';
+import { zones } from '../data/zones.js';
 
-console.log("Step 5 - safe template version");
+console.log("Step 6 - add zones grid with concatenation");
 
 let currentPlayer;
 let currentView = "overview";
@@ -10,29 +10,39 @@ function renderView() {
   const container = document.getElementById("game-container");
   if (!container) return;
 
-  const health = 42; // dummy
+  let html = '<h2>Island Overview</h2>';
+  html += '<p>Coins: <span id="coins-display">' + currentPlayer.coins + '</span></p>';
+  html += '<div id="zones-grid"></div>';
 
-  // Use concatenation or separate style variable
-  const progressStyle = `width: ${health}%`;
+  container.innerHTML = html;
 
-  container.innerHTML = 
-    '<h2>Step 5 – Island Overview</h2>' +
-    '<p>Coins: <span id="coins-display">' + currentPlayer.coins + '</span></p>' +
-    '<div class="progress-bar">' +
-      '<div class="progress-fill" style="' + progressStyle + '"></div>' +
-    '</div>' +
-    '<p>Health: ' + health + '% (dummy)</p>';
+  const grid = document.getElementById("zones-grid");
+
+  zones.forEach(zone => {
+    const health = currentPlayer.zones[zone.id] || 0;
+
+    const card = document.createElement("div");
+    card.className = "zone-card";
+    card.dataset.zoneId = zone.id;
+    card.style.backgroundColor = "#eeeeee"; // simple gray for now
+
+    let cardHtml = '<h3>' + zone.name + '</h3>';
+    cardHtml += '<p>' + zone.description + '</p>';
+    cardHtml += '<div class="progress-bar">';
+    cardHtml += '<div class="progress-fill" style="width: ' + health + '%"></div>';
+    cardHtml += '</div>';
+    cardHtml += '<p>Health: ' + health + '%</p>';
+
+    card.innerHTML = cardHtml;
+    grid.appendChild(card);
+  });
+
+  const coinsEl = document.getElementById("coins-display");
+  if (coinsEl) coinsEl.textContent = currentPlayer.coins;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   currentPlayer = loadPlayer();
   renderView();
-
-  // Safe update (after insertion)
-  const coinsEl = document.getElementById("coins-display");
-  if (coinsEl) {
-    coinsEl.textContent = currentPlayer.coins;
-  }
-
-  console.log("Step 5 loaded – safe version");
+  console.log("Step 6 loaded");
 });
