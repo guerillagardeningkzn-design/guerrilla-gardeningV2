@@ -1,8 +1,8 @@
 // js/main.js
 import { loadPlayer, savePlayer, updatePlayer, resetPlayer } from './player.js';
-import { zones } from '../data/zones.js';  // ← new import
+import { zones } from '../data/zones.js';
 
-console.log("Guerrilla Gardening starting...  🌱");
+console.log("Guerrilla Gardening starting... 🌱");
 
 let currentPlayer;
 let currentView = "overview";  // "overview" or "zone:<id>"
@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   currentPlayer = loadPlayer();
   renderView();  // initial render
 
-  // Global click handler (delegation for dynamic elements)
+  // Global click handler (event delegation)
   document.addEventListener("click", (e) => {
     const target = e.target;
 
@@ -73,9 +73,9 @@ function renderView() {
       grid.appendChild(card);
     });
 
-    // Keep reset button working
+    // Reset button
     document.getElementById("reset-game")?.addEventListener("click", () => {
-      if (confirm("Really reset all progress?")) {
+      if (confirm("Really reset all progress? This cannot be undone.")) {
         resetPlayer();
         location.reload();
       }
@@ -105,7 +105,7 @@ function renderView() {
     `;
   }
 
-  // Update coins display if exists
+  // Update coins display if exists (in overview)
   document.getElementById("coins-display")?.textContent = currentPlayer.coins;
 }
 
@@ -140,7 +140,6 @@ function progressCurrentZone(amount) {
     zones: { ...currentPlayer.zones, [zoneId]: health }
   });
 
-  // Simple unlock feedback (later: unlock new zone visual)
   if (health >= 100) {
     alert(`${zones.find(z => z.id === zoneId).name} fully restored! 🌿`);
   }

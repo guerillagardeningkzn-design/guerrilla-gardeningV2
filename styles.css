@@ -17,8 +17,6 @@ header {
   min-height: 70vh;
 }
 
-/* Add to your existing styles.css */
-
 #zones-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -50,4 +48,19 @@ header {
   height: 100%;
   background: #4CAF50;
   transition: width 0.4s ease;
+}
+
+button {
+  margin: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+  background: #4CAF50;
+  color: white;
+}
+
+button:hover {
+  background: #388E3C;
 }
