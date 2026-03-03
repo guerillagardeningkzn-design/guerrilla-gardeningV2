@@ -155,45 +155,52 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Invasive tap – fixed version
   const invEl = target.closest(".invasive-item");
-  if (invEl) {
-    const zoneId = currentView.split(":")[1];
-    const invId = invEl.dataset.invId;
+  // Invasive tap – fixed version
+const invEl = target.closest(".invasive-item");
+if (invEl) {
+  const zoneId = currentView.split(":")[1];
+  const invId = invEl.dataset.invId;
 
-    const invasives = invasivesByZone[zoneId] || [];
-    const inv = invasives.find(i => i.id === invId);
+  const invasives = invasivesByZone[zoneId] || [];
+  const inv = invasives.find(i => i.id === invId);
 
-    if (inv) {
-      // Give reward
-      const changes = {
-        coins: currentPlayer.coins + inv.coins,
-        zones: {
-          ...currentPlayer.zones,
-          [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + inv.health)
-        }
-      };
-
-      updatePlayer(changes);
-
-      // Visually remove immediately (don't rebuild whole view yet)
-      invEl.remove();
-
-      // Only update coins & progress bar (fast & no flicker)
-      updateCoinsDisplay();
-      const progressFill = document.querySelector(".progress-fill");
-      const healthDisplay = document.querySelector(".progress-bar + p"); // Health: XX%
-      if (progressFill && healthDisplay) {
-        const newHealth = changes.zones[zoneId];
-        progressFill.style.width = newHealth + "%";
-        healthDisplay.textContent = "Health: " + newHealth + "%";
+  if (inv) {
+    // Give reward
+    const changes = {
+      coins: currentPlayer.coins + inv.coins,
+      zones: {
+        ...currentPlayer.zones,
+        [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + inv.health)
       }
+    };
 
-      // Optional: check if all gone
-      if (document.querySelectorAll(".invasive-item").length === 0) {
-        alert(zone.name + " cleared of invasives! 🌿");
+    updatePlayer(changes);
+
+    // Visually remove immediately
+    invEl.remove();
+
+    // Update UI elements
+    updateCoinsDisplay();
+    const progressFill = document.querySelector(".progress-fill");
+    const healthDisplay = document.querySelector(".progress-bar + p"); // the <p>Health: ...%</p>
+    if (progressFill && healthDisplay) {
+      const newHealth = changes.zones[zoneId];
+      progressFill.style.width = newHealth + "%";
+      healthDisplay.textContent = "Health: " + newHealth + "%";
+    }
+
+    // Check if all gone – use zone from currentView
+    if (document.querySelectorAll(".invasive-item").length === 0) {
+      const currentZone = zones.find(z => z.id === zoneId);
+      if (currentZone) {
+        alert(currentZone.name + " cleared of invasives! 🌿");
+      } else {
+        alert("Area cleared of invasives! 🌿");
       }
     }
-    return;
   }
+  return;
+}
 
   // Back button
   if (target.id === "back-to-overview") {
