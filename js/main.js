@@ -12,22 +12,18 @@ document.addEventListener("DOMContentLoaded", () => {
   currentPlayer = loadPlayer();
   renderView();  // initial render
 
-  // Global click handler (event delegation)
   document.addEventListener("click", (e) => {
     const target = e.target;
 
-    // Zone card click → enter zone
     if (target.classList.contains("zone-card")) {
       const zoneId = target.dataset.zoneId;
       enterZone(zoneId);
     }
 
-    // Test: increase health in current zone
     if (target.id === "test-progress") {
-      progressCurrentZone(10);  // +10% for testing
+      progressCurrentZone(10);
     }
 
-    // Back to overview
     if (target.id === "back-to-overview") {
       currentView = "overview";
       renderView();
@@ -40,7 +36,7 @@ function renderView() {
   const container = document.getElementById("game-container");
   if (!container) return;
 
-  container.innerHTML = ""; // clear
+  container.innerHTML = "";
 
   if (currentView === "overview") {
     container.innerHTML = `
@@ -61,11 +57,13 @@ function renderView() {
       card.dataset.zoneId = zone.id;
       card.style.backgroundColor = isUnlocked ? zone.bgColor : "#eeeeee";
       card.style.opacity = isUnlocked ? "1" : "0.6";
+
+      // FIXED: use single quotes or concatenation for style
       card.innerHTML = `
         <h3>${zone.name}</h3>
         <p>${zone.description}</p>
         <div class="progress-bar">
-          <div class="progress-fill" style='width: ${health}%'></div>
+          <div class="progress-fill" style="width: ${health + '%'}"></div>
         </div>
         <p>Health: ${health}%</p>
         ${!isUnlocked ? '<small>(Locked)</small>' : ''}
@@ -73,9 +71,8 @@ function renderView() {
       grid.appendChild(card);
     });
 
-    // Reset button
     document.getElementById("reset-game")?.addEventListener("click", () => {
-      if (confirm("Really reset all progress? This cannot be undone.")) {
+      if (confirm("Really reset all progress?")) {
         resetPlayer();
         location.reload();
       }
@@ -97,7 +94,7 @@ function renderView() {
       <h2>${zone.name}</h2>
       <p>${zone.description}</p>
       <div class="progress-bar">
-        <div class="progress-fill" style='width: ${health}%'></div>
+        <div class="progress-fill" style="width: ${health + '%'}"></div>
       </div>
       <p>Health: ${health}%</p>
       <button id="test-progress">Restore +10% (test tap)</button>
@@ -105,7 +102,6 @@ function renderView() {
     `;
   }
 
-  // Update coins display if exists (in overview)
   document.getElementById("coins-display")?.textContent = currentPlayer.coins;
 }
 
@@ -128,7 +124,7 @@ function enterZone(zoneId) {
   renderView();
 }
 
-// ─── Progress current zone (test / later real actions) ───
+// ─── Progress current zone ──────────────────────────
 function progressCurrentZone(amount) {
   if (!currentView.startsWith("zone:")) return;
 
@@ -144,5 +140,5 @@ function progressCurrentZone(amount) {
     alert(`${zones.find(z => z.id === zoneId).name} fully restored! 🌿`);
   }
 
-  renderView();  // refresh UI
+  renderView();
 }
