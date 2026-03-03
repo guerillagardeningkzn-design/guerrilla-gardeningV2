@@ -1,10 +1,17 @@
 import { loadPlayer, updatePlayer, savePlayer } from './player.js';
 import { zones } from '../data/zones.js';
 
-console.log("Step 8 - restore player functions + coins reward");
+console.log("Step 9 - add unlock requirements + locked zone feedback");
 
 let currentPlayer;
 let currentView = "overview";
+
+function isZoneUnlocked(zone) {
+  if (!zone.unlockRequirement) return true;
+  const req = zone.unlockRequirement;
+  const reqHealth = currentPlayer.zones[req.zone] || 0;
+  return reqHealth >= req.health;
+}
 
 function renderView() {
   const container = document.getElementById("game-container");
@@ -23,12 +30,21 @@ function renderView() {
 
     zones.forEach(zone => {
       const health = currentPlayer.zones[zone.id] || 0;
+      const unlocked = isZoneUnlocked(zone);
 
       const card = document.createElement("div");
       card.className = "zone-card";
       card.dataset.zoneId = zone.id;
-      card.style.backgroundColor = zone.bgColor || "#eeeeee";
-      card.style.cursor = "pointer";
+
+      if (unlocked) {
+        card.style.backgroundColor = zone.bgColor || "#e0f7fa";
+        card.style.cursor = "pointer";
+        card.style.opacity = "1";
+      } else {
+        card.style.backgroundColor = "#cccccc";
+        card.style.cursor = "not-allowed";
+        card.style.opacity = "0.6";
+      }
 
       let cardHtml = '<h3>' + zone.name + '</h3>';
       cardHtml += '<p>' + zone.description + '</p>';
@@ -36,6 +52,12 @@ function renderView() {
       cardHtml += '<div class="progress-fill" style="width: ' + health + '%"></div>';
       cardHtml += '</div>';
       cardHtml += '<p>Health: ' + health + '%</p>';
+
+      if (!unlocked) {
+        const req = zone.unlockRequirement;
+        const reqZone = zones.find(z => z.id === req.zone);
+        cardHtml += '<small>(Locked – need ' + req.health + '% in ' + reqZone.name + ')</small>';
+      }
 
       card.innerHTML = cardHtml;
       grid.appendChild(card);
@@ -47,7 +69,7 @@ function renderView() {
     const zoneId = currentView.split(":")[1];
     const zone = zones.find(z => z.id === zoneId);
 
-    if (!zone) {
+    if (!zone || !isZoneUnlocked(zone)) {
       currentView = "overview";
       renderView();
       return;
@@ -84,11 +106,18 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("click", (e) => {
     const target = e.target;
 
-    if (target.closest(".zone-card")) {
-      const card = target.closest(".zone-card");
+    const card = target.closest(".zone-card");
+    if (card) {
       const zoneId = card.dataset.zoneId;
-      currentView = "zone:" + zoneId;
-      renderView();
+      const zone = zones.find(z => z.id === zoneId);
+
+      if (isZoneUnlocked(zone)) {
+        currentView = "zone:" + zoneId;
+        renderView();
+      } else {
+        alert("This zone is locked! Restore the previous zone first.");
+      }
+      return;
     }
 
     if (target.id === "test-progress") {
@@ -96,10 +125,9 @@ document.addEventListener("DOMContentLoaded", () => {
       let health = currentPlayer.zones[zoneId] || 0;
       health = Math.min(100, health + 10);
 
-      // Update health and add coins reward
       const changes = {
         zones: { ...currentPlayer.zones, [zoneId]: health },
-        coins: currentPlayer.coins + 5  // +5 coins per tap
+        coins: currentPlayer.coins + 5
       };
 
       updatePlayer(changes);
@@ -113,5 +141,5 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   renderView();
-  console.log("Step 8 loaded");
+  console.log("Step 9 loaded");
 });
