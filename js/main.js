@@ -47,4 +47,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Debug: type debugPlayer() in browser console to see full state
+
+// Reset button – this was probably missing resetPlayer in scope
+  document.getElementById("reset-game")?.addEventListener("click", () => {
+    if (confirm("Really reset all progress? This cannot be undone.")) {
+      resetPlayer();           // ← must be imported
+      location.reload();       // refresh page to show fresh defaults
+    }
+  });
 });
