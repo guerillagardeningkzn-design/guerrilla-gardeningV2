@@ -65,7 +65,7 @@ function renderView() {
         <h3>${zone.name}</h3>
         <p>${zone.description}</p>
         <div class="progress-bar">
-          <div class="progress-fill" style="width: ${health}%"></div>
+          <div class="progress-fill" style='width: ${health}%'></div>
         </div>
         <p>Health: ${health}%</p>
         ${!isUnlocked ? '<small>(Locked)</small>' : ''}
@@ -97,7 +97,7 @@ function renderView() {
       <h2>${zone.name}</h2>
       <p>${zone.description}</p>
       <div class="progress-bar">
-        <div class="progress-fill" style="width: ${health}%"></div>
+        <div class="progress-fill" style='width: ${health}%'></div>
       </div>
       <p>Health: ${health}%</p>
       <button id="test-progress">Restore +10% (test tap)</button>
