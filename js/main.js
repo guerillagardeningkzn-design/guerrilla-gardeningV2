@@ -32,14 +32,12 @@ function isZoneUnlocked(zone) {
 function renderView() {
   const container = document.getElementById("game-container");
   if (!container) return;
-
   container.innerHTML = "";
 
   if (currentView === "overview") {
     let html = '<h2>Island Overview</h2>';
     html += '<p>Coins: <span id="coins-display">' + currentPlayer.coins + '</span></p>';
     html += '<div id="zones-grid"></div>';
-
     container.innerHTML = html;
 
     const grid = document.getElementById("zones-grid");
@@ -137,60 +135,75 @@ document.addEventListener("DOMContentLoaded", () => {
   currentPlayer = loadPlayer();
 
   document.addEventListener("click", (e) => {
-  const target = e.target;
+    const target = e.target;
 
-  // Zone card click
-  const card = target.closest(".zone-card");
-  if (card) {
-    const zoneId = card.dataset.zoneId;
-    const zone = zones.find(z => z.id === zoneId);
-    if (isZoneUnlocked(zone)) {
-      currentView = "zone:" + zoneId;
-      renderView();
-    } else {
-      alert("This zone is locked! Restore the previous zone first.");
-    }
-    return;
-  }
-
-  // ONLY ONE of these
-  const invEl = target.closest(".invasive-item");
-  if (invEl) {
-    const zoneId = currentView.split(":")[1];
-    const invId = invEl.dataset.invId;
-    const invasives = invasivesByZone[zoneId] || [];
-    const inv = invasives.find(i => i.id === invId);
-    if (inv) {
-      // reward + remove
-      const changes = { ... };
-      updatePlayer(changes);
-      invEl.remove();
-      updateCoinsDisplay();
-      // update progress bar manually
-      const progressFill = document.querySelector(".progress-fill");
-      const healthDisplay = document.querySelector(".progress-bar + p");
-      if (progressFill && healthDisplay) {
-        const newHealth = changes.zones[zoneId];
-        progressFill.style.width = newHealth + "%";
-        healthDisplay.textContent = "Health: " + newHealth + "%";
+    // Zone card click
+    const card = target.closest(".zone-card");
+    if (card) {
+      const zoneId = card.dataset.zoneId;
+      const zone = zones.find(z => z.id === zoneId);
+      if (isZoneUnlocked(zone)) {
+        currentView = "zone:" + zoneId;
+        renderView();
+      } else {
+        alert("This zone is locked! Restore the previous zone first.");
       }
-      // alert when last removed
-      if (document.querySelectorAll(".invasive-item").length === 0) {
-        const currentZone = zones.find(z => z.id === zoneId);
-        if (currentZone) {
-          alert(currentZone.name + " cleared of invasives! 🌿");
+      return;
+    }
+
+    // Invasive tap
+    const invEl = target.closest(".invasive-item");
+    if (invEl) {
+      const zoneId = currentView.split(":")[1];
+      const invId = invEl.dataset.invId;
+
+      const invasives = invasivesByZone[zoneId] || [];
+      const inv = invasives.find(i => i.id === invId);
+
+      if (inv) {
+        // Give reward
+        const changes = {
+          coins: currentPlayer.coins + inv.coins,
+          zones: {
+            ...currentPlayer.zones,
+            [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + inv.health)
+          }
+        };
+
+        updatePlayer(changes);
+
+        // Visually remove immediately
+        invEl.remove();
+
+        // Update UI elements
+        updateCoinsDisplay();
+        const progressFill = document.querySelector(".progress-fill");
+        const healthDisplay = document.querySelector(".progress-bar + p"); // <p>Health: ...%</p>
+        if (progressFill && healthDisplay) {
+          const newHealth = changes.zones[zoneId];
+          progressFill.style.width = newHealth + "%";
+          healthDisplay.textContent = "Health: " + newHealth + "%";
+        }
+
+        // Check if all gone → alert with zone name
+        if (document.querySelectorAll(".invasive-item").length === 0) {
+          const currentZone = zones.find(z => z.id === zoneId);
+          if (currentZone) {
+            alert(currentZone.name + " cleared of invasives! 🌿");
+          } else {
+            alert("Area cleared of invasives! 🌿");
+          }
         }
       }
+      return;
     }
-    return;
-  }
 
-  // Back button
-  if (target.id === "back-to-overview") {
-    currentView = "overview";
-    renderView();
-  }
-});
+    // Back button
+    if (target.id === "back-to-overview") {
+      currentView = "overview";
+      renderView();
+    }
+  });
 
   renderView();
   console.log("Step 10 loaded");
