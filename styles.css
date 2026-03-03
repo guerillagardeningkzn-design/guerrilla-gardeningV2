@@ -1,0 +1,18 @@
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #e0f7fa;
+  color: #333;
+  text-align: center;
+}
+
+header {
+  background: #4CAF50;
+  color: white;
+  padding: 1rem;
+}
+
+#game-container {
+  padding: 2rem;
+  min-height: 70vh;
+}
