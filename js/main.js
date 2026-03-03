@@ -1,16 +1,16 @@
-import { loadPlayer } from './player.js';
+import { loadPlayer, updatePlayer, savePlayer } from './player.js';
 import { zones } from '../data/zones.js';
 
-console.log("Step 7 - make zones clickable + detail view");
+console.log("Step 8 - restore player functions + coins reward");
 
 let currentPlayer;
-let currentView = "overview";  // "overview" or "zone:beach" etc.
+let currentView = "overview";
 
 function renderView() {
   const container = document.getElementById("game-container");
   if (!container) return;
 
-  container.innerHTML = "";  // clear
+  container.innerHTML = "";
 
   if (currentView === "overview") {
     let html = '<h2>Island Overview</h2>';
@@ -27,8 +27,8 @@ function renderView() {
       const card = document.createElement("div");
       card.className = "zone-card";
       card.dataset.zoneId = zone.id;
-      card.style.backgroundColor = zone.bgColor || "#eeeeee";  // use zone color
-      card.style.cursor = "pointer";  // visual hint it's clickable
+      card.style.backgroundColor = zone.bgColor || "#eeeeee";
+      card.style.cursor = "pointer";
 
       let cardHtml = '<h3>' + zone.name + '</h3>';
       cardHtml += '<p>' + zone.description + '</p>';
@@ -41,8 +41,7 @@ function renderView() {
       grid.appendChild(card);
     });
 
-    const coinsEl = document.getElementById("coins-display");
-    if (coinsEl) coinsEl.textContent = currentPlayer.coins;
+    updateCoinsDisplay();
 
   } else if (currentView.startsWith("zone:")) {
     const zoneId = currentView.split(":")[1];
@@ -58,6 +57,7 @@ function renderView() {
 
     let detailHtml = '<h2>' + zone.name + '</h2>';
     detailHtml += '<p>' + zone.description + '</p>';
+    detailHtml += '<p>Coins: <span id="coins-display">' + currentPlayer.coins + '</span></p>';
     detailHtml += '<div class="progress-bar">';
     detailHtml += '<div class="progress-fill" style="width: ' + health + '%"></div>';
     detailHtml += '</div>';
@@ -66,17 +66,24 @@ function renderView() {
     detailHtml += '<button id="back-to-overview">Back to Overview</button>';
 
     container.innerHTML = detailHtml;
+
+    updateCoinsDisplay();
+  }
+}
+
+function updateCoinsDisplay() {
+  const coinsEl = document.getElementById("coins-display");
+  if (coinsEl) {
+    coinsEl.textContent = currentPlayer.coins;
   }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   currentPlayer = loadPlayer();
 
-  // Global click handler for dynamic elements
   document.addEventListener("click", (e) => {
     const target = e.target;
 
-    // Click on zone card → enter detail view
     if (target.closest(".zone-card")) {
       const card = target.closest(".zone-card");
       const zoneId = card.dataset.zoneId;
@@ -84,18 +91,21 @@ document.addEventListener("DOMContentLoaded", () => {
       renderView();
     }
 
-    // Test progress button
     if (target.id === "test-progress") {
       const zoneId = currentView.split(":")[1];
       let health = currentPlayer.zones[zoneId] || 0;
       health = Math.min(100, health + 10);
-      currentPlayer.zones[zoneId] = health;
-      // Simple save (we'll add proper updatePlayer later)
-      localStorage.setItem("guerrillaGardeningSave-v1", JSON.stringify(currentPlayer));
+
+      // Update health and add coins reward
+      const changes = {
+        zones: { ...currentPlayer.zones, [zoneId]: health },
+        coins: currentPlayer.coins + 5  // +5 coins per tap
+      };
+
+      updatePlayer(changes);
       renderView();
     }
 
-    // Back button
     if (target.id === "back-to-overview") {
       currentView = "overview";
       renderView();
@@ -103,5 +113,5 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   renderView();
-  console.log("Step 7 loaded");
+  console.log("Step 8 loaded");
 });
