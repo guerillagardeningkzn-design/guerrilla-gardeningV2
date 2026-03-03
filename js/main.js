@@ -1,10 +1,26 @@
 import { loadPlayer, updatePlayer, savePlayer } from './player.js';
 import { zones } from '../data/zones.js';
 
-console.log("Step 9 - add unlock requirements + locked zone feedback");
+console.log("Step 10 - add tappable invasives");
 
 let currentPlayer;
 let currentView = "overview";
+
+// Dummy invasives per zone (later from JSON)
+const invasivesByZone = {
+  beach: [
+    { id: "seaweed1", name: "Invasive Seaweed", coins: 3, health: 5 },
+    { id: "seaweed2", name: "More Seaweed", coins: 4, health: 6 },
+    { id: "crabgrass", name: "Alien Crabgrass", coins: 5, health: 8 }
+  ],
+  forest: [
+    { id: "vine1", name: "Choking Vine", coins: 6, health: 7 },
+    { id: "weed2", name: "Foreign Weed", coins: 5, health: 5 }
+  ],
+  mountain: [
+    { id: "thistle", name: "Thorny Thistle", coins: 7, health: 10 }
+  ]
+};
 
 function isZoneUnlocked(zone) {
   if (!zone.unlockRequirement) return true;
@@ -76,6 +92,7 @@ function renderView() {
     }
 
     const health = currentPlayer.zones[zoneId] || 0;
+    const invasives = invasivesByZone[zoneId] || [];
 
     let detailHtml = '<h2>' + zone.name + '</h2>';
     detailHtml += '<p>' + zone.description + '</p>';
@@ -84,10 +101,26 @@ function renderView() {
     detailHtml += '<div class="progress-fill" style="width: ' + health + '%"></div>';
     detailHtml += '</div>';
     detailHtml += '<p>Health: ' + health + '%</p>';
-    detailHtml += '<button id="test-progress">Restore +10% (test tap)</button>';
+    detailHtml += '<h3>Tap to remove invasives:</h3>';
+    detailHtml += '<div id="invasives-list"></div>';
     detailHtml += '<button id="back-to-overview">Back to Overview</button>';
 
     container.innerHTML = detailHtml;
+
+    const list = document.getElementById("invasives-list");
+
+    invasives.forEach(inv => {
+      const invEl = document.createElement("div");
+      invEl.className = "invasive-item";
+      invEl.dataset.invId = inv.id;
+      invEl.style.cursor = "pointer";
+      invEl.style.padding = "8px";
+      invEl.style.margin = "4px";
+      invEl.style.background = "#fff3cd";
+      invEl.style.borderRadius = "4px";
+      invEl.innerHTML = inv.name + ' (Tap to remove, +' + inv.coins + ' coins, +' + inv.health + '%)';
+      list.appendChild(invEl);
+    });
 
     updateCoinsDisplay();
   }
@@ -106,11 +139,11 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("click", (e) => {
     const target = e.target;
 
+    // Zone card click
     const card = target.closest(".zone-card");
     if (card) {
       const zoneId = card.dataset.zoneId;
       const zone = zones.find(z => z.id === zoneId);
-
       if (isZoneUnlocked(zone)) {
         currentView = "zone:" + zoneId;
         renderView();
@@ -120,19 +153,33 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (target.id === "test-progress") {
+    // Invasive tap
+    const invEl = target.closest(".invasive-item");
+    if (invEl) {
       const zoneId = currentView.split(":")[1];
-      let health = currentPlayer.zones[zoneId] || 0;
-      health = Math.min(100, health + 10);
+      const invId = invEl.dataset.invId;
 
-      const changes = {
-        zones: { ...currentPlayer.zones, [zoneId]: health },
-        coins: currentPlayer.coins + 5
-      };
+      const invasives = invasivesByZone[zoneId] || [];
+      const inv = invasives.find(i => i.id === invId);
+      if (inv) {
+        // Reward
+        const changes = {
+          coins: currentPlayer.coins + inv.coins,
+          zones: { ...currentPlayer.zones, [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + inv.health) }
+        };
 
-      updatePlayer(changes);
-      renderView();
+        updatePlayer(changes);
+
+        // Remove the item visually
+        invEl.remove();
+
+        // Optional: if all removed, alert or something
+        renderView();  // refresh to update progress bar & coins
+      }
+      return;
     }
+
+    // Test-progress removed, now using invasives
 
     if (target.id === "back-to-overview") {
       currentView = "overview";
@@ -141,5 +188,5 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   renderView();
-  console.log("Step 9 loaded");
+  console.log("Step 10 loaded");
 });
