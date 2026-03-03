@@ -1,10 +1,17 @@
-// js/main.js - known good minimal version
-console.log("Clean test load");
+import { loadPlayer } from './player.js';
+
+console.log("Step 1 - player import");
+
+let currentPlayer;
 
 document.addEventListener("DOMContentLoaded", () => {
+  currentPlayer = loadPlayer();
   const container = document.getElementById("game-container");
   if (container) {
-    container.innerHTML = "<h2>Test - No templates</h2><p>Coins would be here</p>";
+    container.innerHTML = `
+      <h2>Step 1</h2>
+      <p>Coins from player: ${currentPlayer.coins}</p>
+    `;
   }
-  console.log("DOMContentLoaded fired");
+  console.log("Step 1 loaded");
 });
