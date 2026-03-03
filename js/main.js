@@ -153,10 +153,9 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+
   // Invasive tap – fixed version
-  const invEl = target.closest(".invasive-item");
-  // Invasive tap – fixed version
-const invEl = target.closest(".invasive-item");
+
 if (invEl) {
   const zoneId = currentView.split(":")[1];
   const invId = invEl.dataset.invId;
