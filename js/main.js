@@ -2,7 +2,7 @@
 import { loadPlayer, savePlayer, updatePlayer, resetPlayer } from './player.js';
 import { zones } from '../data/zones.js';  // ← new import
 
-console.log("Guerrilla Gardening starting... 🌱");
+console.log("Guerrilla Gardening starting...  🌱");
 
 let currentPlayer;
 let currentView = "overview";  // "overview" or "zone:<id>"
