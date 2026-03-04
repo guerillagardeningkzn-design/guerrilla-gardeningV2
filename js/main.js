@@ -1,12 +1,12 @@
 import { loadPlayer, updatePlayer, savePlayer } from './player.js';
 import { zones } from '../data/zones.js';
 
-console.log("Step 10 - add tappable invasives");
+console.log("Guerrilla Gardening - updated with full assets tree paths");
 
 let currentPlayer;
 let currentView = "overview";
 
-// Dummy invasives per zone (later from JSON)
+// Dummy invasives per zone (later from JSON or editor)
 const invasivesByZone = {
   beach: [
     { id: "seaweed1", name: "Invasive Seaweed", coins: 3, health: 5 },
@@ -32,12 +32,14 @@ function isZoneUnlocked(zone) {
 function renderView() {
   const container = document.getElementById("game-container");
   if (!container) return;
+
   container.innerHTML = "";
 
   if (currentView === "overview") {
     let html = '<h2>Island Overview</h2>';
     html += '<p>Coins: <span id="coins-display">' + currentPlayer.coins + '</span></p>';
     html += '<div id="zones-grid"></div>';
+
     container.innerHTML = html;
 
     const grid = document.getElementById("zones-grid");
@@ -108,40 +110,40 @@ function renderView() {
     const list = document.getElementById("invasives-list");
 
     invasives.forEach(inv => {
-  const invEl = document.createElement("div");
-  invEl.className = "invasive-item";
-  invEl.dataset.invId = inv.id;
-  invEl.style.cursor = "pointer";
-  invEl.style.padding = "8px";
-  invEl.style.margin = "6px";
-  invEl.style.background = "#fff3cd";
-  invEl.style.borderRadius = "8px";
-  invEl.style.textAlign = "center"; // center image
+      const invEl = document.createElement("div");
+      invEl.className = "invasive-item";
+      invEl.dataset.invId = inv.id;
+      invEl.style.cursor = "pointer";
+      invEl.style.padding = "8px";
+      invEl.style.margin = "6px";
+      invEl.style.background = "#fff3cd";
+      invEl.style.borderRadius = "8px";
+      invEl.style.textAlign = "center";
 
-  // Image only – no text
-  let imagePath = "";
-  if (inv.name.toLowerCase().includes("seaweed")) {
-  imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
-} else if (inv.name.toLowerCase().includes("crabgrass")) {
-  imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
-} else if (inv.name.toLowerCase().includes("vine")) {
-  imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
-} else if (inv.name.toLowerCase().includes("thistle")) {
-  imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
-} else if (inv.name.toLowerCase().includes("weed")) {
-  imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
-} else {
-  imagePath = "assets/ui-icons/leaf-health.png"; // fallback
-}
+      let imagePath = "assets/ui/icons/leaf-health.png"; // fallback
 
-  invEl.innerHTML = `
-    <img src="${imagePath}" 
-         class="invasive-image" 
-         alt="${inv.name}">
-  `;
+      const nameLower = inv.name.toLowerCase();
 
-  list.appendChild(invEl);
-});
+      if (nameLower.includes("seaweed")) {
+        imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
+      } else if (nameLower.includes("crabgrass")) {
+        imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
+      } else if (nameLower.includes("vine") || nameLower.includes("choking")) {
+        imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
+      } else if (nameLower.includes("thistle") || nameLower.includes("thorny")) {
+        imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
+      } else if (nameLower.includes("weed") || nameLower.includes("foreign")) {
+        imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
+      }
+
+      invEl.innerHTML = `
+        <img src="${imagePath}" 
+             class="invasive-image" 
+             alt="${inv.name}">
+      `;
+
+      list.appendChild(invEl);
+    });
 
     updateCoinsDisplay();
   }
@@ -184,7 +186,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const inv = invasives.find(i => i.id === invId);
 
       if (inv) {
-        // Give reward
         const changes = {
           coins: currentPlayer.coins + inv.coins,
           zones: {
@@ -195,20 +196,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         updatePlayer(changes);
 
-        // Visually remove immediately
         invEl.remove();
 
-        // Update UI elements
         updateCoinsDisplay();
         const progressFill = document.querySelector(".progress-fill");
-        const healthDisplay = document.querySelector(".progress-bar + p"); // <p>Health: ...%</p>
+        const healthDisplay = document.querySelector(".progress-bar + p");
         if (progressFill && healthDisplay) {
           const newHealth = changes.zones[zoneId];
           progressFill.style.width = newHealth + "%";
           healthDisplay.textContent = "Health: " + newHealth + "%";
         }
 
-        // Check if all gone → alert with zone name
         if (document.querySelectorAll(".invasive-item").length === 0) {
           const currentZone = zones.find(z => z.id === zoneId);
           if (currentZone) {
@@ -229,5 +227,5 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   renderView();
-  console.log("Step 10 loaded");
+  console.log("Game loaded with full assets/ tree paths");
 });
