@@ -121,19 +121,18 @@ function renderView() {
   // Image only – no text
   let imagePath = "";
   if (inv.name.toLowerCase().includes("seaweed")) {
-    imagePath = "https://raw.githubusercontent.com/guerillagardeningkzn-design/guerrilla-gardeningV2/main/assets/entities/invasives/seaweed/seaweed-01.png";
-  } else if (inv.name.toLowerCase().includes("crabgrass")) {
-    imagePath = "/assets/entities/invasives/crabgrass/crabgrass-01.png";
-  } else if (inv.name.toLowerCase().includes("vine")) {
-    imagePath = "/assets/entities/invasives/vine/vine-choking-01.png";
-  } else if (inv.name.toLowerCase().includes("thistle")) {
-    imagePath = "/assets/entities/invasives/thistle/thistle-thorny-01.png";
-  } else if (inv.name.toLowerCase().includes("weed")) {
-    imagePath = "/assets/entities/invasives/weed-foreign/weed-foreign-01.png";
-  } else {
-    // fallback placeholder
-    imagePath = "/assets/ui-icons/leaf-health.png"; // or leave empty
-  }
+  imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
+} else if (inv.name.toLowerCase().includes("crabgrass")) {
+  imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
+} else if (inv.name.toLowerCase().includes("vine")) {
+  imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
+} else if (inv.name.toLowerCase().includes("thistle")) {
+  imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
+} else if (inv.name.toLowerCase().includes("weed")) {
+  imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
+} else {
+  imagePath = "assets/ui-icons/leaf-health.png"; // fallback
+}
 
   invEl.innerHTML = `
     <img src="${imagePath}" 
