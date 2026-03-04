@@ -108,17 +108,41 @@ function renderView() {
     const list = document.getElementById("invasives-list");
 
     invasives.forEach(inv => {
-      const invEl = document.createElement("div");
-      invEl.className = "invasive-item";
-      invEl.dataset.invId = inv.id;
-      invEl.style.cursor = "pointer";
-      invEl.style.padding = "8px";
-      invEl.style.margin = "4px";
-      invEl.style.background = "#fff3cd";
-      invEl.style.borderRadius = "4px";
-      invEl.innerHTML = inv.name + ' (Tap to remove, +' + inv.coins + ' coins, +' + inv.health + '%)';
-      list.appendChild(invEl);
-    });
+  const invEl = document.createElement("div");
+  invEl.className = "invasive-item";
+  invEl.dataset.invId = inv.id;
+  invEl.style.cursor = "pointer";
+  invEl.style.padding = "8px";
+  invEl.style.margin = "6px";
+  invEl.style.background = "#fff3cd";
+  invEl.style.borderRadius = "8px";
+  invEl.style.textAlign = "center"; // center image
+
+  // Image only – no text
+  let imagePath = "";
+  if (inv.name.toLowerCase().includes("seaweed")) {
+    imagePath = "/assets/entities/invasives/seaweed/seaweed-01.png";
+  } else if (inv.name.toLowerCase().includes("crabgrass")) {
+    imagePath = "/assets/entities/invasives/crabgrass/crabgrass-01.png";
+  } else if (inv.name.toLowerCase().includes("vine")) {
+    imagePath = "/assets/entities/invasives/vine/vine-choking-01.png";
+  } else if (inv.name.toLowerCase().includes("thistle")) {
+    imagePath = "/assets/entities/invasives/thistle/thistle-thorny-01.png";
+  } else if (inv.name.toLowerCase().includes("weed")) {
+    imagePath = "/assets/entities/invasives/weed-foreign/weed-foreign-01.png";
+  } else {
+    // fallback placeholder
+    imagePath = "/assets/ui-icons/leaf-health.png"; // or leave empty
+  }
+
+  invEl.innerHTML = `
+    <img src="${imagePath}" 
+         class="invasive-image" 
+         alt="${inv.name}">
+  `;
+
+  list.appendChild(invEl);
+});
 
     updateCoinsDisplay();
   }

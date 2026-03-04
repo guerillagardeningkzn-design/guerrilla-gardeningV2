@@ -64,3 +64,30 @@ button {
 button:hover {
   background: #388E3C;
 }
+
+
+.invasive-image {
+  max-width: 120px;           /* never wider than this on any screen */
+  max-height: 120px;
+  width: auto;                /* let width adjust based on aspect */
+  height: auto;               /* preserve original proportions */
+  object-fit: contain;        /* fits inside box without cropping or stretching */
+  display: block;             /* removes unwanted bottom space */
+  margin: 0 auto 8px;         /* centers + small spacing below */
+  pointer-events: none;       /* clicks go through to the parent div */
+}
+
+.invasive-item {
+  cursor: pointer;
+  text-align: center;
+  padding: 8px;
+  margin: 6px;
+  background: #fff3cd;
+  border-radius: 8px;
+  min-width: 100px;           /* prevents tiny items */
+  transition: transform 0.15s;
+}
+
+.invasive-item:hover {
+  transform: scale(1.08);
+}
