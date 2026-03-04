@@ -121,7 +121,7 @@ function renderView() {
   // Image only – no text
   let imagePath = "";
   if (inv.name.toLowerCase().includes("seaweed")) {
-    imagePath = "/assets/entities/invasives/seaweed/seaweed-01.png";
+    imagePath = "https://raw.githubusercontent.com/guerillagardeningkzn-design/guerrilla-gardeningV2/main/assets/entities/invasives/seaweed/seaweed-01.png";
   } else if (inv.name.toLowerCase().includes("crabgrass")) {
     imagePath = "/assets/entities/invasives/crabgrass/crabgrass-01.png";
   } else if (inv.name.toLowerCase().includes("vine")) {
