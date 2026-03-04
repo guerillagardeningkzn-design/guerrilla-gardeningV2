@@ -214,7 +214,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		invEl.style.transform = "scale(0.5)";
 		setTimeout(() => {
 		invEl.remove();
-		}, 500); // remove after animation finishes
+		}, 800); // remove after animation finishes
 
         invEl.remove();
 
