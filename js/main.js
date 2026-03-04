@@ -130,8 +130,8 @@ function renderView() {
     invEl.style.cursor = "pointer";
     invEl.style.padding = "8px";
     invEl.style.margin = "6px";
-    invEl.style.background = "rgba(255, 243, 205, 0.85)"; // semi-transparent for visibility over bg
-    invEl.style.borderRadius = "8px";
+    //invEl.style.background = "rgba(255, 243, 205, 0.85)"; // semi-transparent for visibility over bg
+    //invEl.style.borderRadius = "8px";
     invEl.style.textAlign = "center";
 
     let imagePath = "assets/ui/icons/leaf-health.png"; // fallback
