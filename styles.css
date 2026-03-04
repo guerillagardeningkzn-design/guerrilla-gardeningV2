@@ -91,10 +91,25 @@ button:hover {
   display: block;
   margin: 0 auto;
   pointer-events: none;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* optional: subtle shadow for depth */
-  border-radius: 8px;                    /* optional: soft corners on image */
+  animation: sway 4s ease-in-out infinite; /* 4-second cycle, smooth */
+  transform-origin: bottom center; /* sway from base */
 }
 
+@keyframes sway {
+  0%   { transform: rotate(-3deg); }
+  50%  { transform: rotate(3deg); }
+  100% { transform: rotate(-3deg); }
+}
+
+/* Optional: slower/faster or random delay per item */
+.invasive-item:nth-child(odd) .invasive-image {
+  animation-duration: 5s;    /* different speed for variety */
+  animation-delay: 0.5s;
+}
+
+.invasive-item:nth-child(even) .invasive-image {
+  animation-duration: 6s;
+}
 
 .zone-detail {
   background-size: cover;          /* scale to fill container */
