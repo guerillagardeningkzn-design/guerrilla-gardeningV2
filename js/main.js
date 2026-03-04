@@ -209,6 +209,12 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         updatePlayer(changes);
+		invEl.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+        invEl.style.opacity = "0";
+		invEl.style.transform = "scale(0.5)";
+		setTimeout(() => {
+		invEl.remove();
+		}, 500); // remove after animation finishes
 
         invEl.remove();
 
