@@ -82,71 +82,85 @@ function renderView() {
     updateCoinsDisplay();
 
   } else if (currentView.startsWith("zone:")) {
-    const zoneId = currentView.split(":")[1];
-    const zone = zones.find(z => z.id === zoneId);
+  const zoneId = currentView.split(":")[1];
+  const zone = zones.find(z => z.id === zoneId);
 
-    if (!zone || !isZoneUnlocked(zone)) {
-      currentView = "overview";
-      renderView();
-      return;
+  if (!zone || !isZoneUnlocked(zone)) {
+    currentView = "overview";
+    renderView();
+    return;
+  }
+
+  const health = currentPlayer.zones[zoneId] || 0;
+  const invasives = invasivesByZone[zoneId] || [];
+
+  // Choose background image based on zoneId
+  let bgPath = "assets/backgrounds/global/sky-overcast.jpg"; // fallback
+  if (zoneId === "beach") {
+    bgPath = "assets/backgrounds/beach/main-day.jpg";
+  } else if (zoneId === "forest") {
+    bgPath = "assets/backgrounds/forest/main-misty.jpg";
+  } else if (zoneId === "mountain") {
+    bgPath = "assets/backgrounds/mountain/main-rocky.jpg";
+  }
+
+  let detailHtml = `
+    <div class="zone-detail" style="background-image: url('${bgPath}');">
+      <h2>${zone.name}</h2>
+      <p>${zone.description}</p>
+      <p>Coins: <span id="coins-display">${currentPlayer.coins}</span></p>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: ${health}%"></div>
+      </div>
+      <p>Health: ${health}%</p>
+      <h3>Tap to remove invasives:</h3>
+      <div id="invasives-list"></div>
+      <button id="back-to-overview">Back to Overview</button>
+    </div>
+  `;
+
+  container.innerHTML = detailHtml;
+
+  const list = document.getElementById("invasives-list");
+
+  invasives.forEach(inv => {
+    const invEl = document.createElement("div");
+    invEl.className = "invasive-item";
+    invEl.dataset.invId = inv.id;
+    invEl.style.cursor = "pointer";
+    invEl.style.padding = "8px";
+    invEl.style.margin = "6px";
+    invEl.style.background = "rgba(255, 243, 205, 0.85)"; // semi-transparent for visibility over bg
+    invEl.style.borderRadius = "8px";
+    invEl.style.textAlign = "center";
+
+    let imagePath = "assets/ui/icons/leaf-health.png"; // fallback
+
+    const nameLower = inv.name.toLowerCase();
+
+    if (nameLower.includes("seaweed")) {
+      imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
+    } else if (nameLower.includes("crabgrass")) {
+      imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
+    } else if (nameLower.includes("vine") || nameLower.includes("choking")) {
+      imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
+    } else if (nameLower.includes("thistle") || nameLower.includes("thorny")) {
+      imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
+    } else if (nameLower.includes("weed") || nameLower.includes("foreign")) {
+      imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
     }
 
-    const health = currentPlayer.zones[zoneId] || 0;
-    const invasives = invasivesByZone[zoneId] || [];
+    invEl.innerHTML = `
+      <img src="${imagePath}" 
+           class="invasive-image" 
+           alt="${inv.name}">
+    `;
 
-    let detailHtml = '<h2>' + zone.name + '</h2>';
-    detailHtml += '<p>' + zone.description + '</p>';
-    detailHtml += '<p>Coins: <span id="coins-display">' + currentPlayer.coins + '</span></p>';
-    detailHtml += '<div class="progress-bar">';
-    detailHtml += '<div class="progress-fill" style="width: ' + health + '%"></div>';
-    detailHtml += '</div>';
-    detailHtml += '<p>Health: ' + health + '%</p>';
-    detailHtml += '<h3>Tap to remove invasives:</h3>';
-    detailHtml += '<div id="invasives-list"></div>';
-    detailHtml += '<button id="back-to-overview">Back to Overview</button>';
+    list.appendChild(invEl);
+  });
 
-    container.innerHTML = detailHtml;
-
-    const list = document.getElementById("invasives-list");
-
-    invasives.forEach(inv => {
-      const invEl = document.createElement("div");
-      invEl.className = "invasive-item";
-      invEl.dataset.invId = inv.id;
-      invEl.style.cursor = "pointer";
-      invEl.style.padding = "8px";
-      invEl.style.margin = "6px";
-      invEl.style.background = "#fff3cd";
-      invEl.style.borderRadius = "8px";
-      invEl.style.textAlign = "center";
-
-      let imagePath = "assets/ui/icons/leaf-health.png"; // fallback
-
-      const nameLower = inv.name.toLowerCase();
-
-      if (nameLower.includes("seaweed")) {
-        imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
-      } else if (nameLower.includes("crabgrass")) {
-        imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
-      } else if (nameLower.includes("vine") || nameLower.includes("choking")) {
-        imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
-      } else if (nameLower.includes("thistle") || nameLower.includes("thorny")) {
-        imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
-      } else if (nameLower.includes("weed") || nameLower.includes("foreign")) {
-        imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
-      }
-
-      invEl.innerHTML = `
-        <img src="${imagePath}" 
-             class="invasive-image" 
-             alt="${inv.name}">
-      `;
-
-      list.appendChild(invEl);
-    });
-
-    updateCoinsDisplay();
-  }
+  updateCoinsDisplay();
+}
 }
 
 function updateCoinsDisplay() {

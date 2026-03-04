@@ -91,3 +91,16 @@ button:hover {
 .invasive-item:hover {
   transform: scale(1.08);
 }
+
+
+.zone-detail {
+  background-size: cover;          /* scale to fill container */
+  background-position: center;     /* center image */
+  background-repeat: no-repeat;    /* no tiling */
+  min-height: 60vh;                /* give space for content */
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  padding: 20px;
+  color: white;                    /* better text contrast */
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.7); /* readability on image */
+}
