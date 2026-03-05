@@ -1,7 +1,7 @@
 import { loadPlayer, updatePlayer, savePlayer } from './player.js';
 import { zones } from '../data/zones.js';
 
-console.log("Guerrilla Gardening - overworld map with markers  ");
+console.log("Guerrilla Gardening - overworld map with markers");
 
 // ─── Global state ────────────────────────────────────────────────────────────────
 let currentPlayer;
@@ -23,11 +23,11 @@ const invasivesByZone = {
   ]
 };
 
-// ─── Zone positions on island map (adjust % as needed for your image) ────────────
+// ─── Marker positions on island map (adjust % for your image) ───────────────────
 const zoneMarkers = [
-  { id: "beach", name: "Sunny Beach", left: 15, top: 70, unlocked: true },
-  { id: "forest", name: "Misty Forest", left: 60, top: 30, unlocked: false },
-  { id: "mountain", name: "Rocky Mountain", left: 80, top: 20, unlocked: false }
+  { id: "beach", name: "Sunny Beach", left: 20, top: 75 },
+  { id: "forest", name: "Misty Forest", left: 55, top: 40 },
+  { id: "mountain", name: "Rocky Mountain", left: 85, top: 25 }
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────────
@@ -69,17 +69,17 @@ function renderView() {
       const unlocked = isZoneUnlocked(zone);
 
       const markerEl = document.createElement("div");
-      markerEl.className = "map-marker";
+      markerEl.className = "map-marker" + (unlocked ? "" : " locked");
       markerEl.style.left = marker.left + '%';
       markerEl.style.top = marker.top + '%';
       markerEl.dataset.zoneId = marker.id;
+      markerEl.innerHTML = `<span class="marker-label">${marker.name}</span>`;
 
       if (!unlocked) {
-        markerEl.style.opacity = 0.4;
+        markerEl.style.opacity = 0.5;
         markerEl.style.pointerEvents = "none";
       }
 
-      markerEl.innerHTML = `<div class="marker-label">${marker.name}</div>`;
       markersContainer.appendChild(markerEl);
     });
 
@@ -171,7 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("click", (e) => {
     const target = e.target;
 
-    // Click on island map marker
+    // Click on island marker
     const marker = target.closest(".map-marker");
     if (marker) {
       const zoneId = marker.dataset.zoneId;
