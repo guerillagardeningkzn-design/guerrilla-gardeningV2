@@ -81,82 +81,103 @@ function renderView() {
     updateCoinsDisplay();
 
   } else if (currentView.startsWith("zone:")) {
-    const zoneId = currentView.split(":")[1];
-    const zone = zones.find(z => z.id === zoneId);
+  const zoneId = currentView.split(":")[1];
+  const zone = zones.find(z => z.id === zoneId);
 
-    if (!zone || !isZoneUnlocked(zone)) {
-      currentView = "overview";
-      renderView();
-      return;
-    }
+  if (!zone || !isZoneUnlocked(zone)) {
+    currentView = "overview";
+    renderView();
+    return;
+  }
 
-    const health = currentPlayer.zones[zoneId] || 0;
-    const invasives = invasivesByZone[zoneId] || [];
+  const health = currentPlayer.zones[zoneId] || 0;
+  const invasives = invasivesByZone[zoneId] || [];
 
-    // Background
-    let bgPath = "assets/backgrounds/global/sky-overcast.jpg";
-    if (zoneId === "beach") bgPath = "assets/backgrounds/beach/main-day.jpg";
-    else if (zoneId === "forest") bgPath = "assets/backgrounds/forest/main-misty.jpg";
-    else if (zoneId === "mountain") bgPath = "assets/backgrounds/mountain/main-rocky.jpg";
+  // Choose background path
+  let bgPath = "assets/backgrounds/global/sky-overcast.jpg";
+  if (zoneId === "beach") bgPath = "assets/backgrounds/beach/main-day.jpg";
+  else if (zoneId === "forest") bgPath = "assets/backgrounds/forest/main-misty.jpg";
+  else if (zoneId === "mountain") bgPath = "assets/backgrounds/mountain/main-rocky.jpg";
 
-    let detailHtml = `
-      <div class="zone-detail" style="background-image: url('${bgPath}');">
+  // Use <img> instead of background-image
+  let detailHtml = `
+    <div class="zone-detail">
+      <img src="${bgPath}" class="zone-bg-img" alt="${zone.name} background">
+      <div class="zone-content">
         <h2>${zone.name}</h2>
         <p>${zone.description}</p>
-        <!-- No coins here anymore -->
         <div class="progress-bar">
           <div class="progress-fill" style="width: ${health}%"></div>
         </div>
         <p>Health: ${health}%</p>
         <h3>Tap to remove invasives:</h3>
         <div id="invasives-list"></div>
-        <!-- No back button here anymore -->
       </div>
+    </div>
+  `;
+
+  document.getElementById("game-container").innerHTML = detailHtml;
+
+  const list = document.getElementById("invasives-list");
+
+  invasives.forEach(inv => {
+    const invEl = document.createElement("div");
+    invEl.className = "invasive-item";
+    invEl.dataset.invId = inv.id;
+
+    // Position invasives (hardcoded for now)
+    let posX = 50;
+    let posY = 50;
+    if (inv.id.includes("seaweed")) { posX = 30; posY = 60; }
+    if (inv.id.includes("vine")) { posX = 70; posY = 40; }
+    // ... add more
+
+    invEl.style.left = posX + '%';
+    invEl.style.top = posY + '%';
+    invEl.style.position = 'absolute';
+
+    let imagePath = "assets/ui/icons/leaf-health.png";
+    const nameLower = inv.name.toLowerCase();
+
+    if (nameLower.includes("seaweed")) {
+      imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
+    } else if (nameLower.includes("crabgrass")) {
+      imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
+    } else if (nameLower.includes("vine") || nameLower.includes("choking")) {
+      imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
+    } else if (nameLower.includes("thistle") || nameLower.includes("thorny")) {
+      imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
+    } else if (nameLower.includes("weed") || nameLower.includes("foreign")) {
+      imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
+    }
+
+    invEl.innerHTML = `
+      <img src="${imagePath}" 
+           class="invasive-image" 
+           alt="${inv.name}">
     `;
 
-    document.getElementById("game-container").innerHTML = detailHtml;
+    list.appendChild(invEl);
+  });
 
-    const list = document.getElementById("invasives-list");
+  updateCoinsDisplay();
 
-    invasives.forEach(inv => {
-      const invEl = document.createElement("div");
-      invEl.className = "invasive-item";
-      invEl.dataset.invId = inv.id;
-      // Position invasives (hardcoded for now, later from editor)
-      let posX = 50; // % from left
-      let posY = 50; // % from top
-      if (inv.id.includes("seaweed")) { posX = 30; posY = 60; }
-      if (inv.id.includes("vine")) { posX = 70; posY = 40; }
-      // ... add more
-      invEl.style.left = posX + '%';
-      invEl.style.top = posY + '%';
-      invEl.style.position = 'absolute';
-      let imagePath = "assets/ui/icons/leaf-health.png";
-      // your existing imagePath logic here...
-      invEl.innerHTML = `
-        <img src="${imagePath}" class="invasive-image" alt="${inv.name}">
-      `;
-      list.appendChild(invEl);
-    });
+  // Reset zoom and center on zone enter
+  scale = 1.3;
+  translateX = 0;
+  translateY = 0;
 
-    updateCoinsDisplay();
-
-    // Reset zoom and center on zone enter
-    scale = 2;
-    translateX = 0;
-    translateY = 0;
-
-    setTimeout(() => {
-      const detail = document.querySelector('.zone-detail');
-      if (detail) {
-        const rect = detail.getBoundingClientRect();
-        translateX = (viewport.clientWidth - rect.width * scale) / 2;
-        translateY = (viewport.clientHeight - rect.height * scale) / 2;
-        updateTransform();
-		clampTranslate();
-      }
-    }, 50);
-  }
+  setTimeout(() => {
+    const bgImg = document.querySelector('.zone-bg-img');
+    if (bgImg) {
+      const rect = bgImg.getBoundingClientRect();
+      translateX = (viewport.clientWidth - rect.width * scale) / 2;
+      translateY = (viewport.clientHeight - rect.height * scale) / 2;
+      updateTransform();
+      clampTranslate();
+    }
+  }, 100);
+}
 }
 
 function updateCoinsDisplay() {

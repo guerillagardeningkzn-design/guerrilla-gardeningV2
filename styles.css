@@ -112,15 +112,28 @@ button:hover {
 }
 
 .zone-detail {
-  background-size: cover;          /* scale to fill container */
-  background-position: center;     /* center image */
-  background-repeat: no-repeat;    /* no tiling */
-  min-height: 60vh;                /* give space for content */
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.zone-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;              /* fills container, preserves aspect */
+  object-position: center;
+  pointer-events: none;           /* clicks go through to entities */
+  z-index: 1;
+}
+.zone-content {
+  position: relative;
+  z-index: 2;
   padding: 20px;
-  color: white;                    /* better text contrast */
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.7); /* readability on image */
+  color: white;
+  text-shadow: 1px 1px 3px black;
+  /* keep your existing content styles */
 }
 
 html, body {
