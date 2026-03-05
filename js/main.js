@@ -261,21 +261,25 @@ function updateTransform() {
   clampTranslate(); // enforce boundaries
 }
 function clampTranslate() {
-  // Get current dimensions
-  const viewportW = viewport.clientWidth;
-  const viewportH = viewport.clientHeight;
+  // Get viewport and scaled container dimensions
+  const vw = viewport.clientWidth;
+  const vh = viewport.clientHeight;
+  const cw = container.offsetWidth * scale;   // scaled map width
+  const ch = container.offsetHeight * scale;  // scaled map height
 
-  // Scaled size of the map container
-  const scaledW = container.offsetWidth * scale;
-  const scaledH = container.offsetHeight * scale;
+  // If scaled map is smaller than viewport, center it
+  if (cw < vw) {
+    translateX = (vw - cw) / 2;
+  } else {
+    // Clamp so left edge never > 0, right edge never < vw
+    translateX = Math.max(vw - cw, Math.min(0, translateX));
+  }
 
-  // Max allowable translate (so edges don't go beyond screen)
-  const maxX = Math.max(0, scaledW - viewportW) / 2;
-  const maxY = Math.max(0, scaledH - viewportH) / 2;
-
-  // Clamp translateX/Y
-  translateX = Math.min(maxX, Math.max(-maxX, translateX));
-  translateY = Math.min(maxY, Math.max(-maxY, translateY));
+  if (ch < vh) {
+    translateY = (vh - ch) / 2;
+  } else {
+    translateY = Math.max(vh - ch, Math.min(0, translateY));
+  }
 }
 function getMinScale() {
   const viewportRect = viewport.getBoundingClientRect();
