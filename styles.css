@@ -20,6 +20,19 @@ html, body {
 #map-container {
   width: 100%;
   height: 100%;
+  position: relative;
+}
+
+/* ─── Island & zone backgrounds ───────────────────────────────────────────────── */
+.island-bg-img, .zone-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;  /* fills screen, crops edges if needed */
+  object-position: center;
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* ─── Zone detail ──────────────────────────────────────────────────────────────── */
@@ -40,9 +53,10 @@ html, body {
   z-index: 1;
 }
 
+/* ─── Zone content ─────────────────────────────────────────────────────────────── */
 .zone-content {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   padding: 20px;
   color: white;
   text-shadow: 1px 1px 3px black;
@@ -55,6 +69,7 @@ html, body {
   width: 100px;
   height: 100px;
   transform-origin: center;
+  z-index: 4;
 }
 
 .invasive-image {
@@ -89,22 +104,32 @@ html, body {
   font-weight: bold;
 }
 
-.hud-top-right {
+.hud-top-center {
   position: absolute;
   top: 10px;
-  right: 10px;
+  left: 50%;
+  transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.5);
   padding: 8px 16px;
   border-radius: 12px;
+  width: 60%;
+  max-width: 400px;
+  text-align: center;
 }
 
-#zone-select {
-  padding: 8px 16px;
-  font-size: 1rem;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
+#back-to-map {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  background: rgba(76, 175, 80, 0.9);
+  color: white;
   border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
   cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 /* ─── Background ───────────────────────────────────────────────────────────────── */
@@ -165,4 +190,39 @@ html, body {
   padding: 12px;
   margin: 8px 0;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* ─── Markers on island map ───────────────────────────────────────────────────── */
+#map-markers {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.map-marker {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  cursor: pointer;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  transition: transform 0.2s;
+}
+
+.map-marker:hover {
+  transform: scale(1.2);
+}
+
+.marker-label {
+  text-align: center;
+  color: black;
+  text-shadow: none;
 }
