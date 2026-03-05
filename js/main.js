@@ -142,7 +142,7 @@ function renderView() {
     updateCoinsDisplay();
 
     // Reset zoom and center on zone enter
-    scale = 1.3;
+    scale = 2;
     translateX = 0;
     translateY = 0;
 
@@ -257,8 +257,19 @@ const container = document.getElementById("map-container");
 
 function updateTransform() {
   container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+  clampTranslate(); // enforce boundaries
 }
+function clampTranslate() {
+  const viewportRect = viewport.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
 
+  // Calculate how much we can move before edges show
+  const maxX = Math.max(0, containerRect.width * scale - viewportRect.width) / 2;
+  const maxY = Math.max(0, containerRect.height * scale - viewportRect.height) / 2;
+
+  translateX = Math.min(maxX, Math.max(-maxX, translateX));
+  translateY = Math.min(maxY, Math.max(-maxY, translateY));
+}
 function getMinScale() {
   const viewportRect = viewport.getBoundingClientRect();
   const bgImg = new Image();
@@ -292,7 +303,7 @@ viewport.addEventListener('wheel', async (e) => {
   const mouseY = e.clientY - rect.top;
   translateX = mouseX - (mouseX - translateX) * (scale / oldScale);
   translateY = mouseY - (mouseY - translateY) * (scale / oldScale);
-
+  clampTranslate();
   updateTransform();
 });
 
@@ -318,6 +329,7 @@ viewport.addEventListener('touchmove', async (e) => {
     const delta = dist / startDist;
     const oldScale = scale;
     scale = Math.max(await getMinScale(), Math.min(4, scale * delta));
+	clampTranslate();
     updateTransform();
     startDist = dist;
   }
