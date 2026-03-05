@@ -116,13 +116,14 @@ button:hover {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  overflow: auto;
 }
 .zone-bg-img {
-  position: absolute;
+  position: relative;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;            /* fills container, preserves aspect */
+  object-fit: none;            /* fills container, preserves aspect */
   object-position: center;
   pointer-events: none;           /* clicks go through to entities */
   z-index: 1;
