@@ -258,68 +258,56 @@ const container = document.getElementById("map-container");
 
 function updateTransform() {
   container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-  clampTranslate(); // enforce boundaries
+  clampTranslate();
 }
+
 function clampTranslate() {
-  // Get viewport and scaled container dimensions
   const vw = viewport.clientWidth;
   const vh = viewport.clientHeight;
-  const cw = container.offsetWidth * scale;   // scaled map width
-  const ch = container.offsetHeight * scale;  // scaled map height
+  const cw = container.offsetWidth * scale;
+  const ch = container.offsetHeight * scale;
 
-  // If scaled map is smaller than viewport, center it
-  if (cw < vw) {
+  // If scaled content smaller than viewport → center it
+  if (cw <= vw) {
     translateX = (vw - cw) / 2;
   } else {
-    // Clamp so left edge never > 0, right edge never < vw
+    // Clamp so left edge ≥ vw - cw (never right of left screen edge)
+    // and right edge ≤ 0 (never left of right screen edge)
     translateX = Math.max(vw - cw, Math.min(0, translateX));
   }
 
-  if (ch < vh) {
+  if (ch <= vh) {
     translateY = (vh - ch) / 2;
   } else {
     translateY = Math.max(vh - ch, Math.min(0, translateY));
   }
 }
-function getMinScale() {
-  const viewportRect = viewport.getBoundingClientRect();
-  const bgImg = new Image();
-  const zoneDetail = document.querySelector('.zone-detail');
-  if (zoneDetail) {
-    bgImg.src = zoneDetail.style.backgroundImage.slice(5, -2); // extract url
-    return new Promise(resolve => {
-      bgImg.onload = () => {
-        const naturalWidth = bgImg.naturalWidth;
-        const naturalHeight = bgImg.naturalHeight;
-        const scaleX = viewportRect.width / naturalWidth;
-        const scaleY = viewportRect.height / naturalHeight;
-        resolve(Math.max(scaleX, scaleY));
-      };
-      bgImg.onerror = () => resolve(1); // fallback
-    });
-  }
-  return Promise.resolve(1);
-}
 
-// Wheel zoom
-viewport.addEventListener('wheel', async (e) => {
+// Wheel zoom (desktop)
+viewport.addEventListener('wheel', (e) => {
   e.preventDefault();
   const delta = e.deltaY > 0 ? 0.9 : 1.1;
   const oldScale = scale;
-  scale = Math.max(await getMinScale(), Math.min(4, scale * delta));
+  scale *= delta;
+  scale = Math.max(0.8, Math.min(4, scale)); // tighter min zoom
 
   // Zoom towards cursor
   const rect = viewport.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
-  translateX = mouseX - (mouseX - translateX) * (scale / oldScale);
-  translateY = mouseY - (mouseY - translateY) * (scale / oldScale);
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  translateX = mx - (mx - translateX) * (scale / oldScale);
+  translateY = my - (my - translateY) * (scale / oldScale);
+
   clampTranslate();
   updateTransform();
 });
 
-// Touch pinch zoom
+// Touch pinch zoom + single-finger pan (mobile)
 let startDist = 0;
+let startScale = 1;
+let startX = 0;
+let startY = 0;
+
 viewport.addEventListener('touchstart', (e) => {
   if (e.touches.length === 2) {
     e.preventDefault();
@@ -327,58 +315,64 @@ viewport.addEventListener('touchstart', (e) => {
       e.touches[0].pageX - e.touches[1].pageX,
       e.touches[0].pageY - e.touches[1].pageY
     );
+    startScale = scale;
+  } else if (e.touches.length === 1) {
+    // Start single-finger drag
+    startX = e.touches[0].clientX - translateX;
+    startY = e.touches[0].clientY - translateY;
   }
 });
 
-viewport.addEventListener('touchmove', async (e) => {
+viewport.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+
   if (e.touches.length === 2) {
-    e.preventDefault();
+    // Pinch zoom
     const dist = Math.hypot(
       e.touches[0].pageX - e.touches[1].pageX,
       e.touches[0].pageY - e.touches[1].pageY
     );
     const delta = dist / startDist;
-    const oldScale = scale;
-    scale = Math.max(await getMinScale(), Math.min(4, scale * delta));
-	clampTranslate();
+    scale = startScale * delta;
+    scale = Math.max(0.8, Math.min(4, scale));
+
+    clampTranslate();
     updateTransform();
-    startDist = dist;
+  } else if (e.touches.length === 1) {
+    // Single-finger pan
+    translateX = e.touches[0].clientX - startX;
+    translateY = e.touches[0].clientY - startY;
+    clampTranslate();
+    updateTransform();
   }
 });
 
-// Drag pan (mouse)
+// Mouse drag pan (desktop)
 let isDragging = false;
-let startX, startY;
+let startMouseX, startMouseY;
 
 viewport.addEventListener('mousedown', (e) => {
   isDragging = true;
-  startX = e.clientX - translateX;
-  startY = e.clientY - translateY;
+  startMouseX = e.clientX - translateX;
+  startMouseY = e.clientY - translateY;
   viewport.style.cursor = 'grabbing';
 });
 
 viewport.addEventListener('mousemove', (e) => {
   if (!isDragging) return;
-  translateX = e.clientX - startX;
-  translateY = e.clientY - startY;
+  translateX = e.clientX - startMouseX;
+  translateY = e.clientY - startMouseY;
   clampTranslate();
   updateTransform();
 });
 
-viewport.addEventListener('mouseup', () => {
+viewport.addEventListener('mouseup mouseleave', () => {
   isDragging = false;
   viewport.style.cursor = 'default';
 });
 
-viewport.addEventListener('mouseleave', () => {
-  isDragging = false;
-});
-
 // Reset on resize
 window.addEventListener('resize', () => {
-  scale = 1.0;
-  translateX = 0;
-  translateY = 0;
   clampTranslate();
   updateTransform();
 });
