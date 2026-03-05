@@ -153,6 +153,7 @@ function renderView() {
         translateX = (viewport.clientWidth - rect.width * scale) / 2;
         translateY = (viewport.clientHeight - rect.height * scale) / 2;
         updateTransform();
+		clampTranslate();
       }
     }, 50);
   }
@@ -260,13 +261,19 @@ function updateTransform() {
   clampTranslate(); // enforce boundaries
 }
 function clampTranslate() {
-  const viewportRect = viewport.getBoundingClientRect();
-  const containerRect = container.getBoundingClientRect();
+  // Get current dimensions
+  const viewportW = viewport.clientWidth;
+  const viewportH = viewport.clientHeight;
 
-  // Calculate how much we can move before edges show
-  const maxX = Math.max(0, containerRect.width * scale - viewportRect.width) / 2;
-  const maxY = Math.max(0, containerRect.height * scale - viewportRect.height) / 2;
+  // Scaled size of the map container
+  const scaledW = container.offsetWidth * scale;
+  const scaledH = container.offsetHeight * scale;
 
+  // Max allowable translate (so edges don't go beyond screen)
+  const maxX = Math.max(0, scaledW - viewportW) / 2;
+  const maxY = Math.max(0, scaledH - viewportH) / 2;
+
+  // Clamp translateX/Y
   translateX = Math.min(maxX, Math.max(-maxX, translateX));
   translateY = Math.min(maxY, Math.max(-maxY, translateY));
 }
@@ -350,6 +357,7 @@ viewport.addEventListener('mousemove', (e) => {
   if (!isDragging) return;
   translateX = e.clientX - startX;
   translateY = e.clientY - startY;
+  clampTranslate();
   updateTransform();
 });
 
@@ -367,5 +375,6 @@ window.addEventListener('resize', () => {
   scale = 1.0;
   translateX = 0;
   translateY = 0;
+  clampTranslate();
   updateTransform();
 });
