@@ -1,7 +1,7 @@
 import { loadPlayer, updatePlayer, savePlayer } from './player.js';
 import { zones } from '../data/zones.js';
 
-console.log("Guerrilla Gardening - overworld map with markers ");
+console.log("Guerrilla Gardening - overworld map with markers");
 
 // ─── Global state ────────────────────────────────────────────────────────────────
 let currentPlayer;
@@ -115,7 +115,8 @@ function renderView() {
           <h3>Tap to remove invasives:</h3>
           <div id="invasives-list"></div>
         </div>
-       </div>
+        <button id="back-to-map">Back to Map</button>
+      </div>
     `;
 
     container.innerHTML = detailHtml;
