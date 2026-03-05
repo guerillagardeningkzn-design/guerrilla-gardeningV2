@@ -351,25 +351,27 @@ let dragStartX = 0;
 let dragStartY = 0;
 
 viewport.addEventListener('mousedown', (e) => {
+  if (e.button !== 0) return; // only left click
+  e.preventDefault();
   isDragging = true;
   dragStartX = e.clientX - translateX;
   dragStartY = e.clientY - translateY;
   viewport.style.cursor = 'grabbing';
-  e.preventDefault();
 });
 
-viewport.addEventListener('mousemove', (e) => {
+// Listen for mousemove & mouseup on the whole document (not just viewport)
+document.addEventListener('mousemove', (e) => {
   if (!isDragging) return;
   translateX = e.clientX - dragStartX;
   translateY = e.clientY - dragStartY;
+  clampTranslate();
   updateTransform();
-  e.preventDefault();
 });
 
-viewport.addEventListener('mouseup mouseleave', (e) => {
+document.addEventListener('mouseup', (e) => {
+  if (!isDragging) return;
   isDragging = false;
   viewport.style.cursor = 'default';
-  e.preventDefault();
 });
 
 // Reset on resize
