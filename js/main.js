@@ -3,10 +3,11 @@ import { zones } from '../data/zones.js';
 
 console.log("Guerrilla Gardening - full features & assets tree");
 
+// ─── Global state ────────────────────────────────────────────────────────────────
 let currentPlayer;
 let currentView = "overview";
 
-// Dummy invasives per zone (later from JSON/editor)
+// ─── Dummy data (later from JSON/editor) ────────────────────────────────────────
 const invasivesByZone = {
   beach: [
     { id: "seaweed1", name: "Invasive Seaweed", coins: 3, health: 5 },
@@ -22,6 +23,7 @@ const invasivesByZone = {
   ]
 };
 
+// ─── Helper functions ───────────────────────────────────────────────────────────
 function isZoneUnlocked(zone) {
   if (!zone.unlockRequirement) return true;
   const req = zone.unlockRequirement;
@@ -29,11 +31,20 @@ function isZoneUnlocked(zone) {
   return reqHealth >= req.health;
 }
 
+function updateCoinsDisplay() {
+  const coinsEl = document.getElementById("coins-display");
+  if (coinsEl) {
+    coinsEl.textContent = currentPlayer.coins;
+  }
+}
+
+// ─── Core render function ───────────────────────────────────────────────────────
 function renderView() {
   const container = document.getElementById("game-container");
   if (!container) return;
   container.innerHTML = "";
 
+  // ─── Overview mode ────────────────────────────────────────────────────────────
   if (currentView === "overview") {
     let html = '<h2>Island Overview</h2>';
     html += '<p>Coins: <span id="coins-display">' + currentPlayer.coins + '</span></p>';
@@ -79,243 +90,162 @@ function renderView() {
     });
 
     updateCoinsDisplay();
+  } 
+  // ─── Zone detail mode ────────────────────────────────────────────────────────
+  else if (currentView.startsWith("zone:")) {
+    const zoneId = currentView.split(":")[1];
+    const zone = zones.find(z => z.id === zoneId);
 
-  } else if (currentView.startsWith("zone:")) {
-  const zoneId = currentView.split(":")[1];
-  const zone = zones.find(z => z.id === zoneId);
-
-  if (!zone || !isZoneUnlocked(zone)) {
-    currentView = "overview";
-    renderView();
-    return;
-  }
-
-  const health = currentPlayer.zones[zoneId] || 0;
-  const invasives = invasivesByZone[zoneId] || [];
-
-  // Choose background path
-  let bgPath = "assets/backgrounds/global/sky-overcast.jpg";
-  if (zoneId === "beach") bgPath = "assets/backgrounds/beach/main-day.jpg";
-  else if (zoneId === "forest") bgPath = "assets/backgrounds/forest/main-misty.jpg";
-  else if (zoneId === "mountain") bgPath = "assets/backgrounds/mountain/main-rocky.jpg";
-
-  // Use <img> instead of background-image
-  let detailHtml = `
-    <div class="zone-detail">
-      <img src="${bgPath}" class="zone-bg-img" alt="${zone.name} background">
-      <div class="zone-content">
-        <h2>${zone.name}</h2>
-        <p>${zone.description}</p>
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: ${health}%"></div>
-        </div>
-        <p>Health: ${health}%</p>
-        <h3>Tap to remove invasives:</h3>
-        <div id="invasives-list"></div>
-      </div>
-    </div>
-  `;
-
-  document.getElementById("game-container").innerHTML = detailHtml;
-
-  const list = document.getElementById("invasives-list");
-
-  invasives.forEach(inv => {
-    const invEl = document.createElement("div");
-    invEl.className = "invasive-item";
-    invEl.dataset.invId = inv.id;
-
-    // Position invasives (hardcoded for now)
-    let posX = 50;
-    let posY = 50;
-    if (inv.id.includes("seaweed")) { posX = 30; posY = 60; }
-    if (inv.id.includes("vine")) { posX = 70; posY = 40; }
-    // ... add more
-
-    invEl.style.left = posX + '%';
-    invEl.style.top = posY + '%';
-    invEl.style.position = 'absolute';
-
-    let imagePath = "assets/ui/icons/leaf-health.png";
-    const nameLower = inv.name.toLowerCase();
-
-    if (nameLower.includes("seaweed")) {
-      imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
-    } else if (nameLower.includes("crabgrass")) {
-      imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
-    } else if (nameLower.includes("vine") || nameLower.includes("choking")) {
-      imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
-    } else if (nameLower.includes("thistle") || nameLower.includes("thorny")) {
-      imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
-    } else if (nameLower.includes("weed") || nameLower.includes("foreign")) {
-      imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
-    }
-
-    invEl.innerHTML = `
-      <img src="${imagePath}" 
-           class="invasive-image" 
-           alt="${inv.name}">
-    `;
-
-    list.appendChild(invEl);
-  });
-
-  updateCoinsDisplay();
-
-  // Reset zoom and center on zone enter
-  scale = 1.3;
-  translateX = 0;
-  translateY = 0;
-
-  setTimeout(() => {
-    const bgImg = document.querySelector('.zone-bg-img');
-    if (bgImg) {
-      const rect = bgImg.getBoundingClientRect();
-      translateX = (viewport.clientWidth - rect.width * scale) / 2;
-      translateY = (viewport.clientHeight - rect.height * scale) / 2;
-      updateTransform();
-      clampTranslate();
-    }
-  }, 100);
-}
-}
-
-function updateCoinsDisplay() {
-  const coinsEl = document.getElementById("coins-display");
-  if (coinsEl) {
-    coinsEl.textContent = currentPlayer.coins;
-  }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  currentPlayer = loadPlayer();
-
-  document.addEventListener("click", (e) => {
-    const target = e.target;
-
-    // Zone card click
-    const card = target.closest(".zone-card");
-    if (card) {
-      const zoneId = card.dataset.zoneId;
-      const zone = zones.find(z => z.id === zoneId);
-      if (isZoneUnlocked(zone)) {
-        currentView = "zone:" + zoneId;
-        renderView();
-      } else {
-        alert("This zone is locked! Restore the previous zone first.");
-      }
-      return;
-    }
-
-    // Invasive tap – with fade + shrink animation
-    const invEl = target.closest(".invasive-item");
-    if (invEl) {
-      const zoneId = currentView.split(":")[1];
-      const invId = invEl.dataset.invId;
-
-      const invasives = invasivesByZone[zoneId] || [];
-      const inv = invasives.find(i => i.id === invId);
-
-      if (inv) {
-        const changes = {
-          coins: currentPlayer.coins + inv.coins,
-          zones: {
-            ...currentPlayer.zones,
-            [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + inv.health)
-          }
-        };
-
-        updatePlayer(changes);
-
-        // Animate removal
-        invEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
-        invEl.style.opacity = "0";
-        invEl.style.transform = "scale(0.4) rotate(5deg)";
-
-        setTimeout(() => {
-          invEl.remove();
-
-          // Update UI after removal
-          updateCoinsDisplay();
-          const progressFill = document.querySelector(".progress-fill");
-          const healthDisplay = document.querySelector(".progress-bar + p");
-          if (progressFill && healthDisplay) {
-            const newHealth = changes.zones[zoneId];
-            progressFill.style.width = newHealth + "%";
-            healthDisplay.textContent = "Health: " + newHealth + "%";
-          }
-
-          // Check if cleared
-          if (document.querySelectorAll(".invasive-item").length === 0) {
-            const currentZone = zones.find(z => z.id === zoneId);
-            if (currentZone) {
-              alert(currentZone.name + " cleared of invasives! 🌿");
-            } else {
-              alert("Area cleared of invasives! 🌿");
-            }
-          }
-        }, 600); // match transition duration
-      }
-      return;
-    }
-
-    // Back button
-    if (target.id === "back-to-overview") {
+    if (!zone || !isZoneUnlocked(zone)) {
       currentView = "overview";
       renderView();
+      return;
     }
-  });
 
-  renderView();
-  console.log("Game loaded – backgrounds + animated invasives");
-});
+    const health = currentPlayer.zones[zoneId] || 0;
+    const invasives = invasivesByZone[zoneId] || [];
 
-// ─── Improved zoom & pan ─────────────────────────────────────────────────────
+    // ─── Choose background ─────────────────────────────────────────────────────
+    let bgPath = "assets/backgrounds/global/sky-overcast.jpg";
+    if (zoneId === "beach") bgPath = "assets/backgrounds/beach/main-day.jpg";
+    else if (zoneId === "forest") bgPath = "assets/backgrounds/forest/main-misty.jpg";
+    else if (zoneId === "mountain") bgPath = "assets/backgrounds/mountain/main-rocky.jpg";
+
+    // ─── Build zone content with <img> background ──────────────────────────────
+    let detailHtml = `
+      <div class="zone-detail">
+        <img src="${bgPath}" class="zone-bg-img" alt="${zone.name} background">
+        <div class="zone-content">
+          <h2>${zone.name}</h2>
+          <p>${zone.description}</p>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${health}%"></div>
+          </div>
+          <p>Health: ${health}%</p>
+          <h3>Tap to remove invasives:</h3>
+          <div id="invasives-list"></div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById("game-container").innerHTML = detailHtml;
+
+    const list = document.getElementById("invasives-list");
+
+    invasives.forEach(inv => {
+      const invEl = document.createElement("div");
+      invEl.className = "invasive-item";
+      invEl.dataset.invId = inv.id;
+
+      // Position invasives (hardcoded for now, later from editor)
+      let posX = 50;
+      let posY = 50;
+      if (inv.id.includes("seaweed")) { posX = 30; posY = 60; }
+      if (inv.id.includes("vine")) { posX = 70; posY = 40; }
+      // ... add more
+
+      invEl.style.left = posX + '%';
+      invEl.style.top = posY + '%';
+      invEl.style.position = 'absolute';
+
+      let imagePath = "assets/ui/icons/leaf-health.png";
+      const nameLower = inv.name.toLowerCase();
+
+      if (nameLower.includes("seaweed")) {
+        imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
+      } else if (nameLower.includes("crabgrass")) {
+        imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
+      } else if (nameLower.includes("vine") || nameLower.includes("choking")) {
+        imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
+      } else if (nameLower.includes("thistle") || nameLower.includes("thorny")) {
+        imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
+      } else if (nameLower.includes("weed") || nameLower.includes("foreign")) {
+        imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
+      }
+
+      invEl.innerHTML = `
+        <img src="${imagePath}" 
+             class="invasive-image" 
+             alt="${inv.name}">
+      `;
+
+      list.appendChild(invEl);
+    });
+
+    updateCoinsDisplay();
+
+    // Reset zoom and center on zone enter
+    scale = 1.6; // more zoomed-in as requested
+    translateX = 0;
+    translateY = 0;
+
+    setTimeout(() => {
+      const bgImg = document.querySelector('.zone-bg-img');
+      if (bgImg) {
+        const rect = bgImg.getBoundingClientRect();
+        translateX = (viewport.clientWidth - rect.width * scale) / 2;
+        translateY = (viewport.clientHeight - rect.height * scale) / 2;
+        clampTranslate();
+        updateTransform();
+      }
+    }, 100);
+  }
+}
+
+// ─── Zoom & Pan ────────────────────────────────────────────────────────────────
 let scale = 1;
 let translateX = 0;
 let translateY = 0;
 const viewport = document.getElementById("map-viewport");
 const container = document.getElementById("map-container");
 
-// Update transform + clamp
+// Update CSS transform + clamp
 function updateTransform() {
   container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
   clampTranslate();
 }
 
-// Clamp so edges never leave screen
+// Strict edge clamping – prevents any empty space around borders
 function clampTranslate() {
   const vw = viewport.clientWidth;
   const vh = viewport.clientHeight;
-
-  // Get current scaled size (force sync read)
   const cw = container.offsetWidth * scale;
   const ch = container.offsetHeight * scale;
 
-  // For horizontal
-  const overflowX = cw - vw;
-  if (overflowX <= 0) {
-    translateX = (vw - cw) / 2; // center
+  // Horizontal clamp
+  if (cw <= vw) {
+    translateX = (vw - cw) / 2; // center when smaller
   } else {
-    // Left edge must be ≥ vw - cw (rightmost position)
-    // Right edge must be ≤ 0 (leftmost position)
     translateX = Math.max(vw - cw, Math.min(0, translateX));
   }
 
-  // Vertical
-  const overflowY = ch - vh;
-  if (overflowY <= 0) {
+  // Vertical clamp
+  if (ch <= vh) {
     translateY = (vh - ch) / 2;
   } else {
     translateY = Math.max(vh - ch, Math.min(0, translateY));
   }
+
+  // Debug log (comment out after testing)
+  // console.log(`Clamped: X=${translateX.toFixed(0)}, Y=${translateY.toFixed(0)}, scale=${scale.toFixed(2)}`);
 }
+
+// Minimum scale – map never smaller than screen
+function getMinScale() {
+  const vw = viewport.clientWidth;
+  const vh = viewport.clientHeight;
+  const cw = container.offsetWidth;
+  const ch = container.offsetHeight;
+  return Math.max(vw / cw, vh / ch);
+}
+
 // Wheel zoom (desktop)
 viewport.addEventListener('wheel', (e) => {
   e.preventDefault();
   const delta = e.deltaY > 0 ? 0.9 : 1.1;
   const oldScale = scale;
-  scale = Math.max(0.8, Math.min(4, scale * delta));
+  scale *= delta;
+  scale = Math.max(getMinScale(), Math.min(4, scale));
 
   // Zoom towards cursor
   const rect = viewport.getBoundingClientRect();
@@ -349,27 +279,25 @@ viewport.addEventListener('touchstart', (e) => {
 });
 
 viewport.addEventListener('touchmove', (e) => {
+  e.preventDefault(); // prevent browser scroll during interaction
+
   if (isPinching && e.touches.length === 2) {
-    e.preventDefault(); // only prevent when pinching
-    const currentDist = Math.hypot(
+    const dist = Math.hypot(
       e.touches[0].clientX - e.touches[1].clientX,
       e.touches[0].clientY - e.touches[1].clientY
     );
-    scale = initialScale * (currentDist / initialDist);
-    scale = Math.max(0.8, Math.min(4, scale));
+    scale = initialScale * (dist / initialDist);
+    scale = Math.max(getMinScale(), Math.min(4, scale));
     updateTransform();
   } else if (e.touches.length === 1) {
-    e.preventDefault(); // prevent browser scroll only during pan
     translateX = e.touches[0].clientX - panStartX;
     translateY = e.touches[0].clientY - panStartY;
     updateTransform();
   }
 });
 
-viewport.addEventListener('touchend touchcancel', (e) => {
-  if (e.touches.length < 2) {
-    isPinching = false;
-  }
+viewport.addEventListener('touchend touchcancel', () => {
+  isPinching = false;
 });
 
 // Mouse drag (desktop)
@@ -386,12 +314,10 @@ viewport.addEventListener('mousedown', (e) => {
   viewport.style.cursor = 'grabbing';
 });
 
-// Listen for mousemove & mouseup on the whole document (not just viewport)
 document.addEventListener('mousemove', (e) => {
   if (!isDragging) return;
   translateX = e.clientX - dragStartX;
   translateY = e.clientY - dragStartY;
-  clampTranslate();
   updateTransform();
 });
 
@@ -405,4 +331,79 @@ document.addEventListener('mouseup', (e) => {
 window.addEventListener('resize', () => {
   clampTranslate();
   updateTransform();
+});
+
+// ─── Game start ────────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  currentPlayer = loadPlayer();
+
+  document.addEventListener("click", (e) => {
+    const target = e.target;
+
+    // Zone card click
+    const card = target.closest(".zone-card");
+    if (card) {
+      const zoneId = card.dataset.zoneId;
+      const zone = zones.find(z => z.id === zoneId);
+      if (isZoneUnlocked(zone)) {
+        currentView = "zone:" + zoneId;
+        renderView();
+      } else {
+        alert("This zone is locked! Restore the previous zone first.");
+      }
+      return;
+    }
+
+    // Invasive tap – with fade + shrink animation
+    const invEl = target.closest(".invasive-item");
+    if (invEl) {
+      const zoneId = currentView.split(":")[1];
+      const invId = invEl.dataset.invId;
+      const invasives = invasivesByZone[zoneId] || [];
+      const inv = invasives.find(i => i.id === invId);
+      if (inv) {
+        const changes = {
+          coins: currentPlayer.coins + inv.coins,
+          zones: {
+            ...currentPlayer.zones,
+            [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + inv.health)
+          }
+        };
+        updatePlayer(changes);
+        // Animate removal
+        invEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+        invEl.style.opacity = "0";
+        invEl.style.transform = "scale(0.4) rotate(5deg)";
+        setTimeout(() => {
+          invEl.remove();
+          updateCoinsDisplay();
+          const progressFill = document.querySelector(".progress-fill");
+          const healthDisplay = document.querySelector(".progress-bar + p");
+          if (progressFill && healthDisplay) {
+            const newHealth = changes.zones[zoneId];
+            progressFill.style.width = newHealth + "%";
+            healthDisplay.textContent = "Health: " + newHealth + "%";
+          }
+          if (document.querySelectorAll(".invasive-item").length === 0) {
+            const currentZone = zones.find(z => z.id === zoneId);
+            if (currentZone) {
+              alert(currentZone.name + " cleared of invasives! 🌿");
+            } else {
+              alert("Area cleared of invasives! 🌿");
+            }
+          }
+        }, 600);
+      }
+      return;
+    }
+
+    // Back button
+    if (target.id === "back-to-overview") {
+      currentView = "overview";
+      renderView();
+    }
+  });
+
+  renderView();
+  console.log("Game loaded – backgrounds + animated invasives");
 });
