@@ -104,17 +104,7 @@ function renderView() {
 scale = 1.3; // starting zoom level – adjust 1.2–1.6 as preferred
 translateX = 0;
 translateY = 0;
-
-// Optional: center the view (if background is larger than viewport)
-const zoneDetail = document.querySelector('.zone-detail');
-if (zoneDetail) {
-  const rect = zoneDetail.getBoundingClientRect();
-  translateX = (viewport.clientWidth - rect.width * scale) / 2;
-  translateY = (viewport.clientHeight - rect.height * scale) / 2;
-  updateTransform();
-}
-
-  } else if (currentView.startsWith("zone:")) {
+} else if (currentView.startsWith("zone:")) {
   const zoneId = currentView.split(":")[1];
   const zone = zones.find(z => z.id === zoneId);
 
@@ -156,121 +146,40 @@ if (zoneDetail) {
     const invEl = document.createElement("div");
     invEl.className = "invasive-item";
     invEl.dataset.invId = inv.id;
-
     // Position invasives (hardcoded for now, later from editor)
-    let posX = 50;  // % from left
-    let posY = 50;  // % from top
+    let posX = 50; // % from left
+    let posY = 50; // % from top
     if (inv.id.includes("seaweed")) { posX = 30; posY = 60; }
     if (inv.id.includes("vine")) { posX = 70; posY = 40; }
     // ... add more
-
     invEl.style.left = posX + '%';
     invEl.style.top = posY + '%';
     invEl.style.position = 'absolute';
-
     let imagePath = "assets/ui/icons/leaf-health.png";
     // your existing imagePath logic here...
-
     invEl.innerHTML = `
       <img src="${imagePath}" class="invasive-image" alt="${inv.name}">
     `;
-
     list.appendChild(invEl);
   });
 
   updateCoinsDisplay();
 
+  // Reset zoom and center on zone enter
+  scale = 1.3;
+  translateX = 0;
+  translateY = 0;
+
+  setTimeout(() => {
+    const detail = document.querySelector('.zone-detail');
+    if (detail) {
+      const rect = detail.getBoundingClientRect();
+      translateX = (viewport.clientWidth - rect.width * scale) / 2;
+      translateY = (viewport.clientHeight - rect.height * scale) / 2;
+      updateTransform();
+    }
+  }, 50);
 }
-
-function updateCoinsDisplay() {
-  const coinsEl = document.getElementById("coins-display");
-  if (coinsEl) {
-    coinsEl.textContent = currentPlayer.coins;
-  }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  currentPlayer = loadPlayer();
-
-  document.addEventListener("click", (e) => {
-    const target = e.target;
-
-    // Zone card click
-    const card = target.closest(".zone-card");
-    if (card) {
-      const zoneId = card.dataset.zoneId;
-      const zone = zones.find(z => z.id === zoneId);
-      if (isZoneUnlocked(zone)) {
-        currentView = "zone:" + zoneId;
-        renderView();
-      } else {
-        alert("This zone is locked! Restore the previous zone first.");
-      }
-      return;
-    }
-
-    // Invasive tap – with fade + shrink animation
-    const invEl = target.closest(".invasive-item");
-    if (invEl) {
-      const zoneId = currentView.split(":")[1];
-      const invId = invEl.dataset.invId;
-
-      const invasives = invasivesByZone[zoneId] || [];
-      const inv = invasives.find(i => i.id === invId);
-
-      if (inv) {
-        const changes = {
-          coins: currentPlayer.coins + inv.coins,
-          zones: {
-            ...currentPlayer.zones,
-            [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + inv.health)
-          }
-        };
-
-        updatePlayer(changes);
-
-        // Animate removal
-        invEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
-        invEl.style.opacity = "0";
-        invEl.style.transform = "scale(0.4) rotate(5deg)";
-
-        setTimeout(() => {
-          invEl.remove();
-
-          // Update UI after removal
-          updateCoinsDisplay();
-          const progressFill = document.querySelector(".progress-fill");
-          const healthDisplay = document.querySelector(".progress-bar + p");
-          if (progressFill && healthDisplay) {
-            const newHealth = changes.zones[zoneId];
-            progressFill.style.width = newHealth + "%";
-            healthDisplay.textContent = "Health: " + newHealth + "%";
-          }
-
-          // Check if cleared
-          if (document.querySelectorAll(".invasive-item").length === 0) {
-            const currentZone = zones.find(z => z.id === zoneId);
-            if (currentZone) {
-              alert(currentZone.name + " cleared of invasives! 🌿");
-            } else {
-              alert("Area cleared of invasives! 🌿");
-            }
-          }
-        }, 600); // match transition duration
-      }
-      return;
-    }
-
-    // Back button
-    if (target.id === "back-to-overview") {
-      currentView = "overview";
-      renderView();
-    }
-  });
-
-  renderView();
-  console.log("Game loaded – backgrounds + animated invasives");
-});
 
 // ─── Basic zoom & pan ────────────────────────────────────────────────────────
 let scale = 1;
