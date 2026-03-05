@@ -266,20 +266,24 @@ function updateTransform() {
 function clampTranslate() {
   const vw = viewport.clientWidth;
   const vh = viewport.clientHeight;
-  const cw = container.offsetWidth * scale;   // scaled map width
-  const ch = container.offsetHeight * scale;  // scaled map height
 
-  // Horizontal clamp
-  if (cw <= vw) {
-    // Map smaller than screen → center it
-    translateX = (vw - cw) / 2;
+  // Get current scaled size (force sync read)
+  const cw = container.offsetWidth * scale;
+  const ch = container.offsetHeight * scale;
+
+  // For horizontal
+  const overflowX = cw - vw;
+  if (overflowX <= 0) {
+    translateX = (vw - cw) / 2; // center
   } else {
-    // Map larger → left edge ≥ vw - cw, right edge ≤ 0
+    // Left edge must be ≥ vw - cw (rightmost position)
+    // Right edge must be ≤ 0 (leftmost position)
     translateX = Math.max(vw - cw, Math.min(0, translateX));
   }
 
-  // Vertical clamp
-  if (ch <= vh) {
+  // Vertical
+  const overflowY = ch - vh;
+  if (overflowY <= 0) {
     translateY = (vh - ch) / 2;
   } else {
     translateY = Math.max(vh - ch, Math.min(0, translateY));
