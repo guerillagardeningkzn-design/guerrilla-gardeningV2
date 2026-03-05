@@ -300,6 +300,7 @@ viewport.addEventListener('wheel', (e) => {
 
   clampTranslate();
   updateTransform();
+  console.log("translateX clamped to", translateX);
 });
 
 // Touch pinch zoom + single-finger pan (mobile)
