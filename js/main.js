@@ -249,30 +249,30 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("Game loaded – backgrounds + animated invasives");
 });
 
-// ─── Basic zoom & pan ────────────────────────────────────────────────────────
+// ─── Improved zoom & pan ─────────────────────────────────────────────────────
 let scale = 1;
 let translateX = 0;
 let translateY = 0;
 const viewport = document.getElementById("map-viewport");
 const container = document.getElementById("map-container");
 
+// Update transform + clamp
 function updateTransform() {
   container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
   clampTranslate();
 }
 
+// Clamp so edges never leave screen
 function clampTranslate() {
   const vw = viewport.clientWidth;
   const vh = viewport.clientHeight;
   const cw = container.offsetWidth * scale;
   const ch = container.offsetHeight * scale;
 
-  // If scaled content smaller than viewport → center it
+  // Center if smaller than viewport
   if (cw <= vw) {
     translateX = (vw - cw) / 2;
   } else {
-    // Clamp so left edge ≥ vw - cw (never right of left screen edge)
-    // and right edge ≤ 0 (never left of right screen edge)
     translateX = Math.max(vw - cw, Math.min(0, translateX));
   }
 
@@ -288,8 +288,7 @@ viewport.addEventListener('wheel', (e) => {
   e.preventDefault();
   const delta = e.deltaY > 0 ? 0.9 : 1.1;
   const oldScale = scale;
-  scale *= delta;
-  scale = Math.max(0.8, Math.min(4, scale)); // tighter min zoom
+  scale = Math.max(0.8, Math.min(4, scale * delta));
 
   // Zoom towards cursor
   const rect = viewport.getBoundingClientRect();
@@ -298,78 +297,79 @@ viewport.addEventListener('wheel', (e) => {
   translateX = mx - (mx - translateX) * (scale / oldScale);
   translateY = my - (my - translateY) * (scale / oldScale);
 
-  clampTranslate();
   updateTransform();
-  console.log("translateX clamped to", translateX);
 });
 
-// Touch pinch zoom + single-finger pan (mobile)
-let startDist = 0;
-let startScale = 1;
-let startX = 0;
-let startY = 0;
+// Touch handling – pinch zoom + single finger pan
+let initialDist = 0;
+let initialScale = 1;
+let panStartX = 0;
+let panStartY = 0;
+let isPinching = false;
 
 viewport.addEventListener('touchstart', (e) => {
   if (e.touches.length === 2) {
-    e.preventDefault();
-    startDist = Math.hypot(
-      e.touches[0].pageX - e.touches[1].pageX,
-      e.touches[0].pageY - e.touches[1].pageY
+    isPinching = true;
+    initialDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
     );
-    startScale = scale;
+    initialScale = scale;
   } else if (e.touches.length === 1) {
-    // Start single-finger drag
-    startX = e.touches[0].clientX - translateX;
-    startY = e.touches[0].clientY - translateY;
+    panStartX = e.touches[0].clientX - translateX;
+    panStartY = e.touches[0].clientY - translateY;
   }
 });
 
 viewport.addEventListener('touchmove', (e) => {
-  e.preventDefault();
-
-  if (e.touches.length === 2) {
-    // Pinch zoom
-    const dist = Math.hypot(
-      e.touches[0].pageX - e.touches[1].pageX,
-      e.touches[0].pageY - e.touches[1].pageY
+  if (isPinching && e.touches.length === 2) {
+    e.preventDefault(); // only prevent when pinching
+    const currentDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
     );
-    const delta = dist / startDist;
-    scale = startScale * delta;
+    scale = initialScale * (currentDist / initialDist);
     scale = Math.max(0.8, Math.min(4, scale));
-
-    clampTranslate();
     updateTransform();
   } else if (e.touches.length === 1) {
-    // Single-finger pan
-    translateX = e.touches[0].clientX - startX;
-    translateY = e.touches[0].clientY - startY;
-    clampTranslate();
+    e.preventDefault(); // prevent browser scroll only during pan
+    translateX = e.touches[0].clientX - panStartX;
+    translateY = e.touches[0].clientY - panStartY;
     updateTransform();
   }
 });
 
-// Mouse drag pan (desktop)
+viewport.addEventListener('touchend touchcancel', (e) => {
+  if (e.touches.length < 2) {
+    isPinching = false;
+  }
+});
+
+// Mouse drag (desktop)
 let isDragging = false;
-let startMouseX, startMouseY;
+let dragStartX = 0;
+let dragStartY = 0;
 
 viewport.addEventListener('mousedown', (e) => {
   isDragging = true;
-  startMouseX = e.clientX - translateX;
-  startMouseY = e.clientY - translateY;
+  dragStartX = e.clientX - translateX;
+  dragStartY = e.clientY - translateY;
   viewport.style.cursor = 'grabbing';
+  e.preventDefault();
 });
 
 viewport.addEventListener('mousemove', (e) => {
   if (!isDragging) return;
-  translateX = e.clientX - startMouseX;
-  translateY = e.clientY - startMouseY;
-  clampTranslate();
+  translateX = e.clientX - dragStartX;
+  translateY = e.clientY - dragStartY;
   updateTransform();
+  e.preventDefault();
 });
 
-viewport.addEventListener('mouseup mouseleave', () => {
+viewport.addEventListener('mouseup mouseleave', (e) => {
   isDragging = false;
   viewport.style.cursor = 'default';
+  e.preventDefault();
 });
 
 // Reset on resize
