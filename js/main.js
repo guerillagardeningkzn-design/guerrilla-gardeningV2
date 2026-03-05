@@ -32,7 +32,6 @@ function isZoneUnlocked(zone) {
 function renderView() {
   const container = document.getElementById("game-container");
   if (!container) return;
-
   container.innerHTML = "";
 
   if (currentView === "overview") {
@@ -80,106 +79,174 @@ function renderView() {
     });
 
     updateCoinsDisplay();
-	  // ... invasives.forEach loop ...
 
-  updateCoinsDisplay();
+  } else if (currentView.startsWith("zone:")) {
+    const zoneId = currentView.split(":")[1];
+    const zone = zones.find(z => z.id === zoneId);
 
-  // Reset zoom and center on zone enter
-  scale = 1.3;              // ← you can change this number
-  translateX = 0;
-  translateY = 0;
-
-  setTimeout(() => {
-    const detail = document.querySelector('.zone-detail');
-    if (detail) {
-      const rect = detail.getBoundingClientRect();
-      translateX = (viewport.clientWidth - rect.width * scale) / 2;
-      translateY = (viewport.clientHeight - rect.height * scale) / 2;
-      updateTransform();
+    if (!zone || !isZoneUnlocked(zone)) {
+      currentView = "overview";
+      renderView();
+      return;
     }
-  }, 50);
-}
-	
-	// Reset and center on zone enter
-scale = 1.3; // starting zoom level – adjust 1.2–1.6 as preferred
-translateX = 0;
-translateY = 0;
-} else if (currentView.startsWith("zone:")) {
-  const zoneId = currentView.split(":")[1];
-  const zone = zones.find(z => z.id === zoneId);
 
-  if (!zone || !isZoneUnlocked(zone)) {
-    currentView = "overview";
-    renderView();
-    return;
-  }
+    const health = currentPlayer.zones[zoneId] || 0;
+    const invasives = invasivesByZone[zoneId] || [];
 
-  const health = currentPlayer.zones[zoneId] || 0;
-  const invasives = invasivesByZone[zoneId] || [];
+    // Background
+    let bgPath = "assets/backgrounds/global/sky-overcast.jpg";
+    if (zoneId === "beach") bgPath = "assets/backgrounds/beach/main-day.jpg";
+    else if (zoneId === "forest") bgPath = "assets/backgrounds/forest/main-misty.jpg";
+    else if (zoneId === "mountain") bgPath = "assets/backgrounds/mountain/main-rocky.jpg";
 
-  // Background
-  let bgPath = "assets/backgrounds/global/sky-overcast.jpg";
-  if (zoneId === "beach") bgPath = "assets/backgrounds/beach/main-day.jpg";
-  else if (zoneId === "forest") bgPath = "assets/backgrounds/forest/main-misty.jpg";
-  else if (zoneId === "mountain") bgPath = "assets/backgrounds/mountain/main-rocky.jpg";
-
-  let detailHtml = `
-    <div class="zone-detail" style="background-image: url('${bgPath}');">
-      <h2>${zone.name}</h2>
-      <p>${zone.description}</p>
-      <p>Coins: <span id="coins-display">${currentPlayer.coins}</span></p>
-      <div class="progress-bar">
-        <div class="progress-fill" style="width: ${health}%"></div>
+    let detailHtml = `
+      <div class="zone-detail" style="background-image: url('${bgPath}');">
+        <h2>${zone.name}</h2>
+        <p>${zone.description}</p>
+        <p>Coins: <span id="coins-display">${currentPlayer.coins}</span></p>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: ${health}%"></div>
+        </div>
+        <p>Health: ${health}%</p>
+        <h3>Tap to remove invasives:</h3>
+        <div id="invasives-list"></div>
+        <button id="back-to-overview">Back to Overview</button>
       </div>
-      <p>Health: ${health}%</p>
-      <h3>Tap to remove invasives:</h3>
-      <div id="invasives-list"></div>
-      <button id="back-to-overview">Back to Overview</button>
-    </div>
-  `;
-
-  document.getElementById("game-container").innerHTML = detailHtml;
-
-  const list = document.getElementById("invasives-list");
-
-  invasives.forEach(inv => {
-    const invEl = document.createElement("div");
-    invEl.className = "invasive-item";
-    invEl.dataset.invId = inv.id;
-    // Position invasives (hardcoded for now, later from editor)
-    let posX = 50; // % from left
-    let posY = 50; // % from top
-    if (inv.id.includes("seaweed")) { posX = 30; posY = 60; }
-    if (inv.id.includes("vine")) { posX = 70; posY = 40; }
-    // ... add more
-    invEl.style.left = posX + '%';
-    invEl.style.top = posY + '%';
-    invEl.style.position = 'absolute';
-    let imagePath = "assets/ui/icons/leaf-health.png";
-    // your existing imagePath logic here...
-    invEl.innerHTML = `
-      <img src="${imagePath}" class="invasive-image" alt="${inv.name}">
     `;
-    list.appendChild(invEl);
+
+    document.getElementById("game-container").innerHTML = detailHtml;
+
+    const list = document.getElementById("invasives-list");
+
+    invasives.forEach(inv => {
+      const invEl = document.createElement("div");
+      invEl.className = "invasive-item";
+      invEl.dataset.invId = inv.id;
+      // Position invasives (hardcoded for now, later from editor)
+      let posX = 50; // % from left
+      let posY = 50; // % from top
+      if (inv.id.includes("seaweed")) { posX = 30; posY = 60; }
+      if (inv.id.includes("vine")) { posX = 70; posY = 40; }
+      // ... add more
+      invEl.style.left = posX + '%';
+      invEl.style.top = posY + '%';
+      invEl.style.position = 'absolute';
+      let imagePath = "assets/ui/icons/leaf-health.png";
+      // your existing imagePath logic here...
+      invEl.innerHTML = `
+        <img src="${imagePath}" class="invasive-image" alt="${inv.name}">
+      `;
+      list.appendChild(invEl);
+    });
+
+    updateCoinsDisplay();
+
+    // Reset zoom and center on zone enter
+    scale = 1.3;
+    translateX = 0;
+    translateY = 0;
+
+    setTimeout(() => {
+      const detail = document.querySelector('.zone-detail');
+      if (detail) {
+        const rect = detail.getBoundingClientRect();
+        translateX = (viewport.clientWidth - rect.width * scale) / 2;
+        translateY = (viewport.clientHeight - rect.height * scale) / 2;
+        updateTransform();
+      }
+    }, 50);
+  }
+}
+
+function updateCoinsDisplay() {
+  const coinsEl = document.getElementById("coins-display");
+  if (coinsEl) {
+    coinsEl.textContent = currentPlayer.coins;
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  currentPlayer = loadPlayer();
+
+  document.addEventListener("click", (e) => {
+    const target = e.target;
+
+    // Zone card click
+    const card = target.closest(".zone-card");
+    if (card) {
+      const zoneId = card.dataset.zoneId;
+      const zone = zones.find(z => z.id === zoneId);
+      if (isZoneUnlocked(zone)) {
+        currentView = "zone:" + zoneId;
+        renderView();
+      } else {
+        alert("This zone is locked! Restore the previous zone first.");
+      }
+      return;
+    }
+
+    // Invasive tap – with fade + shrink animation
+    const invEl = target.closest(".invasive-item");
+    if (invEl) {
+      const zoneId = currentView.split(":")[1];
+      const invId = invEl.dataset.invId;
+
+      const invasives = invasivesByZone[zoneId] || [];
+      const inv = invasives.find(i => i.id === invId);
+
+      if (inv) {
+        const changes = {
+          coins: currentPlayer.coins + inv.coins,
+          zones: {
+            ...currentPlayer.zones,
+            [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + inv.health)
+          }
+        };
+
+        updatePlayer(changes);
+
+        // Animate removal
+        invEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+        invEl.style.opacity = "0";
+        invEl.style.transform = "scale(0.4) rotate(5deg)";
+
+        setTimeout(() => {
+          invEl.remove();
+
+          // Update UI after removal
+          updateCoinsDisplay();
+          const progressFill = document.querySelector(".progress-fill");
+          const healthDisplay = document.querySelector(".progress-bar + p");
+          if (progressFill && healthDisplay) {
+            const newHealth = changes.zones[zoneId];
+            progressFill.style.width = newHealth + "%";
+            healthDisplay.textContent = "Health: " + newHealth + "%";
+          }
+
+          // Check if cleared
+          if (document.querySelectorAll(".invasive-item").length === 0) {
+            const currentZone = zones.find(z => z.id === zoneId);
+            if (currentZone) {
+              alert(currentZone.name + " cleared of invasives! 🌿");
+            } else {
+              alert("Area cleared of invasives! 🌿");
+            }
+          }
+        }, 600); // match transition duration
+      }
+      return;
+    }
+
+    // Back button
+    if (target.id === "back-to-overview") {
+      currentView = "overview";
+      renderView();
+    }
   });
 
-  updateCoinsDisplay();
-
-  // Reset zoom and center on zone enter
-  scale = 1.3;
-  translateX = 0;
-  translateY = 0;
-
-  setTimeout(() => {
-    const detail = document.querySelector('.zone-detail');
-    if (detail) {
-      const rect = detail.getBoundingClientRect();
-      translateX = (viewport.clientWidth - rect.width * scale) / 2;
-      translateY = (viewport.clientHeight - rect.height * scale) / 2;
-      updateTransform();
-    }
-  }, 50);
-}
+  renderView();
+  console.log("Game loaded – backgrounds + animated invasives");
+});
 
 // ─── Basic zoom & pan ────────────────────────────────────────────────────────
 let scale = 1;
@@ -191,25 +258,25 @@ const container = document.getElementById("map-container");
 function updateTransform() {
   container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
 }
+
 function getMinScale() {
   const viewportRect = viewport.getBoundingClientRect();
-  const containerRect = container.getBoundingClientRect(); // current scaled size
-
-  // Get the natural size of the background (assuming it's set via CSS background-image)
   const bgImg = new Image();
-  bgImg.src = container.querySelector('.zone-detail').style.backgroundImage.slice(5, -2); // extract url
-
-  return new Promise(resolve => {
-    bgImg.onload = () => {
-      const naturalWidth = bgImg.naturalWidth;
-      const naturalHeight = bgImg.naturalHeight;
-
-      const scaleX = viewportRect.width / naturalWidth;
-      const scaleY = viewportRect.height / naturalHeight;
-
-      resolve(Math.max(scaleX, scaleY)); // use the larger one so it fills both directions
-    };
-  });
+  const zoneDetail = document.querySelector('.zone-detail');
+  if (zoneDetail) {
+    bgImg.src = zoneDetail.style.backgroundImage.slice(5, -2); // extract url
+    return new Promise(resolve => {
+      bgImg.onload = () => {
+        const naturalWidth = bgImg.naturalWidth;
+        const naturalHeight = bgImg.naturalHeight;
+        const scaleX = viewportRect.width / naturalWidth;
+        const scaleY = viewportRect.height / naturalHeight;
+        resolve(Math.max(scaleX, scaleY));
+      };
+      bgImg.onerror = () => resolve(1); // fallback
+    });
+  }
+  return Promise.resolve(1);
 }
 
 // Wheel zoom
@@ -217,21 +284,30 @@ viewport.addEventListener('wheel', async (e) => {
   e.preventDefault();
   const delta = e.deltaY > 0 ? 0.9 : 1.1;
   const oldScale = scale;
-
   scale = Math.max(await getMinScale(), Math.min(4, scale * delta));
 
-  // Optional: zoom towards cursor position (more natural feel)
+  // Zoom towards cursor
   const rect = viewport.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
   const mouseY = e.clientY - rect.top;
-
   translateX = mouseX - (mouseX - translateX) * (scale / oldScale);
   translateY = mouseY - (mouseY - translateY) * (scale / oldScale);
 
   updateTransform();
 });
 
-// Touch pinch zoom – add similar min scale check
+// Touch pinch zoom
+let startDist = 0;
+viewport.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    startDist = Math.hypot(
+      e.touches[0].pageX - e.touches[1].pageX,
+      e.touches[0].pageY - e.touches[1].pageY
+    );
+  }
+});
+
 viewport.addEventListener('touchmove', async (e) => {
   if (e.touches.length === 2) {
     e.preventDefault();
@@ -241,22 +317,7 @@ viewport.addEventListener('touchmove', async (e) => {
     );
     const delta = dist / startDist;
     const oldScale = scale;
-
     scale = Math.max(await getMinScale(), Math.min(4, scale * delta));
-    updateTransform();
-    startDist = dist;
-  }
-});
-
-viewport.addEventListener('touchmove', (e) => {
-  if (e.touches.length === 2) {
-    e.preventDefault();
-    const dist = Math.hypot(
-      e.touches[0].pageX - e.touches[1].pageX,
-      e.touches[0].pageY - e.touches[1].pageY
-    );
-    const delta = dist / startDist;
-    scale = Math.max(0.5, Math.min(4, scale * delta));
     updateTransform();
     startDist = dist;
   }
@@ -289,22 +350,10 @@ viewport.addEventListener('mouseleave', () => {
   isDragging = false;
 });
 
-
-
+// Reset on resize
 window.addEventListener('resize', () => {
-  // Re-center on resize
   scale = 1.0;
   translateX = 0;
   translateY = 0;
   updateTransform();
 });
-
-// Optional: reset zoom/pan on zone change (uncomment if wanted)
-// document.addEventListener('click', (e) => {
-//   if (e.target.id === 'back-to-overview') {
-//     scale = 1;
-//     translateX = 0;
-//     translateY = 0;
-//     updateTransform();
-//   }
-// });
