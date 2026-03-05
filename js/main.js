@@ -7,7 +7,7 @@ console.log("Guerrilla Gardening - full features & assets tree");
 let currentPlayer;
 let currentView = "overview";
 
-// ─── Zoom & Pan globals (declared only once) ────────────────────────────────────
+// ─── Zoom & Pan state (declared only once) ──────────────────────────────────────
 let scale = 1;
 let translateX = 0;
 let translateY = 0;
@@ -29,11 +29,8 @@ function updateCoinsDisplay() {
   }
 }
 
-// ─── Zoom & Pan helpers (declared only once) ────────────────────────────────────
-function updateTransform() {
-  container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-  clampTranslate();
-}
+// ─── Zoom & Pan helpers ─────────────────────────────────────────────────────────
+
 
 function clampTranslate() {
   const vw = viewport.clientWidth;
@@ -41,14 +38,12 @@ function clampTranslate() {
   const cw = container.offsetWidth * scale;
   const ch = container.offsetHeight * scale;
 
-  // Horizontal clamp
   if (cw <= vw) {
     translateX = (vw - cw) / 2;
   } else {
     translateX = Math.max(vw - cw, Math.min(0, translateX));
   }
 
-  // Vertical clamp
   if (ch <= vh) {
     translateY = (vh - ch) / 2;
   } else {
@@ -209,38 +204,14 @@ function renderView() {
   }
 }
 
-// ─── Zoom & Pan ────────────────────────────────────────────────────────────────
+// ─── Zoom & Pan event listeners ─────────────────────────────────────────────────
 function updateTransform() {
   container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
   clampTranslate();
 }
 
-function clampTranslate() {
-  const vw = viewport.clientWidth;
-  const vh = viewport.clientHeight;
-  const cw = container.offsetWidth * scale;
-  const ch = container.offsetHeight * scale;
 
-  if (cw <= vw) {
-    translateX = (vw - cw) / 2;
-  } else {
-    translateX = Math.max(vw - cw, Math.min(0, translateX));
-  }
 
-  if (ch <= vh) {
-    translateY = (vh - ch) / 2;
-  } else {
-    translateY = Math.max(vh - ch, Math.min(0, translateY));
-  }
-}
-
-function getMinScale() {
-  const vw = viewport.clientWidth;
-  const vh = viewport.clientHeight;
-  const cw = container.offsetWidth;
-  const ch = container.offsetHeight;
-  return Math.max(vw / cw, vh / ch);
-}
 
 // Wheel zoom
 viewport.addEventListener('wheel', (e) => {
@@ -259,7 +230,7 @@ viewport.addEventListener('wheel', (e) => {
   updateTransform();
 });
 
-// Touch handling – pinch + single finger pan
+// Touch handling – pinch zoom + single finger pan
 let initialDist = 0;
 let initialScale = 1;
 let panStartX = 0;
