@@ -209,28 +209,32 @@ function updateTransform() {
 function clampTranslate() {
   const vw = viewport.clientWidth;
   const vh = viewport.clientHeight;
+
+  // Scaled map size
   const cw = container.offsetWidth * scale;
   const ch = container.offsetHeight * scale;
 
-  // Horizontal clamp
+  // Horizontal
   if (cw <= vw) {
-    translateX = (vw - cw) / 2; // center when smaller
+    translateX = (vw - cw) / 2; // center horizontally
   } else {
+    // Left edge must be >= vw - cw (can't go right of left screen edge)
+    // Right edge must be <= 0 (can't go left of right screen edge)
     translateX = Math.max(vw - cw, Math.min(0, translateX));
   }
 
-  // Vertical clamp
+  // Vertical
   if (ch <= vh) {
-    translateY = (vh - ch) / 2;
+    translateY = (vh - ch) / 2; // center vertically
   } else {
     translateY = Math.max(vh - ch, Math.min(0, translateY));
   }
 
-  // Debug log (comment out after testing)
-  // console.log(`Clamped: X=${translateX.toFixed(0)}, Y=${translateY.toFixed(0)}, scale=${scale.toFixed(2)}`);
+  // Debug (uncomment to watch values)
+   console.log(`Clamped: X=${translateX.toFixed(0)}, Y=${translateY.toFixed(0)}, scale=${scale.toFixed(2)}`);
 }
 
-// Minimum scale – map never smaller than screen
+// Minimum scale – map never smaller than sc// console.log(`Clamped: X=${translateX.toFixed(0)}, Y=${translateY.toFixed(0)}, scale=${scale.toFixed(2)}`);reen
 function getMinScale() {
   const vw = viewport.clientWidth;
   const vh = viewport.clientHeight;
