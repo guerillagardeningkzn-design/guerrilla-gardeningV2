@@ -11,23 +11,24 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header>
-    <h1>Guerrilla Gardening 🌴</h1>
-    <p>Restore damaged climate zones — relaxing eco adventure</p>
-  </header>
-  
-  <main>
+  <!-- Fixed UI layer – always on top -->
+  <div id="ui-overlay">
+    <!-- Coins, health bar, back button, inventory, pet status, etc. go here -->
+    <div class="hud-top">
+      <span id="coins-display">Coins: 0</span>
+      <!-- Add more HUD elements here later -->
+    </div>
+    <button id="back-to-overview">Back to Overview</button>
+    <!-- Future: pet status, inventory icons, zoom buttons, etc. -->
+  </div>
+
+  <!-- Zoomable map layer -->
   <div id="map-viewport">
     <div id="map-container">
       <div id="game-container">
-        <!-- all dynamic content will go here -->
+        <!-- dynamic background + invasives stay here -->
       </div>
     </div>
   </div>
-</main>
-
-  <!-- Important: type="module" is required because we use import/export -->
-  <script type="module" src="js/main.js?cachebust=20260303"></script>
-<!-- or use any changing number/date: ?v=8, ?t=0303pm etc. -->
 </body>
 </html>

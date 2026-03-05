@@ -163,3 +163,47 @@ html, body {
   cursor: pointer;
   /* your existing styles */
 }
+
+#ui-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;           /* clicks go through to map by default */
+  z-index: 20;                    /* above map */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px;
+  box-sizing: border-box;
+  color: white;
+  text-shadow: 1px 1px 3px black;
+}
+
+#ui-overlay > * {
+  pointer-events: auto;           /* make buttons/coins clickable again */
+}
+
+.hud-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0,0,0,0.4);
+  padding: 8px 16px;
+  border-radius: 12px;
+  margin: 10px;
+  max-width: 90%;
+}
+
+#back-to-overview {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  background: rgba(76, 175, 80, 0.9);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  z-index: 25;
+}
