@@ -1,98 +1,72 @@
-body {
+/* ─── Reset & base ─────────────────────────────────────────────────────────────── */
+* {
   margin: 0;
-  font-family: system-ui, sans-serif;
-  background: #e0f7fa;
-  color: #333;
-  text-align: center;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-header {
-  background: #4CAF50;
-  color: white;
-  padding: 1rem;
-}
-
-#game-container {
-  padding: 2rem;
-  min-height: 70vh;
-}
-
-#zones-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-  margin: 1.5rem 0;
-}
-
-.zone-card {
-  padding: 1rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  cursor: pointer;
-  transition: transform 0.1s;
-}
-
-.zone-card:hover {
-  transform: scale(1.03);
-}
-
-.progress-bar {
-  height: 12px;
-  background: #ddd;
-  border-radius: 6px;
-  overflow: hidden;
-  margin: 0.5rem 0;
-}
-
-.progress-fill {
+html, body {
   height: 100%;
-  background: #4CAF50;
-  transition: width 0.4s ease;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
 }
 
-button {
-  margin: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
-  cursor: pointer;
-  border: none;
-  border-radius: 6px;
-  background: #4CAF50;
+/* ─── Map viewport & container ────────────────────────────────────────────────── */
+#map-viewport {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+#map-container {
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+/* ─── Zone detail ──────────────────────────────────────────────────────────────── */
+.zone-detail {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.zone-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;          /* always show full image, letterbox if needed */
+  object-position: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.zone-content {
+  position: relative;
+  z-index: 2;
+  padding: 20px;
   color: white;
+  text-shadow: 1px 1px 3px black;
 }
 
-button:hover {
-  background: #388E3C;
-}
-
-
+/* ─── Invasives ────────────────────────────────────────────────────────────────── */
 .invasive-item {
+  position: absolute;
   cursor: pointer;
-  text-align: center;
-  padding: 0;                      /* remove padding */
-  margin: 10px;                    /* keep some spacing between items */
-  background: transparent;         /* NO background color */
-  border-radius: 0;                /* no rounded corners */
-  min-width: auto;                 /* let size be image-driven */
-  transition: transform 0.15s;
-  display: inline-block;           /* keep them in flow */
-}
-
-.invasive-item:hover {
-  transform: scale(1.12);
+  width: 100px;
+  height: 100px;
+  transform-origin: center;
+  transition: transform 0.2s;
 }
 
 .invasive-image {
-  max-width: 120px;
-  max-height: 120px;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  display: block;
-  margin: 0 auto;
-  pointer-events: none;
-  animation: sway 4s ease-in-out infinite; /* 4-second cycle, smooth */
-  transform-origin: bottom center; /* sway from base */
+  animation: sway 4s ease-in-out infinite;
+  transform-origin: bottom center;
 }
 
 @keyframes sway {
@@ -101,60 +75,13 @@ button:hover {
   100% { transform: rotate(-3deg); }
 }
 
-/* Optional: slower/faster or random delay per item */
-.invasive-item:nth-child(odd) .invasive-image {
-  animation-duration: 5s;    /* different speed for variety */
-  animation-delay: 0.5s;
-}
-
-.invasive-item:nth-child(even) .invasive-image {
-  animation-duration: 6s;
-}
-
-.zone-detail {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  overflow: auto;
-}
-.zone-bg-img {
-  position: relative;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: none;            /* fills container, preserves aspect */
-  object-position: center;
-  pointer-events: none;           /* clicks go through to entities */
-  z-index: 1;
-}
-.zone-content {
-  position: relative;
-  z-index: 2;
-  padding: 20px;
-  color: white;
-  text-shadow: 1px 1px 3px black;
-  /* keep your existing content styles */
-}
-
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow: hidden;
-  touch-action: manipulation; /* helps mobile scrolling feel */
-}
-
+/* ─── UI overlay ───────────────────────────────────────────────────────────────── */
 #ui-overlay {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 100;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
   padding: 10px;
-  box-sizing: border-box;
   color: white;
   text-shadow: 1px 1px 3px black;
 }
@@ -191,74 +118,30 @@ html, body {
   box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
-#map-viewport {
-  position: fixed;
-  inset: 0;
+/* ─── Progress bar ─────────────────────────────────────────────────────────────── */
+.progress-bar {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  height: 10px;
   overflow: hidden;
 }
 
-#map-container {
-  width: 100%;
+.progress-fill {
   height: 100%;
-  transform-origin: 0 0;
-  will-change: transform;
+  background: #4CAF50;
+  transition: width 0.4s ease;
 }
 
-.zone-detail {
-  width: 100%;
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  position: relative;
-}
-
-.invasive-item, .transition-marker {
-  position: absolute;
-  cursor: pointer;
-  /* your existing styles */
-}
-
-#ui-overlay {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;           /* clicks go through to map by default */
-  z-index: 20;                    /* above map */
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 10px;
-  box-sizing: border-box;
-  color: white;
-  text-shadow: 1px 1px 3px black;
-}
-
-#ui-overlay > * {
-  pointer-events: auto;           /* make buttons/coins clickable again */
-}
-
-.hud-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(0,0,0,0.4);
-  padding: 8px 16px;
+/* ─── Zone card (overview) ─────────────────────────────────────────────────────── */
+.zone-card {
+  background: #fff;
   border-radius: 12px;
-  margin: 10px;
-  max-width: 90%;
+  padding: 16px;
+  margin: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
 }
 
-#back-to-overview {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 12px 24px;
-  background: rgba(76, 175, 80, 0.9);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  z-index: 25;
+.zone-card:hover {
+  transform: scale(1.05);
 }

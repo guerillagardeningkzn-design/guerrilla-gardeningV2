@@ -3,7 +3,18 @@ import { zones } from '../data/zones.js';
 
 console.log("Guerrilla Gardening - full features & assets tree");
 
-// ─── Dummy invasives per zone (defined early so renderView can use it) ──────────
+// ─── Global state ────────────────────────────────────────────────────────────────
+let currentPlayer;
+let currentView = "overview";
+
+// ─── Zoom & Pan state ───────────────────────────────────────────────────────────
+let scale = 1;
+let translateX = 0;
+let translateY = 0;
+const viewport = document.getElementById("map-viewport");
+const container = document.getElementById("map-container");
+
+// ─── Data ────────────────────────────────────────────────────────────────────────
 const invasivesByZone = {
   beach: [
     { id: "seaweed1", name: "Invasive Seaweed", coins: 3, health: 5 },
@@ -19,18 +30,7 @@ const invasivesByZone = {
   ]
 };
 
-// ─── Global state ────────────────────────────────────────────────────────────────
-let currentPlayer;
-let currentView = "overview";
-
-// ─── Zoom & Pan globals ─────────────────────────────────────────────────────────
-let scale = 1;
-let translateX = 0;
-let translateY = 0;
-const viewport = document.getElementById("map-viewport");
-const container = document.getElementById("map-container");
-
-// ─── Helper functions ───────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────────
 function isZoneUnlocked(zone) {
   if (!zone.unlockRequirement) return true;
   const req = zone.unlockRequirement;
@@ -40,12 +40,10 @@ function isZoneUnlocked(zone) {
 
 function updateCoinsDisplay() {
   const coinsEl = document.getElementById("coins-display");
-  if (coinsEl) {
-    coinsEl.textContent = currentPlayer.coins;
-  }
+  if (coinsEl) coinsEl.textContent = currentPlayer.coins;
 }
 
-// ─── Zoom & Pan helpers ─────────────────────────────────────────────────────────
+// ─── Zoom & Pan logic ────────────────────────────────────────────────────────────
 function updateTransform() {
   container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
   clampTranslate();
@@ -57,12 +55,14 @@ function clampTranslate() {
   const cw = container.offsetWidth * scale;
   const ch = container.offsetHeight * scale;
 
+  // Horizontal
   if (cw <= vw) {
     translateX = (vw - cw) / 2;
   } else {
     translateX = Math.max(vw - cw, Math.min(0, translateX));
   }
 
+  // Vertical
   if (ch <= vh) {
     translateY = (vh - ch) / 2;
   } else {
@@ -86,13 +86,13 @@ function resetView(startScale = 1.8) {
   updateTransform();
 }
 
-// ─── Core render function ───────────────────────────────────────────────────────
+// ─── Render ──────────────────────────────────────────────────────────────────────
 function renderView() {
   const container = document.getElementById("game-container");
   if (!container) return;
   container.innerHTML = "";
 
-  // Reset zoom/pan on every view change
+  // Reset zoom & pan every time a view is rendered
   resetView(currentView === "overview" ? 1.0 : 1.8);
 
   if (currentView === "overview") {
@@ -174,7 +174,7 @@ function renderView() {
       </div>
     `;
 
-    document.getElementById("game-container").innerHTML = detailHtml;
+    container.innerHTML = detailHtml;
 
     const list = document.getElementById("invasives-list");
 
@@ -208,9 +208,7 @@ function renderView() {
       }
 
       invEl.innerHTML = `
-        <img src="${imagePath}" 
-             class="invasive-image" 
-             alt="${inv.name}">
+        <img src="${imagePath}" class="invasive-image" alt="${inv.name}">
       `;
 
       list.appendChild(invEl);
@@ -218,8 +216,10 @@ function renderView() {
 
     updateCoinsDisplay();
 
-    // Reset zoom and center on zone enter
-    resetView(1.8);
+    // Final reset + center after content is rendered
+    setTimeout(() => {
+      resetView(1.8);
+    }, 100);
   }
 }
 
@@ -240,7 +240,7 @@ viewport.addEventListener('wheel', (e) => {
   updateTransform();
 });
 
-// Touch handling – pinch + single finger pan
+// Touch handling – pinch zoom + single finger pan
 let initialDist = 0;
 let initialScale = 1;
 let panStartX = 0;
