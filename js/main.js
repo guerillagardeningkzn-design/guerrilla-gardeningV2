@@ -7,21 +7,12 @@ console.log("Guerrilla Gardening - full features & assets tree");
 let currentPlayer;
 let currentView = "overview";
 
-// ─── Dummy invasives per zone (later from JSON/editor) ──────────────────────────
-const invasivesByZone = {
-  beach: [
-    { id: "seaweed1", name: "Invasive Seaweed", coins: 3, health: 5 },
-    { id: "seaweed2", name: "More Seaweed", coins: 4, health: 6 },
-    { id: "crabgrass", name: "Alien Crabgrass", coins: 5, health: 8 }
-  ],
-  forest: [
-    { id: "vine1", name: "Choking Vine", coins: 6, health: 7 },
-    { id: "weed2", name: "Foreign Weed", coins: 5, health: 5 }
-  ],
-  mountain: [
-    { id: "thistle", name: "Thorny Thistle", coins: 7, health: 10 }
-  ]
-};
+// ─── Zoom & Pan globals (declared only once) ────────────────────────────────────
+let scale = 1;
+let translateX = 0;
+let translateY = 0;
+const viewport = document.getElementById("map-viewport");
+const container = document.getElementById("map-container");
 
 // ─── Helper functions ───────────────────────────────────────────────────────────
 function isZoneUnlocked(zone) {
@@ -38,14 +29,7 @@ function updateCoinsDisplay() {
   }
 }
 
-// ─── Zoom & Pan globals (declared only once) ────────────────────────────────────
-let scale = 1;
-let translateX = 0;
-let translateY = 0;
-const viewport = document.getElementById("map-viewport");
-const container = document.getElementById("map-container");
-
-// ─── Zoom & Pan helpers ─────────────────────────────────────────────────────────
+// ─── Zoom & Pan helpers (declared only once) ────────────────────────────────────
 function updateTransform() {
   container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
   clampTranslate();
@@ -57,12 +41,14 @@ function clampTranslate() {
   const cw = container.offsetWidth * scale;
   const ch = container.offsetHeight * scale;
 
+  // Horizontal clamp
   if (cw <= vw) {
     translateX = (vw - cw) / 2;
   } else {
     translateX = Math.max(vw - cw, Math.min(0, translateX));
   }
 
+  // Vertical clamp
   if (ch <= vh) {
     translateY = (vh - ch) / 2;
   } else {
@@ -140,7 +126,6 @@ function renderView() {
     });
 
     updateCoinsDisplay();
-
   } else if (currentView.startsWith("zone:")) {
     const zoneId = currentView.split(":")[1];
     const zone = zones.find(z => z.id === zoneId);
