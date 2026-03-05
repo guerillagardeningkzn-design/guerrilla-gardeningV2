@@ -3,11 +3,27 @@ import { zones } from '../data/zones.js';
 
 console.log("Guerrilla Gardening - full features & assets tree");
 
+// ─── Dummy invasives per zone (defined early so renderView can use it) ──────────
+const invasivesByZone = {
+  beach: [
+    { id: "seaweed1", name: "Invasive Seaweed", coins: 3, health: 5 },
+    { id: "seaweed2", name: "More Seaweed", coins: 4, health: 6 },
+    { id: "crabgrass", name: "Alien Crabgrass", coins: 5, health: 8 }
+  ],
+  forest: [
+    { id: "vine1", name: "Choking Vine", coins: 6, health: 7 },
+    { id: "weed2", name: "Foreign Weed", coins: 5, health: 5 }
+  ],
+  mountain: [
+    { id: "thistle", name: "Thorny Thistle", coins: 7, health: 10 }
+  ]
+};
+
 // ─── Global state ────────────────────────────────────────────────────────────────
 let currentPlayer;
 let currentView = "overview";
 
-// ─── Zoom & Pan state (declared only once) ──────────────────────────────────────
+// ─── Zoom & Pan globals ─────────────────────────────────────────────────────────
 let scale = 1;
 let translateX = 0;
 let translateY = 0;
@@ -30,7 +46,10 @@ function updateCoinsDisplay() {
 }
 
 // ─── Zoom & Pan helpers ─────────────────────────────────────────────────────────
-
+function updateTransform() {
+  container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+  clampTranslate();
+}
 
 function clampTranslate() {
   const vw = viewport.clientWidth;
@@ -205,15 +224,6 @@ function renderView() {
 }
 
 // ─── Zoom & Pan event listeners ─────────────────────────────────────────────────
-function updateTransform() {
-  container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-  clampTranslate();
-}
-
-
-
-
-// Wheel zoom
 viewport.addEventListener('wheel', (e) => {
   e.preventDefault();
   const delta = e.deltaY > 0 ? 0.9 : 1.1;
@@ -230,7 +240,7 @@ viewport.addEventListener('wheel', (e) => {
   updateTransform();
 });
 
-// Touch handling – pinch zoom + single finger pan
+// Touch handling – pinch + single finger pan
 let initialDist = 0;
 let initialScale = 1;
 let panStartX = 0;
