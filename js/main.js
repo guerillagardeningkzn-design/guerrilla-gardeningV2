@@ -7,7 +7,7 @@ console.log("Guerrilla Gardening - full features & assets tree");
 let currentPlayer;
 let currentView = "overview";
 
-// ─── Dummy data (later from JSON/editor) ────────────────────────────────────────
+// ─── Dummy invasives per zone (later from JSON/editor) ──────────────────────────
 const invasivesByZone = {
   beach: [
     { id: "seaweed1", name: "Invasive Seaweed", coins: 3, health: 5 },
@@ -44,7 +44,6 @@ function renderView() {
   if (!container) return;
   container.innerHTML = "";
 
-  // ─── Overview mode ────────────────────────────────────────────────────────────
   if (currentView === "overview") {
     let html = '<h2>Island Overview</h2>';
     html += '<p>Coins: <span id="coins-display">' + currentPlayer.coins + '</span></p>';
@@ -90,9 +89,8 @@ function renderView() {
     });
 
     updateCoinsDisplay();
-  } 
-  // ─── Zone detail mode ────────────────────────────────────────────────────────
-  else if (currentView.startsWith("zone:")) {
+
+  } else if (currentView.startsWith("zone:")) {
     const zoneId = currentView.split(":")[1];
     const zone = zones.find(z => z.id === zoneId);
 
@@ -105,13 +103,13 @@ function renderView() {
     const health = currentPlayer.zones[zoneId] || 0;
     const invasives = invasivesByZone[zoneId] || [];
 
-    // ─── Choose background ─────────────────────────────────────────────────────
+    // Choose background path
     let bgPath = "assets/backgrounds/global/sky-overcast.jpg";
     if (zoneId === "beach") bgPath = "assets/backgrounds/beach/main-day.jpg";
     else if (zoneId === "forest") bgPath = "assets/backgrounds/forest/main-misty.jpg";
     else if (zoneId === "mountain") bgPath = "assets/backgrounds/mountain/main-rocky.jpg";
 
-    // ─── Build zone content with <img> background ──────────────────────────────
+    // Use <img> instead of background-image
     let detailHtml = `
       <div class="zone-detail">
         <img src="${bgPath}" class="zone-bg-img" alt="${zone.name} background">
@@ -175,7 +173,7 @@ function renderView() {
     updateCoinsDisplay();
 
     // Reset zoom and center on zone enter
-    scale = 1.6; // more zoomed-in as requested
+    scale = 1.0; // fully fitted – no smaller than screen
     translateX = 0;
     translateY = 0;
 
@@ -185,10 +183,10 @@ function renderView() {
         const rect = bgImg.getBoundingClientRect();
         translateX = (viewport.clientWidth - rect.width * scale) / 2;
         translateY = (viewport.clientHeight - rect.height * scale) / 2;
-        clampTranslate();
         updateTransform();
+        clampTranslate();
       }
-    }, 200);
+    }, 100);
   }
 }
 
@@ -199,42 +197,35 @@ let translateY = 0;
 const viewport = document.getElementById("map-viewport");
 const container = document.getElementById("map-container");
 
-// Update CSS transform + clamp
+// Update transform + clamp
 function updateTransform() {
   container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
   clampTranslate();
 }
 
-// Strict edge clamping – prevents any empty space around borders
+// Strict edge clamping – no empty space around borders
 function clampTranslate() {
   const vw = viewport.clientWidth;
   const vh = viewport.clientHeight;
-
-  // Scaled map size
   const cw = container.offsetWidth * scale;
   const ch = container.offsetHeight * scale;
 
   // Horizontal
   if (cw <= vw) {
-    translateX = (vw - cw) / 2; // center horizontally
+    translateX = (vw - cw) / 2; // center when smaller
   } else {
-    // Left edge must be >= vw - cw (can't go right of left screen edge)
-    // Right edge must be <= 0 (can't go left of right screen edge)
     translateX = Math.max(vw - cw, Math.min(0, translateX));
   }
 
   // Vertical
   if (ch <= vh) {
-    translateY = (vh - ch) / 2; // center vertically
+    translateY = (vh - ch) / 2;
   } else {
     translateY = Math.max(vh - ch, Math.min(0, translateY));
   }
-
-  // Debug (uncomment to watch values)
-   console.log(`Clamped: X=${translateX.toFixed(0)}, Y=${translateY.toFixed(0)}, scale=${scale.toFixed(2)}`);
 }
 
-// Minimum scale – map never smaller than sc// console.log(`Clamped: X=${translateX.toFixed(0)}, Y=${translateY.toFixed(0)}, scale=${scale.toFixed(2)}`);reen
+// Minimum scale – map never smaller than screen
 function getMinScale() {
   const vw = viewport.clientWidth;
   const vh = viewport.clientHeight;
@@ -258,6 +249,7 @@ viewport.addEventListener('wheel', (e) => {
   translateX = mx - (mx - translateX) * (scale / oldScale);
   translateY = my - (my - translateY) * (scale / oldScale);
 
+  clampTranslate();
   updateTransform();
 });
 
@@ -322,6 +314,7 @@ document.addEventListener('mousemove', (e) => {
   if (!isDragging) return;
   translateX = e.clientX - dragStartX;
   translateY = e.clientY - dragStartY;
+  clampTranslate();
   updateTransform();
 });
 
