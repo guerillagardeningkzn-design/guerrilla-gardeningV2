@@ -7,6 +7,13 @@ console.log("Guerrilla Gardening - full features & assets tree");
 let currentPlayer;
 let currentView = "overview";
 
+// ─── Zoom & Pan globals ─────────────────────────────────────────────────────────
+let scale = 1;
+let translateX = 0;
+let translateY = 0;
+const viewport = document.getElementById("map-viewport");
+const container = document.getElementById("map-container");
+
 // ─── Dummy invasives per zone (later from JSON/editor) ──────────────────────────
 const invasivesByZone = {
   beach: [
@@ -38,20 +45,62 @@ function updateCoinsDisplay() {
   }
 }
 
-function resetView(startScale = 1.0) {
-  scale = startScale;         // 1.0 = full fit, 1.3 = slight zoom-in
+// ─── Reset zoom & pan to centered + zoomed-in ───────────────────────────────────
+function resetView(startScale = 1.8) {
+  scale = startScale;           // 1.8 = good zoomed-in start
   translateX = 0;
   translateY = 0;
   clampTranslate();
   updateTransform();
 }
+
+// ─── Strict clamping – no empty space around borders ────────────────────────────
+function clampTranslate() {
+  const vw = viewport.clientWidth;
+  const vh = viewport.clientHeight;
+  const cw = container.offsetWidth * scale;
+  const ch = container.offsetHeight * scale;
+
+  // Horizontal
+  if (cw <= vw) {
+    translateX = (vw - cw) / 2; // center if smaller
+  } else {
+    translateX = Math.max(vw - cw, Math.min(0, translateX));
+  }
+
+  // Vertical
+  if (ch <= vh) {
+    translateY = (vh - ch) / 2;
+  } else {
+    translateY = Math.max(vh - ch, Math.min(0, translateY));
+  }
+}
+
+// ─── Minimum scale – map never smaller than screen ──────────────────────────────
+function getMinScale() {
+  const vw = viewport.clientWidth;
+  const vh = viewport.clientHeight;
+  const cw = container.offsetWidth;
+  const ch = container.offsetHeight;
+  return Math.max(vw / cw, vh / ch);
+}
+
+// ─── Update transform + clamp ───────────────────────────────────────────────────
+function updateTransform() {
+  container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+  clampTranslate();
+}
+
 // ─── Core render function ───────────────────────────────────────────────────────
 function renderView() {
   const container = document.getElementById("game-container");
   if (!container) return;
-  resetView(); // always start clean
   container.innerHTML = "";
 
+  // Reset zoom/pan on every view change
+  resetView(currentView === "overview" ? 1.0 : 1.8);
+
+  // ─── Overview mode ────────────────────────────────────────────────────────────
   if (currentView === "overview") {
     let html = '<h2>Island Overview</h2>';
     html += '<p>Coins: <span id="coins-display">' + currentPlayer.coins + '</span></p>';
@@ -97,8 +146,9 @@ function renderView() {
     });
 
     updateCoinsDisplay();
-
-  } else if (currentView.startsWith("zone:")) {
+  } 
+  // ─── Zone detail mode ────────────────────────────────────────────────────────
+  else if (currentView.startsWith("zone:")) {
     const zoneId = currentView.split(":")[1];
     const zone = zones.find(z => z.id === zoneId);
 
@@ -117,7 +167,7 @@ function renderView() {
     else if (zoneId === "forest") bgPath = "assets/backgrounds/forest/main-misty.jpg";
     else if (zoneId === "mountain") bgPath = "assets/backgrounds/mountain/main-rocky.jpg";
 
-    // Use <img> instead of background-image
+    // Use <img> for background
     let detailHtml = `
       <div class="zone-detail">
         <img src="${bgPath}" class="zone-bg-img" alt="${zone.name} background">
@@ -138,12 +188,13 @@ function renderView() {
 
     const list = document.getElementById("invasives-list");
 
+    // Restore invasives display
     invasives.forEach(inv => {
       const invEl = document.createElement("div");
       invEl.className = "invasive-item";
       invEl.dataset.invId = inv.id;
 
-      // Position invasives (hardcoded for now, later from editor)
+      // Position invasives (hardcoded for now)
       let posX = 50;
       let posY = 50;
       if (inv.id.includes("seaweed")) { posX = 30; posY = 60; }
@@ -181,7 +232,7 @@ function renderView() {
     updateCoinsDisplay();
 
     // Reset zoom and center on zone enter
-    scale = 1.0; // fully fitted – no smaller than screen
+    scale = 1.8; // very zoomed in as requested
     translateX = 0;
     translateY = 0;
 
@@ -191,10 +242,10 @@ function renderView() {
         const rect = bgImg.getBoundingClientRect();
         translateX = (viewport.clientWidth - rect.width * scale) / 2;
         translateY = (viewport.clientHeight - rect.height * scale) / 2;
-        updateTransform();
         clampTranslate();
+        updateTransform();
       }
-    }, 100);
+    }, 150);
   }
 }
 
@@ -211,7 +262,7 @@ function updateTransform() {
   clampTranslate();
 }
 
-// Strict edge clamping – no empty space around borders
+// Clamp so edges never leave screen
 function clampTranslate() {
   const vw = viewport.clientWidth;
   const vh = viewport.clientHeight;
@@ -220,7 +271,7 @@ function clampTranslate() {
 
   // Horizontal
   if (cw <= vw) {
-    translateX = (vw - cw) / 2; // center when smaller
+    translateX = (vw - cw) / 2;
   } else {
     translateX = Math.max(vw - cw, Math.min(0, translateX));
   }
@@ -257,7 +308,6 @@ viewport.addEventListener('wheel', (e) => {
   translateX = mx - (mx - translateX) * (scale / oldScale);
   translateY = my - (my - translateY) * (scale / oldScale);
 
-  clampTranslate();
   updateTransform();
 });
 
@@ -283,7 +333,7 @@ viewport.addEventListener('touchstart', (e) => {
 });
 
 viewport.addEventListener('touchmove', (e) => {
-  e.preventDefault(); // prevent browser scroll during interaction
+  e.preventDefault();
 
   if (isPinching && e.touches.length === 2) {
     const dist = Math.hypot(
@@ -310,7 +360,7 @@ let dragStartX = 0;
 let dragStartY = 0;
 
 viewport.addEventListener('mousedown', (e) => {
-  if (e.button !== 0) return; // only left click
+  if (e.button !== 0) return;
   e.preventDefault();
   isDragging = true;
   dragStartX = e.clientX - translateX;
@@ -322,7 +372,6 @@ document.addEventListener('mousemove', (e) => {
   if (!isDragging) return;
   translateX = e.clientX - dragStartX;
   translateY = e.clientY - dragStartY;
-  clampTranslate();
   updateTransform();
 });
 
