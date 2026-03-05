@@ -1,11 +1,11 @@
 import { loadPlayer, updatePlayer, savePlayer } from './player.js';
 import { zones } from '../data/zones.js';
 
-console.log("Guerrilla Gardening - static full-screen version");
+console.log("Guerrilla Gardening - overworld map with markers");
 
 // ─── Global state ────────────────────────────────────────────────────────────────
 let currentPlayer;
-let currentView = "island";  // start with complete island view
+let currentView = "island";  // start with island map
 
 // ─── Data ────────────────────────────────────────────────────────────────────────
 const invasivesByZone = {
@@ -22,6 +22,13 @@ const invasivesByZone = {
     { id: "thistle", name: "Thorny Thistle", coins: 7, health: 10 }
   ]
 };
+
+// ─── Zone positions on island map (adjust % as needed for your image) ────────────
+const zoneMarkers = [
+  { id: "beach", name: "Sunny Beach", left: 15, top: 70, unlocked: true },
+  { id: "forest", name: "Misty Forest", left: 60, top: 30, unlocked: false },
+  { id: "mountain", name: "Rocky Mountain", left: 80, top: 20, unlocked: false }
+];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────────
 function isZoneUnlocked(zone) {
@@ -51,12 +58,31 @@ function renderView() {
 
   if (currentView === "island") {
     container.innerHTML = `
-      <img src="assets/backgrounds/island-full.jpg" class="zone-bg-img" alt="Complete Island">
-      <div class="zone-content">
-        <h2>Island Overview</h2>
-        <p>Select a zone from the dropdown to explore.</p>
-      </div>
+      <img src="assets/backgrounds/island-full.jpg" class="island-bg-img" alt="Island Map">
+      <div id="map-markers"></div>
     `;
+
+    const markersContainer = document.getElementById("map-markers");
+
+    zoneMarkers.forEach(marker => {
+      const zone = zones.find(z => z.id === marker.id);
+      const unlocked = isZoneUnlocked(zone);
+
+      const markerEl = document.createElement("div");
+      markerEl.className = "map-marker";
+      markerEl.style.left = marker.left + '%';
+      markerEl.style.top = marker.top + '%';
+      markerEl.dataset.zoneId = marker.id;
+
+      if (!unlocked) {
+        markerEl.style.opacity = 0.4;
+        markerEl.style.pointerEvents = "none";
+      }
+
+      markerEl.innerHTML = `<div class="marker-label">${marker.name}</div>`;
+      markersContainer.appendChild(markerEl);
+    });
+
     updateCoinsDisplay();
   } else if (currentView.startsWith("zone:")) {
     const zoneId = currentView.split(":")[1];
@@ -89,6 +115,7 @@ function renderView() {
           <h3>Tap to remove invasives:</h3>
           <div id="invasives-list"></div>
         </div>
+        <button id="back-to-map">Back to Map</button>
       </div>
     `;
 
@@ -137,42 +164,29 @@ function renderView() {
   }
 }
 
-// ─── Populate dropdown ───────────────────────────────────────────────────────────
-function populateZoneDropdown() {
-  const select = document.getElementById("zone-select");
-  if (!select) return;
-
-  select.innerHTML = '<option value="island">Island Overview</option>';
-
-  zones.forEach(zone => {
-    const option = document.createElement("option");
-    option.value = zone.id;
-    option.textContent = zone.name;
-    if (!isZoneUnlocked(zone)) {
-      option.disabled = true;
-      option.textContent += " (Locked)";
-    }
-    select.appendChild(option);
-  });
-
-  select.value = currentView === "island" ? "island" : currentView.split(":")[1];
-  select.addEventListener("change", (e) => {
-    const value = e.target.value;
-    currentView = value === "island" ? "island" : "zone:" + value;
-    renderView();
-  });
-}
-
 // ─── Game start ──────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   currentPlayer = loadPlayer();
 
-  // Populate dropdown on load
-  populateZoneDropdown();
-
-  // Handle clicks for invasives
   document.addEventListener("click", (e) => {
-    const invEl = e.target.closest(".invasive-item");
+    const target = e.target;
+
+    // Click on island map marker
+    const marker = target.closest(".map-marker");
+    if (marker) {
+      const zoneId = marker.dataset.zoneId;
+      const zone = zones.find(z => z.id === zoneId);
+      if (zone && isZoneUnlocked(zone)) {
+        currentView = "zone:" + zoneId;
+        renderView();
+      } else {
+        alert("This zone is locked! Complete the previous area first.");
+      }
+      return;
+    }
+
+    // Invasive tap
+    const invEl = target.closest(".invasive-item");
     if (invEl) {
       const zoneId = currentView.split(":")[1];
       const invId = invEl.dataset.invId;
@@ -209,8 +223,14 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       return;
     }
+
+    // Back to map button
+    if (target.id === "back-to-map") {
+      currentView = "island";
+      renderView();
+    }
   });
 
   renderView();
-  console.log("Game loaded – static full-screen version");
+  console.log("Game loaded – island map with markers");
 });
