@@ -38,10 +38,18 @@ function updateCoinsDisplay() {
   }
 }
 
+function resetView(startScale = 1.0) {
+  scale = startScale;         // 1.0 = full fit, 1.3 = slight zoom-in
+  translateX = 0;
+  translateY = 0;
+  clampTranslate();
+  updateTransform();
+}
 // ─── Core render function ───────────────────────────────────────────────────────
 function renderView() {
   const container = document.getElementById("game-container");
   if (!container) return;
+  resetView(); // always start clean
   container.innerHTML = "";
 
   if (currentView === "overview") {
