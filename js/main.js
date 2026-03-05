@@ -103,14 +103,14 @@ function renderView() {
       <div class="zone-detail" style="background-image: url('${bgPath}');">
         <h2>${zone.name}</h2>
         <p>${zone.description}</p>
-        <p>Coins: <span id="coins-display">${currentPlayer.coins}</span></p>
+        <!-- No coins here anymore -->
         <div class="progress-bar">
           <div class="progress-fill" style="width: ${health}%"></div>
         </div>
         <p>Health: ${health}%</p>
         <h3>Tap to remove invasives:</h3>
         <div id="invasives-list"></div>
-        <button id="back-to-overview">Back to Overview</button>
+        <!-- No back button here anymore -->
       </div>
     `;
 
