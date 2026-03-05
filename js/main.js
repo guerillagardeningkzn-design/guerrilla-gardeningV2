@@ -188,7 +188,7 @@ function renderView() {
         clampTranslate();
         updateTransform();
       }
-    }, 100);
+    }, 200);
   }
 }
 
