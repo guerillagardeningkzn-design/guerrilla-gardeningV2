@@ -33,9 +33,7 @@ function isZoneUnlocked(zone) {
 
 function updateCoinsDisplay() {
   const coinsEl = document.getElementById("coins-display");
-  if (coinsEl) {
-    coinsEl.textContent = currentPlayer.coins;
-  }
+  if (coinsEl) coinsEl.textContent = currentPlayer.coins;
 }
 
 function updateHealthDisplay(health) {
@@ -51,21 +49,16 @@ function renderView() {
   if (!container) return;
   container.innerHTML = "";
 
-  // ─── Complete Island view ─────────────────────────────────────────────────────
   if (currentView === "island") {
     container.innerHTML = `
       <img src="assets/backgrounds/island-full.jpg" class="zone-bg-img" alt="Complete Island">
       <div class="zone-content">
         <h2>Island Overview</h2>
         <p>Select a zone from the dropdown to explore.</p>
-        <div id="invasives-list"></div>
       </div>
     `;
-
     updateCoinsDisplay();
-  } 
-  // ─── Zone detail view ─────────────────────────────────────────────────────────
-  else if (currentView.startsWith("zone:")) {
+  } else if (currentView.startsWith("zone:")) {
     const zoneId = currentView.split(":")[1];
     const zone = zones.find(z => z.id === zoneId);
 
@@ -133,9 +126,7 @@ function renderView() {
       }
 
       invEl.innerHTML = `
-        <img src="${imagePath}" 
-             class="invasive-image" 
-             alt="${inv.name}">
+        <img src="${imagePath}" class="invasive-image" alt="${inv.name}">
       `;
 
       list.appendChild(invEl);
@@ -146,7 +137,7 @@ function renderView() {
   }
 }
 
-// ─── UI dropdown for zone selection ─────────────────────────────────────────────
+// ─── Populate dropdown ───────────────────────────────────────────────────────────
 function populateZoneDropdown() {
   const select = document.getElementById("zone-select");
   if (!select) return;
@@ -164,6 +155,7 @@ function populateZoneDropdown() {
     select.appendChild(option);
   });
 
+  select.value = currentView === "island" ? "island" : currentView.split(":")[1];
   select.addEventListener("change", (e) => {
     const value = e.target.value;
     currentView = value === "island" ? "island" : "zone:" + value;
@@ -175,14 +167,12 @@ function populateZoneDropdown() {
 document.addEventListener("DOMContentLoaded", () => {
   currentPlayer = loadPlayer();
 
-  // Populate dropdown once on load
+  // Populate dropdown on load
   populateZoneDropdown();
 
-  // Handle clicks
+  // Handle clicks for invasives
   document.addEventListener("click", (e) => {
-    const target = e.target;
-
-    const invEl = target.closest(".invasive-item");
+    const invEl = e.target.closest(".invasive-item");
     if (invEl) {
       const zoneId = currentView.split(":")[1];
       const invId = invEl.dataset.invId;
@@ -212,16 +202,12 @@ document.addEventListener("DOMContentLoaded", () => {
           if (progressFill) progressFill.style.width = changes.zones[zoneId] + "%";
 
           if (document.querySelectorAll(".invasive-item").length === 0) {
+            const zone = zones.find(z => z.id === zoneId);
             alert(zone.name + " cleared of invasives! 🌿");
           }
         }, 600);
       }
       return;
-    }
-
-    if (target.id === "back-to-overview") {
-      currentView = "island";
-      renderView();
     }
   });
 
