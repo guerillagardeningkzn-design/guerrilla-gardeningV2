@@ -1,7 +1,7 @@
 import { loadPlayer, updatePlayer, savePlayer } from './player.js';
 import { zones } from '../data/zones.js';
 
-console.log("Guerrilla Gardening - overworld map with markers");
+console.log("Guerrilla Gardening - overworld map with markers latest push");
 
 // ─── Global state ────────────────────────────────────────────────────────────────
 let currentPlayer;
