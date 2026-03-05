@@ -266,23 +266,25 @@ function updateTransform() {
 function clampTranslate() {
   const vw = viewport.clientWidth;
   const vh = viewport.clientHeight;
-  const cw = container.offsetWidth * scale;
-  const ch = container.offsetHeight * scale;
+  const cw = container.offsetWidth * scale;   // scaled map width
+  const ch = container.offsetHeight * scale;  // scaled map height
 
-  // Center if smaller than viewport
+  // Horizontal clamp
   if (cw <= vw) {
+    // Map smaller than screen → center it
     translateX = (vw - cw) / 2;
   } else {
+    // Map larger → left edge ≥ vw - cw, right edge ≤ 0
     translateX = Math.max(vw - cw, Math.min(0, translateX));
   }
 
+  // Vertical clamp
   if (ch <= vh) {
     translateY = (vh - ch) / 2;
   } else {
     translateY = Math.max(vh - ch, Math.min(0, translateY));
   }
 }
-
 // Wheel zoom (desktop)
 viewport.addEventListener('wheel', (e) => {
   e.preventDefault();
