@@ -80,6 +80,25 @@ function renderView() {
     });
 
     updateCoinsDisplay();
+	  // ... invasives.forEach loop ...
+
+  updateCoinsDisplay();
+
+  // Reset zoom and center on zone enter
+  scale = 1.3;              // ← you can change this number
+  translateX = 0;
+  translateY = 0;
+
+  setTimeout(() => {
+    const detail = document.querySelector('.zone-detail');
+    if (detail) {
+      const rect = detail.getBoundingClientRect();
+      translateX = (viewport.clientWidth - rect.width * scale) / 2;
+      translateY = (viewport.clientHeight - rect.height * scale) / 2;
+      updateTransform();
+    }
+  }, 50);
+}
 	
 	// Reset and center on zone enter
 scale = 1.3; // starting zoom level – adjust 1.2–1.6 as preferred
@@ -359,6 +378,16 @@ viewport.addEventListener('mouseup', () => {
 
 viewport.addEventListener('mouseleave', () => {
   isDragging = false;
+});
+
+
+
+window.addEventListener('resize', () => {
+  // Re-center on resize
+  scale = 1.0;
+  translateX = 0;
+  translateY = 0;
+  updateTransform();
 });
 
 // Optional: reset zoom/pan on zone change (uncomment if wanted)
