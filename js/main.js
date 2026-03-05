@@ -80,6 +80,20 @@ function renderView() {
     });
 
     updateCoinsDisplay();
+	
+	// Reset and center on zone enter
+scale = 1.3; // starting zoom level – adjust 1.2–1.6 as preferred
+translateX = 0;
+translateY = 0;
+
+// Optional: center the view (if background is larger than viewport)
+const zoneDetail = document.querySelector('.zone-detail');
+if (zoneDetail) {
+  const rect = zoneDetail.getBoundingClientRect();
+  translateX = (viewport.clientWidth - rect.width * scale) / 2;
+  translateY = (viewport.clientHeight - rect.height * scale) / 2;
+  updateTransform();
+}
 
   } else if (currentView.startsWith("zone:")) {
   const zoneId = currentView.split(":")[1];
@@ -249,24 +263,60 @@ const container = document.getElementById("map-container");
 function updateTransform() {
   container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
 }
+function getMinScale() {
+  const viewportRect = viewport.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect(); // current scaled size
 
-// Wheel zoom (desktop)
-viewport.addEventListener('wheel', (e) => {
+  // Get the natural size of the background (assuming it's set via CSS background-image)
+  const bgImg = new Image();
+  bgImg.src = container.querySelector('.zone-detail').style.backgroundImage.slice(5, -2); // extract url
+
+  return new Promise(resolve => {
+    bgImg.onload = () => {
+      const naturalWidth = bgImg.naturalWidth;
+      const naturalHeight = bgImg.naturalHeight;
+
+      const scaleX = viewportRect.width / naturalWidth;
+      const scaleY = viewportRect.height / naturalHeight;
+
+      resolve(Math.max(scaleX, scaleY)); // use the larger one so it fills both directions
+    };
+  });
+}
+
+// Wheel zoom
+viewport.addEventListener('wheel', async (e) => {
   e.preventDefault();
   const delta = e.deltaY > 0 ? 0.9 : 1.1;
-  scale = Math.max(0.5, Math.min(4, scale * delta));
+  const oldScale = scale;
+
+  scale = Math.max(await getMinScale(), Math.min(4, scale * delta));
+
+  // Optional: zoom towards cursor position (more natural feel)
+  const rect = viewport.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  translateX = mouseX - (mouseX - translateX) * (scale / oldScale);
+  translateY = mouseY - (mouseY - translateY) * (scale / oldScale);
+
   updateTransform();
 });
 
-// Touch pinch zoom (mobile)
-let startDist = 0;
-viewport.addEventListener('touchstart', (e) => {
+// Touch pinch zoom – add similar min scale check
+viewport.addEventListener('touchmove', async (e) => {
   if (e.touches.length === 2) {
     e.preventDefault();
-    startDist = Math.hypot(
+    const dist = Math.hypot(
       e.touches[0].pageX - e.touches[1].pageX,
       e.touches[0].pageY - e.touches[1].pageY
     );
+    const delta = dist / startDist;
+    const oldScale = scale;
+
+    scale = Math.max(await getMinScale(), Math.min(4, scale * delta));
+    updateTransform();
+    startDist = dist;
   }
 });
 
