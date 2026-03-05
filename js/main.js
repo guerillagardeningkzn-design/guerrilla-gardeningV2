@@ -115,8 +115,7 @@ function renderView() {
           <h3>Tap to remove invasives:</h3>
           <div id="invasives-list"></div>
         </div>
-        <button id="back-to-map">Back to Map</button>
-      </div>
+       </div>
     `;
 
     container.innerHTML = detailHtml;
