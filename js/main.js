@@ -7,13 +7,6 @@ console.log("Guerrilla Gardening - full features & assets tree");
 let currentPlayer;
 let currentView = "overview";
 
-// ─── Zoom & Pan globals ─────────────────────────────────────────────────────────
-let scale = 1;
-let translateX = 0;
-let translateY = 0;
-const viewport = document.getElementById("map-viewport");
-const container = document.getElementById("map-container");
-
 // ─── Dummy invasives per zone (later from JSON/editor) ──────────────────────────
 const invasivesByZone = {
   beach: [
@@ -45,30 +38,31 @@ function updateCoinsDisplay() {
   }
 }
 
-// ─── Reset zoom & pan to centered + zoomed-in ───────────────────────────────────
-function resetView(startScale = 1.8) {
-  scale = startScale;           // 1.8 = good zoomed-in start
-  translateX = 0;
-  translateY = 0;
+// ─── Zoom & Pan globals (declared only once) ────────────────────────────────────
+let scale = 1;
+let translateX = 0;
+let translateY = 0;
+const viewport = document.getElementById("map-viewport");
+const container = document.getElementById("map-container");
+
+// ─── Zoom & Pan helpers ─────────────────────────────────────────────────────────
+function updateTransform() {
+  container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
   clampTranslate();
-  updateTransform();
 }
 
-// ─── Strict clamping – no empty space around borders ────────────────────────────
 function clampTranslate() {
   const vw = viewport.clientWidth;
   const vh = viewport.clientHeight;
   const cw = container.offsetWidth * scale;
   const ch = container.offsetHeight * scale;
 
-  // Horizontal
   if (cw <= vw) {
-    translateX = (vw - cw) / 2; // center if smaller
+    translateX = (vw - cw) / 2;
   } else {
     translateX = Math.max(vw - cw, Math.min(0, translateX));
   }
 
-  // Vertical
   if (ch <= vh) {
     translateY = (vh - ch) / 2;
   } else {
@@ -76,7 +70,6 @@ function clampTranslate() {
   }
 }
 
-// ─── Minimum scale – map never smaller than screen ──────────────────────────────
 function getMinScale() {
   const vw = viewport.clientWidth;
   const vh = viewport.clientHeight;
@@ -85,10 +78,12 @@ function getMinScale() {
   return Math.max(vw / cw, vh / ch);
 }
 
-// ─── Update transform + clamp ───────────────────────────────────────────────────
-function updateTransform() {
-  container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+function resetView(startScale = 1.8) {
+  scale = startScale;
+  translateX = 0;
+  translateY = 0;
   clampTranslate();
+  updateTransform();
 }
 
 // ─── Core render function ───────────────────────────────────────────────────────
@@ -100,7 +95,6 @@ function renderView() {
   // Reset zoom/pan on every view change
   resetView(currentView === "overview" ? 1.0 : 1.8);
 
-  // ─── Overview mode ────────────────────────────────────────────────────────────
   if (currentView === "overview") {
     let html = '<h2>Island Overview</h2>';
     html += '<p>Coins: <span id="coins-display">' + currentPlayer.coins + '</span></p>';
@@ -146,9 +140,8 @@ function renderView() {
     });
 
     updateCoinsDisplay();
-  } 
-  // ─── Zone detail mode ────────────────────────────────────────────────────────
-  else if (currentView.startsWith("zone:")) {
+
+  } else if (currentView.startsWith("zone:")) {
     const zoneId = currentView.split(":")[1];
     const zone = zones.find(z => z.id === zoneId);
 
@@ -161,13 +154,11 @@ function renderView() {
     const health = currentPlayer.zones[zoneId] || 0;
     const invasives = invasivesByZone[zoneId] || [];
 
-    // Choose background path
     let bgPath = "assets/backgrounds/global/sky-overcast.jpg";
     if (zoneId === "beach") bgPath = "assets/backgrounds/beach/main-day.jpg";
     else if (zoneId === "forest") bgPath = "assets/backgrounds/forest/main-misty.jpg";
     else if (zoneId === "mountain") bgPath = "assets/backgrounds/mountain/main-rocky.jpg";
 
-    // Use <img> for background
     let detailHtml = `
       <div class="zone-detail">
         <img src="${bgPath}" class="zone-bg-img" alt="${zone.name} background">
@@ -188,18 +179,15 @@ function renderView() {
 
     const list = document.getElementById("invasives-list");
 
-    // Restore invasives display
     invasives.forEach(inv => {
       const invEl = document.createElement("div");
       invEl.className = "invasive-item";
       invEl.dataset.invId = inv.id;
 
-      // Position invasives (hardcoded for now)
       let posX = 50;
       let posY = 50;
       if (inv.id.includes("seaweed")) { posX = 30; posY = 60; }
       if (inv.id.includes("vine")) { posX = 70; posY = 40; }
-      // ... add more
 
       invEl.style.left = posX + '%';
       invEl.style.top = posY + '%';
@@ -232,51 +220,28 @@ function renderView() {
     updateCoinsDisplay();
 
     // Reset zoom and center on zone enter
-    scale = 1.8; // very zoomed in as requested
-    translateX = 0;
-    translateY = 0;
-
-    setTimeout(() => {
-      const bgImg = document.querySelector('.zone-bg-img');
-      if (bgImg) {
-        const rect = bgImg.getBoundingClientRect();
-        translateX = (viewport.clientWidth - rect.width * scale) / 2;
-        translateY = (viewport.clientHeight - rect.height * scale) / 2;
-        clampTranslate();
-        updateTransform();
-      }
-    }, 150);
+    resetView(1.8);
   }
 }
 
 // ─── Zoom & Pan ────────────────────────────────────────────────────────────────
-let scale = 1;
-let translateX = 0;
-let translateY = 0;
-const viewport = document.getElementById("map-viewport");
-const container = document.getElementById("map-container");
-
-// Update transform + clamp
 function updateTransform() {
   container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
   clampTranslate();
 }
 
-// Clamp so edges never leave screen
 function clampTranslate() {
   const vw = viewport.clientWidth;
   const vh = viewport.clientHeight;
   const cw = container.offsetWidth * scale;
   const ch = container.offsetHeight * scale;
 
-  // Horizontal
   if (cw <= vw) {
     translateX = (vw - cw) / 2;
   } else {
     translateX = Math.max(vw - cw, Math.min(0, translateX));
   }
 
-  // Vertical
   if (ch <= vh) {
     translateY = (vh - ch) / 2;
   } else {
@@ -284,7 +249,6 @@ function clampTranslate() {
   }
 }
 
-// Minimum scale – map never smaller than screen
 function getMinScale() {
   const vw = viewport.clientWidth;
   const vh = viewport.clientHeight;
@@ -293,7 +257,7 @@ function getMinScale() {
   return Math.max(vw / cw, vh / ch);
 }
 
-// Wheel zoom (desktop)
+// Wheel zoom
 viewport.addEventListener('wheel', (e) => {
   e.preventDefault();
   const delta = e.deltaY > 0 ? 0.9 : 1.1;
@@ -301,7 +265,6 @@ viewport.addEventListener('wheel', (e) => {
   scale *= delta;
   scale = Math.max(getMinScale(), Math.min(4, scale));
 
-  // Zoom towards cursor
   const rect = viewport.getBoundingClientRect();
   const mx = e.clientX - rect.left;
   const my = e.clientY - rect.top;
@@ -311,7 +274,7 @@ viewport.addEventListener('wheel', (e) => {
   updateTransform();
 });
 
-// Touch handling – pinch zoom + single finger pan
+// Touch handling – pinch + single finger pan
 let initialDist = 0;
 let initialScale = 1;
 let panStartX = 0;
@@ -354,7 +317,7 @@ viewport.addEventListener('touchend touchcancel', () => {
   isPinching = false;
 });
 
-// Mouse drag (desktop)
+// Mouse drag
 let isDragging = false;
 let dragStartX = 0;
 let dragStartY = 0;
@@ -394,7 +357,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("click", (e) => {
     const target = e.target;
 
-    // Zone card click
     const card = target.closest(".zone-card");
     if (card) {
       const zoneId = card.dataset.zoneId;
@@ -408,7 +370,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Invasive tap – with fade + shrink animation
     const invEl = target.closest(".invasive-item");
     if (invEl) {
       const zoneId = currentView.split(":")[1];
@@ -424,7 +385,6 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         };
         updatePlayer(changes);
-        // Animate removal
         invEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
         invEl.style.opacity = "0";
         invEl.style.transform = "scale(0.4) rotate(5deg)";
@@ -451,7 +411,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Back button
     if (target.id === "back-to-overview") {
       currentView = "overview";
       renderView();
