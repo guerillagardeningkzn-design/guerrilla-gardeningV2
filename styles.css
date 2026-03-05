@@ -8,8 +8,8 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  font-family: Arial, sans-serif;
-  background: #000; /* fallback dark color if image fails */
+  font-family: 'Poppins', Arial, sans-serif; /* nicer numbers */
+  background: #000; /* fallback */
 }
 
 /* ─── Map viewport & container ────────────────────────────────────────────────── */
@@ -25,14 +25,14 @@ html, body {
   position: relative;
 }
 
-/* ─── Background images (island & zones) ───────────────────────────────────────── */
+/* ─── Background images ───────────────────────────────────────────────────────── */
 .island-bg-img,
 .zone-bg-img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;            /* fills screen edge-to-edge, crops if needed */
+  object-fit: cover;
   object-position: center;
   pointer-events: none;
   z-index: 1;
@@ -42,48 +42,143 @@ html, body {
 #map-markers {
   position: absolute;
   inset: 0;
-  z-index: 10;                  /* above background, below UI overlay */
+  z-index: 10;
 }
 
 .map-marker {
   position: absolute;
-  width: 60px;
-  height: 60px;
-  background: rgba(255, 255, 255, 0.8);
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
   border-radius: 50%;
-  border: 3px solid #4CAF50;
+  border: 4px solid #FFD700; /* gold rim */
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.8rem;
   font-weight: bold;
-  color: black;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  color: #1a1a1a;
+  box-shadow: 
+    0 6px 16px rgba(255,215,0,0.6),
+    inset 0 2px 4px rgba(255,255,255,0.8);
   transform: translate(-50%, -50%);
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
 }
 
 .map-marker:hover {
-  transform: translate(-50%, -50%) scale(1.2);
-  background: rgba(255, 255, 255, 1);
-  border-color: #81C784;
+  transform: translate(-50%, -50%) scale(1.18);
+  box-shadow: 0 12px 30px rgba(255,215,0,0.9), 0 0 20px rgba(255,215,0,0.7);
+  background: rgba(255,255,255,1);
 }
 
 .map-marker.locked {
-  background: rgba(150, 150, 150, 0.6);
+  background: rgba(150,150,150,0.6);
   border-color: #757575;
   cursor: not-allowed;
   pointer-events: none;
+  opacity: 0.65;
 }
 
 .marker-label {
   text-align: center;
-  font-size: 0.7rem;
   line-height: 1.1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
 }
 
-/* ─── Zone content ─────────────────────────────────────────────────────────────── */
+/* ─── New HUD styles (Lily-inspired golden / glowing) ──────────────────────────── */
+#ui-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  padding: 15px;
+  color: white;
+  text-shadow: 1px 1px 3px black;
+}
+
+#ui-overlay > * {
+  pointer-events: auto;
+}
+
+/* Coins pill */
+.hud-coins {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(145deg, #FFD700, #FFA500);
+  padding: 10px 20px 10px 16px;
+  border-radius: 50px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  box-shadow: 
+    0 8px 20px rgba(255,215,0,0.6),
+    inset 0 2px 5px rgba(255,255,255,0.5);
+  transform: perspective(600px) rotateX(8deg);
+}
+
+.hud-coins span {
+  min-width: 3ch;
+  text-align: right;
+}
+
+/* Resources cluster (top-right) */
+.hud-resources {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 12px;
+}
+
+.hud-badge {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #1a1a1a;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.5);
+  transition: all 0.3s ease;
+}
+
+.hud-badge:hover {
+  transform: scale(1.12) rotate(4deg);
+}
+
+.hud-gems {
+  background: linear-gradient(145deg, #A100A1, #DDA0DD);
+  box-shadow: 0 6px 16px rgba(160,0,160,0.5);
+}
+
+.hud-stars {
+  background: linear-gradient(145deg, #FFD700, #FFEB3B);
+}
+
+.hud-hearts {
+  background: linear-gradient(145deg, #FF69B4, #FF1493);
+}
+
+/* Pulse animation for updates */
+@keyframes pulse {
+  0%   { transform: scale(1);   box-shadow: 0 6px 16px rgba(255,215,0,0.5); }
+  50%  { transform: scale(1.15); box-shadow: 0 12px 30px rgba(255,215,0,0.9); }
+  100% { transform: scale(1);   box-shadow: 0 6px 16px rgba(255,215,0,0.5); }
+}
+
+.pulse {
+  animation: pulse 0.6s ease-out;
+}
+
+/* ─── Existing zone/invasive styles (unchanged or lightly enhanced) ────────────── */
 .zone-content {
   position: relative;
   z-index: 3;
@@ -92,7 +187,6 @@ html, body {
   text-shadow: 1px 1px 4px black;
 }
 
-/* ─── Invasives ────────────────────────────────────────────────────────────────── */
 .invasive-item {
   position: absolute;
   cursor: pointer;
@@ -113,87 +207,46 @@ html, body {
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
 }
 
-/* ─── Fixed UI overlay ─────────────────────────────────────────────────────────── */
-#ui-overlay {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 100;
-  padding: 15px;
-  color: white;
-  text-shadow: 1px 1px 4px black;
-}
-
-#ui-overlay > * {
-  pointer-events: auto;
-}
-
-/* Top-left: Coins */
-.hud-top-left {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 10px 18px;
-  border-radius: 12px;
-  font-size: 1.3rem;
-  font-weight: bold;
-}
-
-/* Top-center: Health bar */
-.hud-top-center {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.6);
-  padding: 10px 20px;
-  border-radius: 12px;
-  width: 60%;
-  max-width: 500px;
-  text-align: center;
-}
-
-/* Bottom-center: Back button */
+/* Back button */
 #back-to-map {
   position: absolute;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   padding: 14px 32px;
-  background: rgba(76, 175, 80, 0.95);
+  background: linear-gradient(145deg, #4CAF50, #66BB6A);
   color: white;
   border: none;
-  border-radius: 16px;
+  border-radius: 20px;
   font-size: 1.2rem;
   font-weight: bold;
   cursor: pointer;
   box-shadow: 0 6px 12px rgba(0,0,0,0.4);
   transition: all 0.2s ease;
-  z-index: 20;
 }
 
 #back-to-map:hover {
-  background: rgba(76, 175, 80, 1);
-  transform: translateX(-50%) scale(1.05);
+  background: linear-gradient(145deg, #66BB6A, #81C784);
+  transform: translateX(-50%) scale(1.06);
 }
 
-/* ─── Progress bar ─────────────────────────────────────────────────────────────── */
+/* Progress bar */
 .progress-bar {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255,255,255,0.25);
   border-radius: 12px;
-  height: 12px;
+  height: 14px;
   overflow: hidden;
   margin: 12px 0;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(to right, #4CAF50, #81C784);
+  background: linear-gradient(to right, #FFD700, #FFA500);
   transition: width 0.5s ease;
 }
 
-/* ─── Text styling ─────────────────────────────────────────────────────────────── */
+/* Text */
 h2, h3 {
   margin-bottom: 10px;
 }

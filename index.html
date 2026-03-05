@@ -5,30 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Guerrilla Gardening</title>
   
-  <!-- Basic PWA / mobile hints (expand later) -->
+  <!-- Basic PWA / mobile hints -->
   <meta name="theme-color" content="#2E7D32">
+  
+  <!-- Optional: nicer font for numbers & badges (remove if you don't want external dependency) -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Static UI overlay – always on top, fixed -->
+  <!-- Fixed UI overlay – always on top -->
   <div id="ui-overlay">
-    <div class="hud-top">
-      <span>Coins: <span id="coins-display">0</span></span>
-      <!-- Add health bar, inventory, pet status, etc. here later -->
+    <!-- Coins pill (top-left) -->
+    <div class="hud-coins">
+      Coins: <span id="coins-display">0</span> 🪙🪙
     </div>
 
+    <!-- Resource badges cluster (top-right) -->
+    <div class="hud-resources">
+      <div class="hud-badge hud-gems">
+        💎 <span id="gems-display">0</span>
+      </div>
+      <div class="hud-badge hud-stars">
+        ⭐ <span id="stars-display">0</span>
+      </div>
+      <div class="hud-badge hud-hearts">
+        ❤️ <span id="hearts-display">5</span>
+      </div>
+    </div>
 
+    <!-- You can add timer/chest here later, e.g. bottom-right -->
+    <!-- <div class="hud-timer">11h ⏰</div> -->
   </div>
 
-  <!-- Zoomable map layer – this replaces your old #game-container -->
+  <!-- Map viewport -->
   <div id="map-viewport">
     <div id="map-container">
       <div id="game-container">
-        <!-- Your existing dynamic content will go here -->
+        <!-- Dynamic content injected here -->
       </div>
     </div>
   </div>
+
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

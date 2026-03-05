@@ -1,11 +1,11 @@
 import { loadPlayer, updatePlayer, savePlayer } from './player.js';
 import { zones } from '../data/zones.js';
 
-console.log("Guerrilla Gardening - overworld map with markers latest push");
+console.log("Guerrilla Gardening - overworld map with markers + golden UI");
 
 // ─── Global state ────────────────────────────────────────────────────────────────
 let currentPlayer;
-let currentView = "island";  // start with island map
+let currentView = "island";
 
 // ─── Data ────────────────────────────────────────────────────────────────────────
 const invasivesByZone = {
@@ -23,7 +23,6 @@ const invasivesByZone = {
   ]
 };
 
-// ─── Marker positions on island map (adjust % for your image) ───────────────────
 const zoneMarkers = [
   { id: "beach", name: "Sunny Beach", left: 20, top: 75 },
   { id: "forest", name: "Misty Forest", left: 55, top: 40 },
@@ -39,8 +38,28 @@ function isZoneUnlocked(zone) {
 }
 
 function updateCoinsDisplay() {
+  // Coins
   const coinsEl = document.getElementById("coins-display");
-  if (coinsEl) coinsEl.textContent = currentPlayer.coins;
+  if (coinsEl) {
+    coinsEl.textContent = currentPlayer.coins;
+    const coinContainer = coinsEl.closest(".hud-coins");
+    if (coinContainer) {
+      coinContainer.classList.add("pulse");
+      setTimeout(() => coinContainer.classList.remove("pulse"), 800);
+    }
+  }
+
+  // Gems (placeholder – add to player.js later if needed)
+  const gemsEl = document.getElementById("gems-display");
+  if (gemsEl) gemsEl.textContent = currentPlayer.gems ?? 0;
+
+  // Stars
+  const starsEl = document.getElementById("stars-display");
+  if (starsEl) starsEl.textContent = currentPlayer.stars ?? 0;
+
+  // Hearts / energy
+  const heartsEl = document.getElementById("hearts-display");
+  if (heartsEl) heartsEl.textContent = currentPlayer.energy ?? 5;
 }
 
 function updateHealthDisplay(health) {
@@ -60,6 +79,7 @@ function renderView() {
     container.innerHTML = `
       <img src="assets/backgrounds/island-full.jpg" class="island-bg-img" alt="Island Map">
       <div id="map-markers"></div>
+      <!-- Optional: add <div class="compass"></div> here if you create compass.png -->
     `;
 
     const markersContainer = document.getElementById("map-markers");
@@ -209,7 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         setTimeout(() => {
           invEl.remove();
-          updateCoinsDisplay();
+          updateCoinsDisplay();          // ← now pulses + updates all badges
           updateHealthDisplay(changes.zones[zoneId]);
 
           const progressFill = document.querySelector(".progress-fill");
