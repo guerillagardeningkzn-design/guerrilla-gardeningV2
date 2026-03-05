@@ -82,79 +82,71 @@ function renderView() {
     updateCoinsDisplay();
 
   } else if (currentView.startsWith("zone:")) {
-    const zoneId = currentView.split(":")[1];
-    const zone = zones.find(z => z.id === zoneId);
+  const zoneId = currentView.split(":")[1];
+  const zone = zones.find(z => z.id === zoneId);
 
-    if (!zone || !isZoneUnlocked(zone)) {
-      currentView = "overview";
-      renderView();
-      return;
-    }
+  if (!zone || !isZoneUnlocked(zone)) {
+    currentView = "overview";
+    renderView();
+    return;
+  }
 
-    const health = currentPlayer.zones[zoneId] || 0;
-    const invasives = invasivesByZone[zoneId] || [];
+  const health = currentPlayer.zones[zoneId] || 0;
+  const invasives = invasivesByZone[zoneId] || [];
 
-    // Background image per zone
-    let bgPath = "assets/backgrounds/global/sky-overcast.jpg"; // fallback
-    if (zoneId === "beach") {
-      bgPath = "assets/backgrounds/beach/main-day.jpg";
-    } else if (zoneId === "forest") {
-      bgPath = "assets/backgrounds/forest/main-misty.jpg";
-    } else if (zoneId === "mountain") {
-      bgPath = "assets/backgrounds/mountain/main-rocky.jpg";
-    }
+  // Background
+  let bgPath = "assets/backgrounds/global/sky-overcast.jpg";
+  if (zoneId === "beach") bgPath = "assets/backgrounds/beach/main-day.jpg";
+  else if (zoneId === "forest") bgPath = "assets/backgrounds/forest/main-misty.jpg";
+  else if (zoneId === "mountain") bgPath = "assets/backgrounds/mountain/main-rocky.jpg";
 
-    let detailHtml = `
-      <div class="zone-detail" style="background-image: url('${bgPath}');">
-        <h2>${zone.name}</h2>
-        <p>${zone.description}</p>
-        <p>Coins: <span id="coins-display">${currentPlayer.coins}</span></p>
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: ${health}%"></div>
-        </div>
-        <p>Health: ${health}%</p>
-        <h3>Tap to remove invasives:</h3>
-        <div id="invasives-list"></div>
-        <button id="back-to-overview">Back to Overview</button>
+  let detailHtml = `
+    <div class="zone-detail" style="background-image: url('${bgPath}');">
+      <h2>${zone.name}</h2>
+      <p>${zone.description}</p>
+      <p>Coins: <span id="coins-display">${currentPlayer.coins}</span></p>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: ${health}%"></div>
       </div>
+      <p>Health: ${health}%</p>
+      <h3>Tap to remove invasives:</h3>
+      <div id="invasives-list"></div>
+      <button id="back-to-overview">Back to Overview</button>
+    </div>
+  `;
+
+  document.getElementById("game-container").innerHTML = detailHtml;
+
+  const list = document.getElementById("invasives-list");
+
+  invasives.forEach(inv => {
+    const invEl = document.createElement("div");
+    invEl.className = "invasive-item";
+    invEl.dataset.invId = inv.id;
+
+    // Position invasives (hardcoded for now, later from editor)
+    let posX = 50;  // % from left
+    let posY = 50;  // % from top
+    if (inv.id.includes("seaweed")) { posX = 30; posY = 60; }
+    if (inv.id.includes("vine")) { posX = 70; posY = 40; }
+    // ... add more
+
+    invEl.style.left = posX + '%';
+    invEl.style.top = posY + '%';
+    invEl.style.position = 'absolute';
+
+    let imagePath = "assets/ui/icons/leaf-health.png";
+    // your existing imagePath logic here...
+
+    invEl.innerHTML = `
+      <img src="${imagePath}" class="invasive-image" alt="${inv.name}">
     `;
 
-    container.innerHTML = detailHtml;
+    list.appendChild(invEl);
+  });
 
-    const list = document.getElementById("invasives-list");
-
-    invasives.forEach(inv => {
-      const invEl = document.createElement("div");
-      invEl.className = "invasive-item";
-      invEl.dataset.invId = inv.id;
-
-      let imagePath = "assets/ui/icons/leaf-health.png"; // fallback
-
-      const nameLower = inv.name.toLowerCase();
-
-      if (nameLower.includes("seaweed")) {
-        imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
-      } else if (nameLower.includes("crabgrass")) {
-        imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
-      } else if (nameLower.includes("vine") || nameLower.includes("choking")) {
-        imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
-      } else if (nameLower.includes("thistle") || nameLower.includes("thorny")) {
-        imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
-      } else if (nameLower.includes("weed") || nameLower.includes("foreign")) {
-        imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
-      }
-
-      invEl.innerHTML = `
-        <img src="${imagePath}" 
-             class="invasive-image" 
-             alt="${inv.name}">
-      `;
-
-      list.appendChild(invEl);
-    });
-
-    updateCoinsDisplay();
-  }
+  updateCoinsDisplay();
+}
 }
 
 function updateCoinsDisplay() {
@@ -246,3 +238,85 @@ document.addEventListener("DOMContentLoaded", () => {
   renderView();
   console.log("Game loaded – backgrounds + animated invasives");
 });
+
+// ─── Basic zoom & pan ────────────────────────────────────────────────────────
+let scale = 1;
+let translateX = 0;
+let translateY = 0;
+const viewport = document.getElementById("map-viewport");
+const container = document.getElementById("map-container");
+
+function updateTransform() {
+  container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+}
+
+// Wheel zoom (desktop)
+viewport.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  scale = Math.max(0.5, Math.min(4, scale * delta));
+  updateTransform();
+});
+
+// Touch pinch zoom (mobile)
+let startDist = 0;
+viewport.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    startDist = Math.hypot(
+      e.touches[0].pageX - e.touches[1].pageX,
+      e.touches[0].pageY - e.touches[1].pageY
+    );
+  }
+});
+
+viewport.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    const dist = Math.hypot(
+      e.touches[0].pageX - e.touches[1].pageX,
+      e.touches[0].pageY - e.touches[1].pageY
+    );
+    const delta = dist / startDist;
+    scale = Math.max(0.5, Math.min(4, scale * delta));
+    updateTransform();
+    startDist = dist;
+  }
+});
+
+// Drag pan (mouse)
+let isDragging = false;
+let startX, startY;
+
+viewport.addEventListener('mousedown', (e) => {
+  isDragging = true;
+  startX = e.clientX - translateX;
+  startY = e.clientY - translateY;
+  viewport.style.cursor = 'grabbing';
+});
+
+viewport.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  translateX = e.clientX - startX;
+  translateY = e.clientY - startY;
+  updateTransform();
+});
+
+viewport.addEventListener('mouseup', () => {
+  isDragging = false;
+  viewport.style.cursor = 'default';
+});
+
+viewport.addEventListener('mouseleave', () => {
+  isDragging = false;
+});
+
+// Optional: reset zoom/pan on zone change (uncomment if wanted)
+// document.addEventListener('click', (e) => {
+//   if (e.target.id === 'back-to-overview') {
+//     scale = 1;
+//     translateX = 0;
+//     translateY = 0;
+//     updateTransform();
+//   }
+// });
