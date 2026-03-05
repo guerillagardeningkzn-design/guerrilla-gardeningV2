@@ -179,7 +179,7 @@ if (zoneDetail) {
   });
 
   updateCoinsDisplay();
-}
+
 }
 
 function updateCoinsDisplay() {
