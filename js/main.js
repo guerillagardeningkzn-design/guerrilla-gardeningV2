@@ -1,18 +1,11 @@
 import { loadPlayer, updatePlayer, savePlayer } from './player.js';
 import { zones } from '../data/zones.js';
 
-console.log("Guerrilla Gardening - full features & assets tree");
+console.log("Guerrilla Gardening - static full-screen version");
 
 // ─── Global state ────────────────────────────────────────────────────────────────
 let currentPlayer;
-let currentView = "overview";
-
-// ─── Zoom & Pan state ───────────────────────────────────────────────────────────
-let scale = 1;
-let translateX = 0;
-let translateY = 0;
-const viewport = document.getElementById("map-viewport");
-const container = document.getElementById("map-container");
+let currentView = "island";  // start with complete island view
 
 // ─── Data ────────────────────────────────────────────────────────────────────────
 const invasivesByZone = {
@@ -40,50 +33,16 @@ function isZoneUnlocked(zone) {
 
 function updateCoinsDisplay() {
   const coinsEl = document.getElementById("coins-display");
-  if (coinsEl) coinsEl.textContent = currentPlayer.coins;
-}
-
-// ─── Zoom & Pan logic ────────────────────────────────────────────────────────────
-function updateTransform() {
-  container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-  clampTranslate();
-}
-
-function clampTranslate() {
-  const vw = viewport.clientWidth;
-  const vh = viewport.clientHeight;
-  const cw = container.offsetWidth * scale;
-  const ch = container.offsetHeight * scale;
-
-  // Horizontal
-  if (cw <= vw) {
-    translateX = (vw - cw) / 2;
-  } else {
-    translateX = Math.max(vw - cw, Math.min(0, translateX));
-  }
-
-  // Vertical
-  if (ch <= vh) {
-    translateY = (vh - ch) / 2;
-  } else {
-    translateY = Math.max(vh - ch, Math.min(0, translateY));
+  if (coinsEl) {
+    coinsEl.textContent = currentPlayer.coins;
   }
 }
 
-function getMinScale() {
-  const vw = viewport.clientWidth;
-  const vh = viewport.clientHeight;
-  const cw = container.offsetWidth;
-  const ch = container.offsetHeight;
-  return Math.max(vw / cw, vh / ch);
-}
-
-function resetView(startScale = 1.8) {
-  scale = startScale;
-  translateX = 0;
-  translateY = 0;
-  clampTranslate();
-  updateTransform();
+function updateHealthDisplay(health) {
+  const fill = document.querySelector(".progress-fill");
+  const text = document.querySelector(".health-text");
+  if (fill) fill.style.width = health + "%";
+  if (text) text.textContent = "Health: " + health + "%";
 }
 
 // ─── Render ──────────────────────────────────────────────────────────────────────
@@ -92,60 +51,26 @@ function renderView() {
   if (!container) return;
   container.innerHTML = "";
 
-  // Reset zoom & pan every time a view is rendered
-  resetView(currentView === "overview" ? 1.0 : 1.8);
-
-  if (currentView === "overview") {
-    let html = '<h2>Island Overview</h2>';
-    html += '<p>Coins: <span id="coins-display">' + currentPlayer.coins + '</span></p>';
-    html += '<div id="zones-grid"></div>';
-
-    container.innerHTML = html;
-
-    const grid = document.getElementById("zones-grid");
-
-    zones.forEach(zone => {
-      const health = currentPlayer.zones[zone.id] || 0;
-      const unlocked = isZoneUnlocked(zone);
-
-      const card = document.createElement("div");
-      card.className = "zone-card";
-      card.dataset.zoneId = zone.id;
-
-      if (unlocked) {
-        card.style.backgroundColor = zone.bgColor || "#e0f7fa";
-        card.style.cursor = "pointer";
-        card.style.opacity = "1";
-      } else {
-        card.style.backgroundColor = "#cccccc";
-        card.style.cursor = "not-allowed";
-        card.style.opacity = "0.6";
-      }
-
-      let cardHtml = '<h3>' + zone.name + '</h3>';
-      cardHtml += '<p>' + zone.description + '</p>';
-      cardHtml += '<div class="progress-bar">';
-      cardHtml += '<div class="progress-fill" style="width: ' + health + '%"></div>';
-      cardHtml += '</div>';
-      cardHtml += '<p>Health: ' + health + '%</p>';
-
-      if (!unlocked) {
-        const req = zone.unlockRequirement;
-        const reqZone = zones.find(z => z.id === req.zone);
-        cardHtml += '<small>(Locked – need ' + req.health + '% in ' + reqZone.name + ')</small>';
-      }
-
-      card.innerHTML = cardHtml;
-      grid.appendChild(card);
-    });
+  // ─── Complete Island view ─────────────────────────────────────────────────────
+  if (currentView === "island") {
+    container.innerHTML = `
+      <img src="assets/backgrounds/island-full.jpg" class="zone-bg-img" alt="Complete Island">
+      <div class="zone-content">
+        <h2>Island Overview</h2>
+        <p>Select a zone from the dropdown to explore.</p>
+        <div id="invasives-list"></div>
+      </div>
+    `;
 
     updateCoinsDisplay();
-  } else if (currentView.startsWith("zone:")) {
+  } 
+  // ─── Zone detail view ─────────────────────────────────────────────────────────
+  else if (currentView.startsWith("zone:")) {
     const zoneId = currentView.split(":")[1];
     const zone = zones.find(z => z.id === zoneId);
 
     if (!zone || !isZoneUnlocked(zone)) {
-      currentView = "overview";
+      currentView = "island";
       renderView();
       return;
     }
@@ -167,7 +92,7 @@ function renderView() {
           <div class="progress-bar">
             <div class="progress-fill" style="width: ${health}%"></div>
           </div>
-          <p>Health: ${health}%</p>
+          <p class="health-text">Health: ${health}%</p>
           <h3>Tap to remove invasives:</h3>
           <div id="invasives-list"></div>
         </div>
@@ -208,133 +133,54 @@ function renderView() {
       }
 
       invEl.innerHTML = `
-        <img src="${imagePath}" class="invasive-image" alt="${inv.name}">
+        <img src="${imagePath}" 
+             class="invasive-image" 
+             alt="${inv.name}">
       `;
 
       list.appendChild(invEl);
     });
 
     updateCoinsDisplay();
-
-    // Final reset + center after content is rendered
-    setTimeout(() => {
-      resetView(1.8);
-    }, 100);
+    updateHealthDisplay(health);
   }
 }
 
-// ─── Zoom & Pan event listeners ─────────────────────────────────────────────────
-viewport.addEventListener('wheel', (e) => {
-  e.preventDefault();
-  const delta = e.deltaY > 0 ? 0.9 : 1.1;
-  const oldScale = scale;
-  scale *= delta;
-  scale = Math.max(getMinScale(), Math.min(4, scale));
+// ─── UI dropdown for zone selection ─────────────────────────────────────────────
+function populateZoneDropdown() {
+  const select = document.getElementById("zone-select");
+  if (!select) return;
 
-  const rect = viewport.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
-  translateX = mx - (mx - translateX) * (scale / oldScale);
-  translateY = my - (my - translateY) * (scale / oldScale);
+  select.innerHTML = '<option value="island">Island Overview</option>';
 
-  updateTransform();
-});
+  zones.forEach(zone => {
+    const option = document.createElement("option");
+    option.value = zone.id;
+    option.textContent = zone.name;
+    if (!isZoneUnlocked(zone)) {
+      option.disabled = true;
+      option.textContent += " (Locked)";
+    }
+    select.appendChild(option);
+  });
 
-// Touch handling – pinch zoom + single finger pan
-let initialDist = 0;
-let initialScale = 1;
-let panStartX = 0;
-let panStartY = 0;
-let isPinching = false;
+  select.addEventListener("change", (e) => {
+    const value = e.target.value;
+    currentView = value === "island" ? "island" : "zone:" + value;
+    renderView();
+  });
+}
 
-viewport.addEventListener('touchstart', (e) => {
-  if (e.touches.length === 2) {
-    isPinching = true;
-    initialDist = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY
-    );
-    initialScale = scale;
-  } else if (e.touches.length === 1) {
-    panStartX = e.touches[0].clientX - translateX;
-    panStartY = e.touches[0].clientY - translateY;
-  }
-});
-
-viewport.addEventListener('touchmove', (e) => {
-  e.preventDefault();
-
-  if (isPinching && e.touches.length === 2) {
-    const dist = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY
-    );
-    scale = initialScale * (dist / initialDist);
-    scale = Math.max(getMinScale(), Math.min(4, scale));
-    updateTransform();
-  } else if (e.touches.length === 1) {
-    translateX = e.touches[0].clientX - panStartX;
-    translateY = e.touches[0].clientY - panStartY;
-    updateTransform();
-  }
-});
-
-viewport.addEventListener('touchend touchcancel', () => {
-  isPinching = false;
-});
-
-// Mouse drag
-let isDragging = false;
-let dragStartX = 0;
-let dragStartY = 0;
-
-viewport.addEventListener('mousedown', (e) => {
-  if (e.button !== 0) return;
-  e.preventDefault();
-  isDragging = true;
-  dragStartX = e.clientX - translateX;
-  dragStartY = e.clientY - translateY;
-  viewport.style.cursor = 'grabbing';
-});
-
-document.addEventListener('mousemove', (e) => {
-  if (!isDragging) return;
-  translateX = e.clientX - dragStartX;
-  translateY = e.clientY - dragStartY;
-  updateTransform();
-});
-
-document.addEventListener('mouseup', (e) => {
-  if (!isDragging) return;
-  isDragging = false;
-  viewport.style.cursor = 'default';
-});
-
-// Reset on resize
-window.addEventListener('resize', () => {
-  clampTranslate();
-  updateTransform();
-});
-
-// ─── Game start ────────────────────────────────────────────────────────────────
+// ─── Game start ──────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   currentPlayer = loadPlayer();
 
+  // Populate dropdown once on load
+  populateZoneDropdown();
+
+  // Handle clicks
   document.addEventListener("click", (e) => {
     const target = e.target;
-
-    const card = target.closest(".zone-card");
-    if (card) {
-      const zoneId = card.dataset.zoneId;
-      const zone = zones.find(z => z.id === zoneId);
-      if (isZoneUnlocked(zone)) {
-        currentView = "zone:" + zoneId;
-        renderView();
-      } else {
-        alert("This zone is locked! Restore the previous zone first.");
-      }
-      return;
-    }
 
     const invEl = target.closest(".invasive-item");
     if (invEl) {
@@ -342,6 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const invId = invEl.dataset.invId;
       const invasives = invasivesByZone[zoneId] || [];
       const inv = invasives.find(i => i.id === invId);
+
       if (inv) {
         const changes = {
           coins: currentPlayer.coins + inv.coins,
@@ -351,26 +198,21 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         };
         updatePlayer(changes);
+
         invEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
         invEl.style.opacity = "0";
         invEl.style.transform = "scale(0.4) rotate(5deg)";
+
         setTimeout(() => {
           invEl.remove();
           updateCoinsDisplay();
+          updateHealthDisplay(changes.zones[zoneId]);
+
           const progressFill = document.querySelector(".progress-fill");
-          const healthDisplay = document.querySelector(".progress-bar + p");
-          if (progressFill && healthDisplay) {
-            const newHealth = changes.zones[zoneId];
-            progressFill.style.width = newHealth + "%";
-            healthDisplay.textContent = "Health: " + newHealth + "%";
-          }
+          if (progressFill) progressFill.style.width = changes.zones[zoneId] + "%";
+
           if (document.querySelectorAll(".invasive-item").length === 0) {
-            const currentZone = zones.find(z => z.id === zoneId);
-            if (currentZone) {
-              alert(currentZone.name + " cleared of invasives! 🌿");
-            } else {
-              alert("Area cleared of invasives! 🌿");
-            }
+            alert(zone.name + " cleared of invasives! 🌿");
           }
         }, 600);
       }
@@ -378,11 +220,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (target.id === "back-to-overview") {
-      currentView = "overview";
+      currentView = "island";
       renderView();
     }
   });
 
   renderView();
-  console.log("Game loaded – backgrounds + animated invasives");
+  console.log("Game loaded – static full-screen version");
 });
