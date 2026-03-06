@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Guerrilla Gardening Editor - Production Version</title>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: white;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: #222;
+    padding: 10px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  button, input, select, textarea {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #333;
+    color: white;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: #444;
+  }
+
+  #main {
+    flex: 1;
+    display: flex;
+  }
+
+  #canvas-wrapper {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #000;
+  }
+
+  #canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  .entity {
+    position: absolute;
+    cursor: move;
+    background: rgba(0, 255, 100, 0.7);
+    border-radius: 50%;
+    border: 3px solid #0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    color: black;
+    box-shadow: 0 0 8px rgba(0,0,0,0.6);
+    user-select: none;
+    z-index: 10;
+  }
+
+  .entity.selected {
+    border-color: yellow;
+    box-shadow: 0 0 12px yellow;
+  }
+
+  .entity.locked {
+    background: rgba(150,150,150,0.6);
+    border-color: gray;
+  }
+
+  #sidebar {
+    width: 320px;
+    background: #222;
+    padding: 15px;
+    overflow-y: auto;
+    border-left: 1px solid #444;
+  }
+
+  #entity-list {
+    margin: 15px 0;
+  }
+
+  .entity-item {
+    padding: 8px;
+    margin: 4px 0;
+    background: #333;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .entity-item:hover {
+    background: #444;
+  }
+
+  .entity-item.selected {
+    background: #555;
+  }
+
+  label {
+    display: block;
+    margin: 10px 0 4px;
+  }
+
+  input[type="text"], input[type="number"], select, textarea {
+    width: 100%;
+    padding: 6px;
+    background: #333;
+    border: 1px solid #555;
+    color: white;
+    border-radius: 4px;
+  }
+
+  textarea {
+    min-height: 80px;
+  }
+
+  #add-inventory, #add-dialog {
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h2>Guerrilla Gardening Editor</h2>
+  <input type="file" id="bg-upload" accept="image/*" />
+  <select id="entity-type">
+    <option value="marker">Marker</option>
+    <option value="invasive">Invasive</option>
+    <option value="pickup">Pickup</option>
+    <option value="transition">Zone Transition</option>
+    <option value="critter">Critter</option>
+    <option value="plant-spot">Plant Spot</option>
+  </select>
+  <button id="add-entity">Add Entity</button>
+  <button id="save-json">Save JSON</button>
+  <button id="load-json">Load JSON</button>
+  <input type="file" id="json-upload" accept=".json" style="display:none;" />
+  <input type="file" id="icon-upload" accept="image/*" style="display:none;" />
+</header>
+
+<div id="main">
+  <div id="canvas-wrapper">
+    <div id="canvas"></div>
+  </div>
+
+  <div id="sidebar">
+    <h3>Selected Entity</h3>
+    <div id="properties" style="display:none;">
+      <label>Type</label>
+      <select id="prop-type">
+        <option value="marker">Marker</option>
+        <option value="invasive">Invasive</option>
+        <option value="pickup">Pickup</option>
+        <option value="transition">Zone Transition</option>
+        <option value="critter">Critter</option>
+        <option value="plant-spot">Plant Spot</option>
+      </select>
+
+      <label>ID / Name</label>
+      <input type="text" id="prop-name" />
+
+      <label>Left (%)</label>
+      <input type="number" id="prop-left" step="0.1" min="0" max="100" />
+
+      <label>Top (%)</label>
+      <input type="number" id="prop-top" step="0.1" min="0" max="100" />
+
+      <label>Scale (%)</label>
+      <input type="range" id="prop-scale-slider" min="50" max="200" step="5" />
+      <input type="number" id="prop-scale" step="5" min="50" max="200" />
+
+      <label>Icon / Image</label>
+      <button id="prop-icon-upload-btn">Upload Image</button>
+      <input type="text" id="prop-icon" placeholder="assets/path/to/image.png" />
+
+      <label>Locked?</label>
+      <input type="checkbox" id="prop-locked" />
+
+      <label>Tooltip / Description</label>
+      <textarea id="prop-tooltip"></textarea>
+
+      <!-- Dialog Tree -->
+      <label>Dialog Tree (JSON)</label>
+      <textarea id="prop-dialog"></textarea>
+
+      <!-- Inventory (JSON array) -->
+      <label>Inventory Items (JSON)</label>
+      <textarea id="prop-inventory"></textarea>
+
+      <button id="delete-selected">Delete</button>
+    </div>
+
+    <h3>All Entities</h3>
+    <div id="entity-list"></div>
+  </div>
+</div>
+
+<script>
+// ─── State ──────────────────────────────────────────────────────────────────────
+let entities = [];
+let selectedId = null;
+let backgroundUrl = null;
+
+// ─── DOM elements ───────────────────────────────────────────────────────────────
+const canvas = document.getElementById("canvas");
+const entityList = document.getElementById("entity-list");
+const properties = document.getElementById("properties");
+const iconUpload = document.getElementById("icon-upload");
+
+// ─── Drag logic ─────────────────────────────────────────────────────────────────
+function makeDraggable(el) {
+  let isDragging = false;
+  let startX, startY, startLeft, startTop;
+
+  el.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    startLeft = parseFloat(el.style.left) || 0;
+    startTop = parseFloat(el.style.top) || 0;
+    el.classList.add("selected");
+    selectEntity(el.dataset.id);
+    e.preventDefault();
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    let newLeft = startLeft + (dx / canvas.clientWidth) * 100;
+    let newTop = startTop + (dy / canvas.clientHeight) * 100;
+
+    // Snap to 5% grid
+    newLeft = Math.round(newLeft / 5) * 5;
+    newTop = Math.round(newTop / 5) * 5;
+
+    el.style.left = newLeft + "%";
+    el.style.top = newTop + "%";
+
+    // Update properties
+    document.getElementById("prop-left").value = newLeft;
+    document.getElementById("prop-top").value = newTop;
+  });
+
+  document.addEventListener("mouseup", () => {
+    isDragging = false;
+  });
+}
+
+// ─── Select entity ──────────────────────────────────────────────────────────────
+function selectEntity(id) {
+  selectedId = id;
+  document.querySelectorAll(".entity").forEach(m => m.classList.remove("selected"));
+  const el = document.querySelector(`[data-id="${id}"]`);
+  if (el) el.classList.add("selected");
+
+  const entity = entities.find(e => e.id === id);
+  if (entity) {
+    properties.style.display = "block";
+    document.getElementById("prop-type").value = entity.type || "marker";
+    document.getElementById("prop-name").value = entity.name || "";
+    document.getElementById("prop-left").value = entity.left || 50;
+    document.getElementById("prop-top").value = entity.top || 50;
+    document.getElementById("prop-scale-slider").value = entity.scale || 100;
+    document.getElementById("prop-scale").value = entity.scale || 100;
+    document.getElementById("prop-icon").value = entity.icon || "";
+    document.getElementById("prop-locked").checked = entity.locked || false;
+    document.getElementById("prop-tooltip").value = entity.tooltip || "";
+    document.getElementById("prop-dialog").value = JSON.stringify(entity.dialog || [], null, 2);
+    document.getElementById("prop-inventory").value = JSON.stringify(entity.inventory || [], null, 2);
+  } else {
+    properties.style.display = "none";
+  }
+}
+
+// ─── Update entity from properties ──────────────────────────────────────────────
+function updateFromProperties() {
+  if (!selectedId) return;
+  const entity = entities.find(e => e.id === selectedId);
+  if (!entity) return;
+
+  entity.type = document.getElementById("prop-type").value;
+  entity.name = document.getElementById("prop-name").value;
+  entity.left = parseFloat(document.getElementById("prop-left").value);
+  entity.top = parseFloat(document.getElementById("prop-top").value);
+  entity.scale = parseFloat(document.getElementById("prop-scale").value);
+  entity.icon = document.getElementById("prop-icon").value;
+  entity.locked = document.getElementById("prop-locked").checked;
+  entity.tooltip = document.getElementById("prop-tooltip").value;
+
+  try {
+    entity.dialog = JSON.parse(document.getElementById("prop-dialog").value);
+  } catch (err) {
+    console.warn("Invalid dialog JSON:", err);
+  }
+
+  try {
+    entity.inventory = JSON.parse(document.getElementById("prop-inventory").value);
+  } catch (err) {
+    console.warn("Invalid inventory JSON:", err);
+  }
+
+  // Update DOM
+  const el = document.querySelector(`[data-id="${selectedId}"]`);
+  if (el) {
+    el.style.left = entity.left + "%";
+    el.style.top = entity.top + "%";
+    el.style.transform = `scale(${entity.scale / 100})`;
+    el.style.backgroundImage = entity.icon ? `url(${entity.icon})` : "none";
+    el.style.backgroundSize = "contain";
+    el.style.backgroundRepeat = "no-repeat";
+    el.style.borderRadius = entity.icon ? "0" : "50%"; // square for images, circle for no icon
+    el.classList.toggle("locked", entity.locked);
+    el.querySelector(".marker-label").textContent = entity.name;
+  }
+}
+
+// ─── Add entity ─────────────────────────────────────────────────────────────────
+document.getElementById("add-entity").addEventListener("click", () => {
+  const type = document.getElementById("entity-type").value;
+  const id = type + "-" + Date.now();
+  const entity = {
+    id,
+    type,
+    name: "New " + type.charAt(0).toUpperCase() + type.slice(1),
+    left: 50,
+    top: 50,
+    scale: 100,
+    icon: "",
+    locked: false,
+    tooltip: "",
+    dialog: [], // Array of dialog nodes for tree
+    inventory: [] // Array of inventory items
+  };
+  entities.push(entity);
+
+  const el = document.createElement("div");
+  el.className = "entity";
+  el.dataset.id = id;
+  el.style.left = "50%";
+  el.style.top = "50%";
+  el.style.transform = "scale(1)";
+  el.innerHTML = `<span class="marker-label">New</span>`;
+  canvas.appendChild(el);
+
+  makeDraggable(el);
+  selectEntity(id);
+  updateEntityList();
+});
+
+// ─── Update entity list ─────────────────────────────────────────────────────────
+function updateEntityList() {
+  entityList.innerHTML = "";
+  entities.forEach(e => {
+    const item = document.createElement("div");
+    item.className = "entity-item";
+    item.textContent = `${e.name || e.id} (${e.type})`;
+    if (selectedId === e.id) item.classList.add("selected");
+    item.addEventListener("click", () => selectEntity(e.id));
+    entityList.appendChild(item);
+  });
+}
+
+// ─── Load background ────────────────────────────────────────────────────────────
+document.getElementById("bg-upload").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  backgroundUrl = URL.createObjectURL(file);
+  canvas.style.backgroundImage = `url(${backgroundUrl})`;
+});
+
+// ─── Upload icon for entity ─────────────────────────────────────────────────────
+document.getElementById("prop-icon-upload-btn").addEventListener("click", () => {
+  iconUpload.click();
+});
+
+iconUpload.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  document.getElementById("prop-icon").value = url; // For preview – replace with repo path on save
+  updateFromProperties();
+});
+
+// ─── Save JSON ──────────────────────────────────────────────────────────────────
+document.getElementById("save-json").addEventListener("click", () => {
+  const data = {
+    background: "island-full.jpg", // Customize based on current bg
+    entities: entities
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "entities.json";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// ─── Load JSON ──────────────────────────────────────────────────────────────────
+document.getElementById("load-json").addEventListener("click", () => {
+  document.getElementById("json-upload").click();
+});
+
+document.getElementById("json-upload").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      entities = data.entities || [];
+      updateEntityList();
+      entities.forEach(e => {
+        const el = document.createElement("div");
+        el.className = "entity" + (e.locked ? " locked" : "");
+        el.dataset.id = e.id;
+        el.style.left = e.left + "%";
+        el.style.top = e.top + "%";
+        el.style.transform = `scale(${e.scale / 100 || 1})`;
+        el.style.backgroundImage = e.icon ? `url(${e.icon})` : "none";
+        el.style.backgroundSize = "contain";
+        el.style.backgroundRepeat = "no-repeat";
+        el.style.borderRadius = e.icon ? "0" : "50%";
+        el.innerHTML = `<span class="marker-label">${e.name || e.id}</span>`;
+        canvas.appendChild(el);
+        makeDraggable(el);
+      });
+    } catch (err) {
+      alert("Invalid JSON: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+});
+
+// ─── Delete selected ────────────────────────────────────────────────────────────
+document.getElementById("delete-selected").addEventListener("click", () => {
+  if (!selectedId) return;
+  entities = entities.filter(e => e.id !== selectedId);
+  const el = document.querySelector(`[data-id="${selectedId}"]`);
+  if (el) el.remove();
+  selectedId = null;
+  properties.style.display = "none";
+  updateEntityList();
+});
+
+// ─── Live updates ───────────────────────────────────────────────────────────────
+["prop-type", "prop-name", "prop-left", "prop-top", "prop-scale-slider", "prop-scale", "prop-locked", "prop-tooltip", "prop-dialog", "prop-inventory", "prop-icon"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("input", updateFromProperties);
+  el.addEventListener("change", updateFromProperties);
+});
+
+// ─── Sync slider & number ───────────────────────────────────────────────────────
+document.getElementById("prop-scale-slider").addEventListener("input", (e) => {
+  document.getElementById("prop-scale").value = e.target.value;
+  updateFromProperties();
+});
+
+document.getElementById("prop-scale").addEventListener("input", (e) => {
+  document.getElementById("prop-scale-slider").value = e.target.value;
+  updateFromProperties();
+});
+</script>
+</body>
+</html>
