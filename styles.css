@@ -222,21 +222,39 @@ html, body {
 }
 
 /* ─── HUD badges – small, rounded, semi-transparent (June's Journey style) ──────── */
+./* ─── Base font size scaling (root rem) ────────────────────────────────────────── */
+html {
+  font-size: 16px; /* desktop default */
+}
+
+@media (max-width: 768px) { /* tablets & small laptops */
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) { /* phones */
+  html {
+    font-size: 12px;
+  }
+}
+
+/* ─── HUD badges – responsive size with vw/vmin ────────────────────────────────── */
 .hud-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 0.6em;
+  padding: 0.6em 1.2em;
   border-radius: 999px;
+  font-size: clamp(0.9rem, 2.5vw, 1.1rem); /* scales with screen width */
+  font-weight: bold;
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   border: 1px solid rgba(255,255,255,0.15);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-  font-size: 1.1rem;
-  font-weight: bold;
+  box-shadow: 0 0.4em 1.2em rgba(0,0,0,0.5);
   color: white;
-  text-shadow: 0 1px 3px black;
+  text-shadow: 0 0.1em 0.3em black;
   transition: transform 0.2s ease;
 }
 
@@ -244,77 +262,102 @@ html, body {
   transform: scale(1.08);
 }
 
-/* Specific badge colors */
+/* Position & specific colors */
 .hud-coins {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  top: 1vh;
+  left: 2vw;
   background: linear-gradient(145deg, #FFD700, #DAA520);
-  border: 2px solid #B8860B;
+  border: 0.15em solid #B8860B;
   color: #1a1a1a;
   text-shadow: none;
 }
 
-.hud-diamonds {
-  background: linear-gradient(145deg, #8E24AA, #AB47BC);
-  border: 2px solid #7B1FA2;
-}
-
-.hud-stars {
-  background: linear-gradient(145deg, #FFA000, #FFB300);
-  border: 2px solid #FF8F00;
-}
-
-.hud-energy {
-  background: linear-gradient(145deg, #00BCD4, #26C6DA);
-  border: 2px solid #0097A7;
-}
-
-/* ─── Resources cluster – top-right ────────────────────────────────────────────── */
 .hud-resources {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 1vh;
+  right: 2vw;
   display: flex;
-  gap: 10px;
+  gap: 1vw;
 }
 
-/* ─── Back to Map button – smaller, pill-shaped, softer ────────────────────────── */
+.hud-diamonds { background: linear-gradient(145deg, #8E24AA, #AB47BC); border: 0.15em solid #7B1FA2; }
+.hud-stars    { background: linear-gradient(145deg, #FFA000, #FFB300); border: 0.15em solid #FF8F00; }
+.hud-energy   { background: linear-gradient(145deg, #00BCD4, #26C6DA); border: 0.15em solid #0097A7; }
+
+/* ─── Back to Map button – responsive size & position ──────────────────────────── */
 #back-to-map {
   position: fixed;
-  bottom: 24px;
+  bottom: 3vh;
   left: 50%;
   transform: translateX(-50%);
-  padding: 10px 28px;
+  padding: clamp(0.8em, 3vw, 1em) clamp(1.5em, 5vw, 2em);
   background: rgba(76, 175, 80, 0.85);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: white;
   border: 1px solid rgba(255,255,255,0.2);
   border-radius: 999px;
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 4vw, 1.1rem);
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+  box-shadow: 0 0.6em 1.6em rgba(0,0,0,0.5);
   transition: all 0.25s ease;
   z-index: 200;
+  white-space: nowrap;
 }
 
 #back-to-map:hover {
   background: rgba(76, 175, 80, 1);
   transform: translateX(-50%) scale(1.08);
-  box-shadow: 0 10px 24px rgba(76,175,80,0.5);
+  box-shadow: 0 1em 2.4em rgba(76,175,80,0.5);
 }
 
-/* ─── Zone title – elegant, semi-transparent background ────────────────────────── */
+/* ─── Health / progress bar – thinner & responsive width ───────────────────────── */
+.progress-bar {
+  height: clamp(8px, 1.2vh, 12px);
+  background: rgba(255,255,255,0.18);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 0.8em 0;
+  box-shadow: inset 0 0.2em 0.4em rgba(0,0,0,0.5);
+  width: 100%;
+  max-width: clamp(280px, 60vw, 450px);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, #4CAF50, #8BC34A);
+  transition: width 0.6s ease;
+}
+
+/* ─── Zone title & description – smaller & more integrated on mobile ───────────── */
 .zone-content h2 {
-  font-size: 1.8rem;
-  margin-bottom: 8px;
+  font-size: clamp(1.4rem, 5vw, 1.8rem);
+  margin-bottom: 0.5em;
   background: rgba(0,0,0,0.4);
-  padding: 8px 16px;
+  padding: 0.5em 1em;
   border-radius: 12px;
   display: inline-block;
   backdrop-filter: blur(4px);
+}
+
+.zone-content p {
+  font-size: clamp(0.95rem, 3.5vw, 1.1rem);
+  margin-bottom: 1em;
+  background: rgba(0,0,0,0.3);
+  padding: 0.4em 0.8em;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+.zone-content h3 {
+  font-size: clamp(1rem, 3.8vw, 1.1rem);
+  margin: 1.2em 0 0.8em;
+  background: rgba(0,0,0,0.4);
+  padding: 0.4em 0.8em;
+  border-radius: 10px;
+  display: inline-block;
 }
 
 /* ─── Health bar – thinner and more elegant ────────────────────────────────────── */
