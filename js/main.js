@@ -60,6 +60,73 @@ function updateHealthDisplay(health) {
   if (text) text.textContent = "Health: " + health + "%";
 }
 
+// ─── Custom modal for "area cleared" message ────────────────────────────────────
+function showClearModal(message) {
+  const modal = document.createElement("div");
+  modal.style.position = "fixed";
+  modal.style.inset = "0";
+  modal.style.background = "rgba(0, 0, 0, 0.75)";
+  modal.style.display = "flex";
+  modal.style.alignItems = "center";
+  modal.style.justifyContent = "center";
+  modal.style.zIndex = "9999";
+  modal.style.opacity = "0";
+  modal.style.transition = "opacity 0.4s ease";
+
+  modal.innerHTML = `
+    <div style="
+      background: rgba(30, 50, 30, 0.95);
+      border: 3px solid #4CAF50;
+      border-radius: 16px;
+      padding: 32px 48px;
+      max-width: 80%;
+      text-align: center;
+      color: white;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+      transform: scale(0.9);
+      transition: transform 0.4s ease;
+    ">
+      <h2 style="margin-bottom: 16px; font-size: 1.8rem;">Area Cleared!</h2>
+      <p style="font-size: 1.2rem; margin-bottom: 24px;">${message}</p>
+      <button id="modal-ok-btn" style="
+        padding: 12px 32px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+      ">OK</button>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Fade in
+  setTimeout(() => {
+    modal.style.opacity = "1";
+    modal.querySelector("div").style.transform = "scale(1)";
+  }, 50);
+
+  // Close on OK click
+  modal.querySelector("#modal-ok-btn").addEventListener("click", () => {
+    modal.style.opacity = "0";
+    modal.querySelector("div").style.transform = "scale(0.9)";
+    setTimeout(() => modal.remove(), 400);
+  });
+
+  // Close on outside click (optional)
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      modal.style.opacity = "0";
+      modal.querySelector("div").style.transform = "scale(0.9)";
+      setTimeout(() => modal.remove(), 400);
+    }
+  });
+}
+
 // ─── Render ──────────────────────────────────────────────────────────────────────
 function renderView() {
   const container = document.getElementById("game-container");
@@ -227,7 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           if (document.querySelectorAll(".invasive-item").length === 0) {
             const zone = zones.find(z => z.id === zoneId);
-            alert(zone.name + " cleared of invasives! 🌿");
+            showClearModal(zone.name + " cleared of invasives! 🌿");
           }
         }, 600);
       }
