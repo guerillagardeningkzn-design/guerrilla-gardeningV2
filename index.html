@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+  <!-- Mobile / PWA hints -->
   <meta name="theme-color" content="#2E7D32">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -10,10 +12,10 @@
 
   <title>Guerrilla Gardening</title>
 
-  <!-- PWA manifest -->
+  <!-- PWA manifest (leave included for now – create manifest.json later) -->
   <link rel="manifest" href="/manifest.json">
 
-  <!-- Icons (create these PNG files or use placeholders) -->
+  <!-- Icons (placeholders – replace with real files later) -->
   <link rel="icon" href="assets/icon-192.png" sizes="192x192">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
 
@@ -23,27 +25,29 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Fullscreen trigger button (will be styled big & noticeable) -->
-  <button id="fullscreen-btn">Go Full Screen (recommended for best experience)</button>
 
-  <!-- Portrait warning overlay -->
+  <!-- Fullscreen trigger button – visible until fullscreen is activated -->
+  <button id="fullscreen-btn">Go Full Screen (recommended)</button>
+
+  <!-- Portrait orientation warning overlay -->
   <div id="portrait-warning">
     Please rotate your device to landscape mode for the best experience
   </div>
 
-  <!-- Fixed UI overlay -->
+  <!-- Fixed UI overlay – always visible -->
   <div id="ui-overlay">
     <div class="hud-top-left">
       Coins: <span id="coins-display">0</span> 🪙
     </div>
-    <!-- Add other HUD elements as needed -->
+
+    <!-- Add other HUD elements here later (gems, stars, hearts, etc.) -->
   </div>
 
-  <!-- Map viewport -->
+  <!-- Main game viewport -->
   <div id="map-viewport">
     <div id="map-container">
       <div id="game-container">
-        <!-- Dynamic content goes here -->
+        <!-- All dynamic content is injected here -->
       </div>
     </div>
   </div>

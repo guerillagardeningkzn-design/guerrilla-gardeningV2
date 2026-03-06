@@ -38,7 +38,6 @@ function isZoneUnlocked(zone) {
 }
 
 function updateCoinsDisplay() {
-  // Coins
   const coinsEl = document.getElementById("coins-display");
   if (coinsEl) {
     coinsEl.textContent = currentPlayer.coins;
@@ -49,17 +48,9 @@ function updateCoinsDisplay() {
     }
   }
 
-  // Gems (placeholder – add to player.js later if needed)
-  const gemsEl = document.getElementById("gems-display");
-  if (gemsEl) gemsEl.textContent = currentPlayer.gems ?? 0;
-
-  // Stars
-  const starsEl = document.getElementById("stars-display");
-  if (starsEl) starsEl.textContent = currentPlayer.stars ?? 0;
-
-  // Hearts / energy
-  const heartsEl = document.getElementById("hearts-display");
-  if (heartsEl) heartsEl.textContent = currentPlayer.energy ?? 5;
+  // Placeholder for other badges (add logic when you implement them)
+  // const gemsEl = document.getElementById("gems-display");
+  // if (gemsEl) gemsEl.textContent = currentPlayer.gems ?? 0;
 }
 
 function updateHealthDisplay(health) {
@@ -79,7 +70,6 @@ function renderView() {
     container.innerHTML = `
       <img src="assets/backgrounds/island-full.jpg" class="island-bg-img" alt="Island Map">
       <div id="map-markers"></div>
-      <!-- Optional: add <div class="compass"></div> here if you create compass.png -->
     `;
 
     const markersContainer = document.getElementById("map-markers");
@@ -229,7 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         setTimeout(() => {
           invEl.remove();
-          updateCoinsDisplay();          // ← now pulses + updates all badges
+          updateCoinsDisplay();
           updateHealthDisplay(changes.zones[zoneId]);
 
           const progressFill = document.querySelector(".progress-fill");
@@ -260,7 +250,7 @@ async function enterFullscreen() {
   const elem = document.documentElement;
 
   try {
-        if (elem.requestFullscreen) {
+    if (elem.requestFullscreen) {
       await elem.requestFullscreen();
     } else if (elem.webkitRequestFullscreen) {
       await elem.webkitRequestFullscreen();
@@ -268,6 +258,10 @@ async function enterFullscreen() {
       await elem.msRequestFullscreen();
     }
     console.log("Entered fullscreen");
+
+    // Hide fullscreen button on success
+    const btn = document.getElementById("fullscreen-btn");
+    if (btn) btn.style.display = "none";
 
     // Try to lock orientation (Android/Chrome only)
     if (screen.orientation && screen.orientation.lock) {
@@ -281,39 +275,28 @@ async function enterFullscreen() {
   } catch (err) {
     console.error("Fullscreen failed:", err);
   }
-    // Hide the button after success
-    const btn = document.getElementById("fullscreen-btn");
-    if (btn) {
-      btn.style.display = "none";
-    }
-
-    // Optional: Show a small "Exit Fullscreen" hint or button if needed
-    // You can add a new small button that calls document.exitFullscreen()
-
-  } catch (err) {
-    console.error("Fullscreen failed:", err);
-  }
 }
-window.addEventListener("resize", checkOrientation);
-window.addEventListener("orientationchange", checkOrientation);
-document.addEventListener("DOMContentLoaded", () => {
-  checkOrientation();
-
-  // Fullscreen button
-  const btn = document.getElementById("fullscreen-btn");
-  if (btn) {
-    btn.addEventListener("click", enterFullscreen);
-  }
-});
 
 // Portrait warning
 function checkOrientation() {
   const warning = document.getElementById("portrait-warning");
   if (window.innerHeight > window.innerWidth) {
     document.body.classList.add("portrait-warning-visible");
-    warning.style.display = "flex";
+    if (warning) warning.style.display = "flex";
   } else {
     document.body.classList.remove("portrait-warning-visible");
-    warning.style.display = "none";
+    if (warning) warning.style.display = "none";
   }
-} 
+}
+
+window.addEventListener("resize", checkOrientation);
+window.addEventListener("orientationchange", checkOrientation);
+
+document.addEventListener("DOMContentLoaded", () => {
+  checkOrientation();
+
+  const btn = document.getElementById("fullscreen-btn");
+  if (btn) {
+    btn.addEventListener("click", enterFullscreen);
+  }
+});
