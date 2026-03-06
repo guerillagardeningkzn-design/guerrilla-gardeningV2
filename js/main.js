@@ -260,7 +260,7 @@ async function enterFullscreen() {
   const elem = document.documentElement;
 
   try {
-    if (elem.requestFullscreen) {
+        if (elem.requestFullscreen) {
       await elem.requestFullscreen();
     } else if (elem.webkitRequestFullscreen) {
       await elem.webkitRequestFullscreen();
@@ -281,20 +281,19 @@ async function enterFullscreen() {
   } catch (err) {
     console.error("Fullscreen failed:", err);
   }
-}
+    // Hide the button after success
+    const btn = document.getElementById("fullscreen-btn");
+    if (btn) {
+      btn.style.display = "none";
+    }
 
-// Portrait warning
-function checkOrientation() {
-  const warning = document.getElementById("portrait-warning");
-  if (window.innerHeight > window.innerWidth) {
-    document.body.classList.add("portrait-warning-visible");
-    warning.style.display = "flex";
-  } else {
-    document.body.classList.remove("portrait-warning-visible");
-    warning.style.display = "none";
+    // Optional: Show a small "Exit Fullscreen" hint or button if needed
+    // You can add a new small button that calls document.exitFullscreen()
+
+  } catch (err) {
+    console.error("Fullscreen failed:", err);
   }
 }
-
 window.addEventListener("resize", checkOrientation);
 window.addEventListener("orientationchange", checkOrientation);
 document.addEventListener("DOMContentLoaded", () => {
@@ -306,3 +305,15 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener("click", enterFullscreen);
   }
 });
+
+// Portrait warning
+function checkOrientation() {
+  const warning = document.getElementById("portrait-warning");
+  if (window.innerHeight > window.innerWidth) {
+    document.body.classList.add("portrait-warning-visible");
+    warning.style.display = "flex";
+  } else {
+    document.body.classList.remove("portrait-warning-visible");
+    warning.style.display = "none";
+  }
+} 
