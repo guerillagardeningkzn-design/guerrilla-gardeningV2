@@ -254,3 +254,55 @@ document.addEventListener("DOMContentLoaded", () => {
   renderView();
   console.log("Game loaded – island map with markers");
 });
+
+// ─── Fullscreen & landscape support ─────────────────────────────────────────────
+async function enterFullscreen() {
+  const elem = document.documentElement;
+
+  try {
+    if (elem.requestFullscreen) {
+      await elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) {
+      await elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) {
+      await elem.msRequestFullscreen();
+    }
+    console.log("Entered fullscreen");
+
+    // Try to lock orientation (Android/Chrome only)
+    if (screen.orientation && screen.orientation.lock) {
+      try {
+        await screen.orientation.lock("landscape");
+        console.log("Locked to landscape");
+      } catch (err) {
+        console.warn("Orientation lock not supported:", err);
+      }
+    }
+  } catch (err) {
+    console.error("Fullscreen failed:", err);
+  }
+}
+
+// Portrait warning
+function checkOrientation() {
+  const warning = document.getElementById("portrait-warning");
+  if (window.innerHeight > window.innerWidth) {
+    document.body.classList.add("portrait-warning-visible");
+    warning.style.display = "flex";
+  } else {
+    document.body.classList.remove("portrait-warning-visible");
+    warning.style.display = "none";
+  }
+}
+
+window.addEventListener("resize", checkOrientation);
+window.addEventListener("orientationchange", checkOrientation);
+document.addEventListener("DOMContentLoaded", () => {
+  checkOrientation();
+
+  // Fullscreen button
+  const btn = document.getElementById("fullscreen-btn");
+  if (btn) {
+    btn.addEventListener("click", enterFullscreen);
+  }
+});

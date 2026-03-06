@@ -256,3 +256,60 @@ p {
   margin-bottom: 15px;
   line-height: 1.5;
 }
+/* ─── Fullscreen & orientation support ─────────────────────────────────────────── */
+#fullscreen-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  padding: 16px 32px;
+  background: linear-gradient(145deg, #4CAF50, #66BB6A);
+  color: white;
+  border: none;
+  border-radius: 16px;
+  font-size: 1.3rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+  transition: all 0.3s ease;
+}
+
+#fullscreen-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 12px 30px rgba(76,175,80,0.6);
+}
+
+/* Portrait warning overlay */
+#portrait-warning {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.95);
+  color: white;
+  font-size: 1.8rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  z-index: 9998;
+}
+
+.portrait-warning-visible #portrait-warning {
+  display: flex;
+}
+
+/* Ensure game area uses full viewport */
+#map-viewport {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  touch-action: manipulation; /* disable double-tap zoom */
+}
+
+/* Prevent scroll & zoom */
+html, body {
+  overscroll-behavior: none;
+  touch-action: pan-x pan-y pinch-zoom; /* allow pinch only if needed */
+}
