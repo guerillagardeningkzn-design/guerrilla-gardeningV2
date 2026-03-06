@@ -220,3 +220,127 @@ html, body {
   background: linear-gradient(to right, #4CAF50, #81C784);
   transition: width 0.5s ease;
 }
+
+/* ─── HUD badges – small, rounded, semi-transparent (June's Journey style) ──────── */
+.hud-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.15);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 1px 3px black;
+  transition: transform 0.2s ease;
+}
+
+.hud-badge:hover {
+  transform: scale(1.08);
+}
+
+/* Specific badge colors */
+.hud-coins {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: linear-gradient(145deg, #FFD700, #DAA520);
+  border: 2px solid #B8860B;
+  color: #1a1a1a;
+  text-shadow: none;
+}
+
+.hud-diamonds {
+  background: linear-gradient(145deg, #8E24AA, #AB47BC);
+  border: 2px solid #7B1FA2;
+}
+
+.hud-stars {
+  background: linear-gradient(145deg, #FFA000, #FFB300);
+  border: 2px solid #FF8F00;
+}
+
+.hud-energy {
+  background: linear-gradient(145deg, #00BCD4, #26C6DA);
+  border: 2px solid #0097A7;
+}
+
+/* ─── Resources cluster – top-right ────────────────────────────────────────────── */
+.hud-resources {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 10px;
+}
+
+/* ─── Back to Map button – smaller, pill-shaped, softer ────────────────────────── */
+#back-to-map {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 28px;
+  background: rgba(76, 175, 80, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 999px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+  transition: all 0.25s ease;
+  z-index: 200;
+}
+
+#back-to-map:hover {
+  background: rgba(76, 175, 80, 1);
+  transform: translateX(-50%) scale(1.08);
+  box-shadow: 0 10px 24px rgba(76,175,80,0.5);
+}
+
+/* ─── Zone title – elegant, semi-transparent background ────────────────────────── */
+.zone-content h2 {
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+  background: rgba(0,0,0,0.4);
+  padding: 8px 16px;
+  border-radius: 12px;
+  display: inline-block;
+  backdrop-filter: blur(4px);
+}
+
+/* ─── Health bar – thinner and more elegant ────────────────────────────────────── */
+.progress-bar {
+  height: 10px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 8px 0;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+  max-width: 400px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, #4CAF50, #8BC34A);
+  transition: width 0.6s ease;
+}
+
+/* ─── Invasives instruction – smaller and integrated ───────────────────────────── */
+.zone-content h3 {
+  font-size: 1.1rem;
+  margin: 16px 0 12px;
+  background: rgba(0,0,0,0.4);
+  padding: 6px 14px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
