@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Guerrilla Gardening Editor - Production Version</title>
+<title>Guerrilla Gardening Editor - Full</title>
 <style>
   body {
     margin: 0;
@@ -16,11 +16,12 @@
 
   header {
     background: #222;
-    padding: 10px;
+    padding: 10px 15px;
     display: flex;
     gap: 15px;
     align-items: center;
     flex-wrap: wrap;
+    border-bottom: 1px solid #444;
   }
 
   button, input, select, textarea {
@@ -36,15 +37,103 @@
     background: #444;
   }
 
+  .tab-btn {
+    padding: 8px 16px;
+    background: #333;
+    border: none;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .tab-btn.active {
+    background: #444;
+    border-bottom: 3px solid #4CAF50;
+  }
+
   #main {
     flex: 1;
     display: flex;
+    overflow: hidden;
+  }
+
+  #sidebar {
+    width: 360px;
+    background: #222;
+    padding: 15px;
+    overflow-y: auto;
+    border-right: 1px solid #444;
+  }
+
+  #template-list, #entity-list {
+    margin: 15px 0;
+  }
+
+  .entity-item, .template-item {
+    padding: 8px;
+    margin: 4px 0;
+    background: #333;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .entity-item:hover, .template-item:hover {
+    background: #444;
+  }
+
+  .entity-item.selected, .template-item.selected {
+    background: #555;
+    border-left: 4px solid #4CAF50;
+  }
+
+  label {
+    display: block;
+    margin: 10px 0 4px;
+    font-size: 0.9rem;
+  }
+
+  input[type="text"], input[type="number"], select, textarea {
+    width: 100%;
+    padding: 6px;
+    background: #333;
+    border: 1px solid #555;
+    color: white;
+    border-radius: 4px;
+  }
+
+  textarea {
+    min-height: 80px;
+    resize: vertical;
+  }
+
+  #root-path-section {
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #282828;
+    border-radius: 8px;
+  }
+
+  #recent-files {
+    margin-top: 10px;
+  }
+
+  .recent-item {
+    padding: 6px;
+    background: #333;
+    margin: 4px 0;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+
+  .recent-item:hover {
+    background: #444;
   }
 
   #canvas-wrapper {
     flex: 1;
     position: relative;
-    overflow: hidden;
+    overflow: auto;
     background: #000;
   }
 
@@ -61,7 +150,9 @@
   .entity {
     position: absolute;
     cursor: move;
-    background: rgba(0, 255, 100, 0.7);
+    min-width: 40px;
+    min-height: 40px;
+    background: rgba(0, 255, 100, 0.6);
     border-radius: 50%;
     border: 3px solid #0f0;
     display: flex;
@@ -73,6 +164,13 @@
     box-shadow: 0 0 8px rgba(0,0,0,0.6);
     user-select: none;
     z-index: 10;
+    overflow: hidden;
+  }
+
+  .entity img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 
   .entity.selected {
@@ -85,54 +183,13 @@
     border-color: gray;
   }
 
-  #sidebar {
-    width: 320px;
-    background: #222;
-    padding: 15px;
-    overflow-y: auto;
-    border-left: 1px solid #444;
+  .tab-content {
+    flex: 1;
+    display: none;
   }
 
-  #entity-list {
-    margin: 15px 0;
-  }
-
-  .entity-item {
-    padding: 8px;
-    margin: 4px 0;
-    background: #333;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-
-  .entity-item:hover {
-    background: #444;
-  }
-
-  .entity-item.selected {
-    background: #555;
-  }
-
-  label {
-    display: block;
-    margin: 10px 0 4px;
-  }
-
-  input[type="text"], input[type="number"], select, textarea {
-    width: 100%;
-    padding: 6px;
-    background: #333;
-    border: 1px solid #555;
-    color: white;
-    border-radius: 4px;
-  }
-
-  textarea {
-    min-height: 80px;
-  }
-
-  #add-inventory, #add-dialog {
-    margin-top: 10px;
+  .tab-content.active {
+    display: flex;
   }
 </style>
 </head>
@@ -140,92 +197,543 @@
 
 <header>
   <h2>Guerrilla Gardening Editor</h2>
-  <input type="file" id="bg-upload" accept="image/*" />
-  <select id="entity-type">
-    <option value="marker">Marker</option>
-    <option value="invasive">Invasive</option>
-    <option value="pickup">Pickup</option>
-    <option value="transition">Zone Transition</option>
-    <option value="critter">Critter</option>
-    <option value="plant-spot">Plant Spot</option>
-  </select>
-  <button id="add-entity">Add Entity</button>
-  <button id="save-json">Save JSON</button>
-  <button id="load-json">Load JSON</button>
-  <input type="file" id="json-upload" accept=".json" style="display:none;" />
-  <input type="file" id="icon-upload" accept="image/*" style="display:none;" />
+  <button id="settings-tab" class="tab-btn active">Settings</button>
+  <button id="entities-tab" class="tab-btn">Entities Setup</button>
+  <button id="map-tab" class="tab-btn">Map Creator</button>
+  <input type="file" id="bg-upload" accept="image/*" style="display:none;" />
 </header>
 
 <div id="main">
-  <div id="canvas-wrapper">
-    <div id="canvas"></div>
+  <!-- Settings Tab -->
+  <div id="settings-content" class="tab-content active">
+    <div id="sidebar">
+      <div id="root-path-section">
+        <label>Repo Root Path (for local image preview)</label>
+        <input type="text" id="repo-root" placeholder="C:/Users/You/Projects/guerrilla-gardeningV2/" />
+        <button id="save-root">Save Root Path</button>
+        <p id="root-status" style="font-size:0.8rem; color:#aaa; margin-top:8px;">
+          No root set – local image preview disabled.
+        </p>
+      </div>
+
+      <h3>Recent Images</h3>
+      <div id="recent-files"></div>
+    </div>
   </div>
 
-  <div id="sidebar">
-    <h3>Selected Entity</h3>
-    <div id="properties" style="display:none;">
+  <!-- Entities Setup Tab -->
+  <div id="entities-content" class="tab-content">
+    <div id="sidebar">
+      <button id="add-template">Add New Entity Template</button>
+      <h3>Entity Templates</h3>
+      <div id="template-list"></div>
+    </div>
+
+    <div id="properties" style="flex:1; padding:20px; overflow-y:auto; display:none;">
+      <h2>Edit Template</h2>
+
       <label>Type</label>
-      <select id="prop-type">
-        <option value="marker">Marker</option>
+      <select id="temp-type">
+        <option value="marker">Marker (island)</option>
         <option value="invasive">Invasive</option>
         <option value="pickup">Pickup</option>
         <option value="transition">Zone Transition</option>
-        <option value="critter">Critter</option>
+        <option value="critter">Critter / NPC</option>
         <option value="plant-spot">Plant Spot</option>
+        <option value="seed">Seed</option>
       </select>
 
-      <label>ID / Name</label>
-      <input type="text" id="prop-name" />
+      <label>Name</label>
+      <input type="text" id="temp-name" />
 
-      <label>Left (%)</label>
-      <input type="number" id="prop-left" step="0.1" min="0" max="100" />
+      <label>Default Icon</label>
+      <input type="text" id="temp-icon" placeholder="assets/entities/invasives/seaweed/seaweed-02.png" />
+      <button id="temp-icon-upload-btn">Upload Icon</button>
+      <input type="file" id="temp-icon-upload" accept="image/*" style="display:none;" />
+      <div id="icon-preview" style="margin-top:10px; max-height:160px; overflow:hidden;"></div>
 
-      <label>Top (%)</label>
-      <input type="number" id="prop-top" step="0.1" min="0" max="100" />
+      <div class="field-group">
+        <label>Coins Dropped</label>
+        <input type="number" id="temp-coins" min="0" value="0" step="1" />
 
-      <label>Scale (%)</label>
-      <input type="range" id="prop-scale-slider" min="50" max="200" step="5" />
-      <input type="number" id="prop-scale" step="5" min="50" max="200" />
+        <label>Damage on Encounter</label>
+        <input type="number" id="temp-damage" min="0" value="0" step="1" />
 
-      <label>Icon / Image</label>
-      <button id="prop-icon-upload-btn">Upload Image</button>
-      <input type="text" id="prop-icon" placeholder="assets/path/to/image.png" />
+        <label>Health Contribution</label>
+        <input type="number" id="temp-health" min="0" value="0" step="1" />
 
-      <label>Locked?</label>
-      <input type="checkbox" id="prop-locked" />
+        <label>Locked by default?</label>
+        <input type="checkbox" id="temp-locked" />
+      </div>
+
+      <div class="field-group" id="respawn-group">
+        <label>Respawn Time</label>
+        <input type="number" id="temp-respawn-value" min="0" value="0" step="1" style="width:60%;" />
+        <select id="temp-respawn-unit" style="width:35%;">
+          <option value="hours">hours</option>
+          <option value="days">days</option>
+        </select>
+      </div>
+
+      <div class="field-group" id="drop-chance-group">
+        <label>Drop Chance (%)</label>
+        <input type="number" id="temp-drop-chance" min="0" max="100" value="0" step="5" />
+      </div>
+
+      <div class="field-group" id="spawn-actions-group">
+        <label>Spawn Actions (one per line)</label>
+        <textarea id="temp-spawn-actions" placeholder="spawn:seed:palm@random:20m radius:2"></textarea>
+      </div>
+
+      <div class="field-group" id="growth-group">
+        <label>Growth Timer (total hours to mature)</label>
+        <input type="number" id="temp-growth-hours" min="0" value="0" step="1" />
+
+        <label>Growth Stages</label>
+        <select id="temp-growth-stages">
+          <option value="2">Fresh → Mature</option>
+          <option value="3">Fresh → Sprout → Mature</option>
+          <option value="4">Fresh → Seedling → Sprout → Mature</option>
+        </select>
+      </div>
+
+      <div class="field-group" id="conditions-group">
+        <label>Visibility / Activation Conditions</label>
+        <textarea id="temp-conditions" placeholder="zoneHealth > 50 OR playerHasItem:seeds"></textarea>
+      </div>
 
       <label>Tooltip / Description</label>
-      <textarea id="prop-tooltip"></textarea>
+      <textarea id="temp-tooltip"></textarea>
 
-      <!-- Dialog Tree -->
       <label>Dialog Tree (JSON)</label>
-      <textarea id="prop-dialog"></textarea>
+      <textarea id="temp-dialog">[]</textarea>
 
-      <!-- Inventory (JSON array) -->
-      <label>Inventory Items (JSON)</label>
-      <textarea id="prop-inventory"></textarea>
+      <label>Inventory Items (JSON array)</label>
+      <textarea id="temp-inventory">[]</textarea>
 
-      <button id="delete-selected">Delete</button>
+      <div style="margin-top:20px;">
+        <button id="save-template">Save Template</button>
+        <button id="delete-template" style="background:#c62828;">Delete Template</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map Creator Tab -->
+  <div id="map-content" class="tab-content">
+    <div id="canvas-wrapper">
+      <div id="canvas"></div>
     </div>
 
-    <h3>All Entities</h3>
-    <div id="entity-list"></div>
+    <div id="sidebar">
+      <input type="file" id="bg-upload" accept="image/*" />
+      <h3>Entities on Current Map</h3>
+      <div id="entity-list"></div>
+
+      <label>Add Entity from Template</label>
+      <select id="add-from-template"></select>
+      <button id="add-entity-map">Add to Map</button>
+
+      <h3>Selected Map Entity</h3>
+      <div id="map-properties" style="display:none;">
+        <!-- Simplified map instance properties -->
+        <label>Name (override)</label>
+        <input type="text" id="map-name" />
+
+        <label>Left (%)</label>
+        <input type="number" id="map-left" step="0.1" min="0" max="100" />
+
+        <label>Top (%)</label>
+        <input type="number" id="map-top" step="0.1" min="0" max="100" />
+
+        <label>Scale (%)</label>
+        <input type="range" id="map-scale-slider" min="50" max="300" step="5" value="100" />
+        <input type="number" id="map-scale" step="5" min="50" max="300" value="100" />
+
+        <button id="delete-map-entity">Delete from Map</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
 // ─── State ──────────────────────────────────────────────────────────────────────
-let entities = [];
-let selectedId = null;
+let templates = [];
+let currentMapEntities = [];
+let selectedTemplateId = null;
+let selectedMapEntityId = null;
 let backgroundUrl = null;
+let repoRoot = localStorage.getItem('repoRoot') || '';
+let currentTab = 'settings';
 
-// ─── DOM elements ───────────────────────────────────────────────────────────────
-const canvas = document.getElementById("canvas");
-const entityList = document.getElementById("entity-list");
-const properties = document.getElementById("properties");
-const iconUpload = document.getElementById("icon-upload");
+// Normalize root path
+repoRoot = repoRoot.replace(/\\/g, '/').replace(/\/+$/, '').replace(/^["']+/, '').replace(/["']+$/, '');
+localStorage.setItem('repoRoot', repoRoot);
+updateRootStatus();
 
-// ─── Drag logic ─────────────────────────────────────────────────────────────────
+function updateRootStatus() {
+  const status = document.getElementById("root-status");
+  if (status) {
+    status.textContent = repoRoot ? `Root: ${repoRoot}` : "No root set – local preview disabled.";
+    status.style.color = repoRoot ? "#8f8" : "#f88";
+  }
+}
+
+// Recent images
+let recentFiles = JSON.parse(localStorage.getItem('recentFiles') || "[]");
+function addToRecent(relativePath) {
+  if (!relativePath) return;
+  recentFiles = recentFiles.filter(p => p !== relativePath);
+  recentFiles.unshift(relativePath);
+  recentFiles = recentFiles.slice(0, 10);
+  localStorage.setItem('recentFiles', JSON.stringify(recentFiles));
+  renderRecentFiles();
+}
+
+function renderRecentFiles() {
+  const container = document.getElementById("recent-files");
+  if (!container) return;
+  container.innerHTML = "";
+  recentFiles.forEach(path => {
+    const item = document.createElement("div");
+    item.className = "recent-item";
+    item.textContent = path;
+    item.title = "Click to load";
+    item.addEventListener("click", () => {
+      document.getElementById("temp-icon").value = path;
+      loadImagePreview(path);
+      updateTemplateFromProperties();
+    });
+    container.appendChild(item);
+  });
+}
+renderRecentFiles();
+
+// ─── Path normalization ──────────────────────────────────────────────────────────
+function normalizeToRelative(rawPath) {
+  if (!rawPath) return '';
+  let path = rawPath.trim();
+  path = path.replace(/^["']+/, '').replace(/["']+$/, '');
+  path = path.replace(/^file:\/{2,3}/i, '');
+  path = path.replace(/\\/g, '/');
+  const normalizedRoot = repoRoot.replace(/\\/g, '/').replace(/\/+$/, '');
+  if (normalizedRoot && path.includes(normalizedRoot)) {
+    path = path.split(normalizedRoot)[1] || path;
+    path = path.replace(/^[/\\]+/, '');
+  }
+  if (!path.startsWith('assets/') && path.includes('assets')) {
+    path = 'assets/' + path.split('assets')[1].replace(/^[/\\]+/, '');
+  }
+  return path;
+}
+
+// ─── Load image preview ─────────────────────────────────────────────────────────
+function loadImagePreview(relativePath) {
+  const preview = document.getElementById("icon-preview");
+  if (!preview) return;
+  preview.innerHTML = "";
+  if (!relativePath) return;
+  let fullUrl = relativePath;
+  if (repoRoot && !relativePath.startsWith('http') && !relativePath.startsWith('file:///')) {
+    fullUrl = `file:///${repoRoot}/${relativePath}`;
+  }
+  console.log("Loading preview:", fullUrl);
+  const img = document.createElement("img");
+  img.src = fullUrl;
+  img.style.maxWidth = "100%";
+  img.style.maxHeight = "160px";
+  img.style.objectFit = "contain";
+  img.onerror = () => {
+    preview.innerHTML = "<p style='color:#f88;'>Not found</p>";
+  };
+  preview.appendChild(img);
+}
+
+// ─── Tab switching ──────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+  document.getElementById(tab + "-content").classList.add('active');
+  document.getElementById(tab + "-tab").classList.add('active');
+}
+
+document.getElementById("settings-tab").addEventListener("click", () => switchTab("settings"));
+document.getElementById("entities-tab").addEventListener("click", () => switchTab("entities"));
+document.getElementById("map-tab").addEventListener("click", () => switchTab("map"));
+
+// ─── Settings: Repo Root ────────────────────────────────────────────────────────
+document.getElementById("save-root").addEventListener("click", () => {
+  let newRoot = document.getElementById("repo-root").value.trim();
+  if (newRoot) {
+    newRoot = newRoot.trim()
+      .replace(/^["']+/, '')
+      .replace(/["']+$/, '')
+      .replace(/\\/g, '/')
+      .replace(/\/+$/, '');
+    localStorage.setItem('repoRoot', newRoot);
+    repoRoot = newRoot;
+    updateRootStatus();
+    alert("Root path saved and cleaned:\n" + newRoot);
+  }
+});
+
+// ─── Entities Setup ─────────────────────────────────────────────────────────────
+function renderTemplateList() {
+  const list = document.getElementById("template-list");
+  if (!list) return;
+  list.innerHTML = "";
+  templates.forEach(t => {
+    const item = document.createElement("div");
+    item.className = "template-item";
+    item.textContent = `${t.name || t.id} (${t.type})`;
+    if (selectedTemplateId === t.id) item.classList.add("selected");
+    item.addEventListener("click", () => selectTemplate(t.id));
+    list.appendChild(item);
+  });
+}
+
+function selectTemplate(id) {
+  selectedTemplateId = id;
+  renderTemplateList();
+  const template = templates.find(t => t.id === id);
+  if (template) {
+    document.getElementById("properties").style.display = "block";
+    document.getElementById("temp-type").value = template.type || "marker";
+    document.getElementById("temp-name").value = template.name || "";
+    document.getElementById("temp-icon").value = template.icon || "";
+    document.getElementById("temp-coins").value = template.coins || 0;
+    document.getElementById("temp-damage").value = template.damage || 0;
+    document.getElementById("temp-health").value = template.health || 0;
+    document.getElementById("temp-locked").checked = template.locked || false;
+    document.getElementById("temp-tooltip").value = template.tooltip || "";
+    document.getElementById("temp-dialog").value = JSON.stringify(template.dialog || [], null, 2);
+    document.getElementById("temp-inventory").value = JSON.stringify(template.inventory || [], null, 2);
+    document.getElementById("temp-respawn-value").value = template.respawnValue || 0;
+    document.getElementById("temp-respawn-unit").value = template.respawnUnit || "hours";
+    document.getElementById("temp-drop-chance").value = template.dropChance || 0;
+    document.getElementById("temp-spawn-actions").value = (template.spawnActions || []).join('\n');
+    document.getElementById("temp-growth-hours").value = template.growthHours || 0;
+    document.getElementById("temp-growth-stages").value = template.growthStages || 2;
+    document.getElementById("temp-conditions").value = template.conditions || '';
+    loadImagePreview(template.icon);
+  } else {
+    document.getElementById("properties").style.display = "none";
+  }
+}
+
+document.getElementById("add-template").addEventListener("click", () => {
+  const type = prompt("Enter template type:", "invasive") || "invasive";
+  const id = `${type}-${Date.now()}`;
+  const template = {
+    id,
+    type,
+    name: `New ${type.charAt(0).toUpperCase() + type.slice(1)}`,
+    icon: "",
+    coins: 0,
+    damage: 0,
+    health: 0,
+    locked: false,
+    tooltip: "",
+    dialog: [],
+    inventory: [],
+    respawnValue: 0,
+    respawnUnit: "hours",
+    dropChance: 0,
+    spawnActions: [],
+    growthHours: 0,
+    growthStages: 2,
+    conditions: ""
+  };
+  templates.push(template);
+  renderTemplateList();
+  selectTemplate(id);
+});
+
+document.getElementById("save-template").addEventListener("click", () => {
+  updateTemplateFromProperties();
+  alert("Template saved.");
+});
+
+document.getElementById("delete-template").addEventListener("click", () => {
+  if (!selectedTemplateId) return;
+  if (!confirm("Delete this template?")) return;
+  templates = templates.filter(t => t.id !== selectedTemplateId);
+  selectedTemplateId = null;
+  document.getElementById("properties").style.display = "none";
+  renderTemplateList();
+});
+
+document.getElementById("save-templates").addEventListener("click", () => {
+  const filename = prompt("Save as:", "entity-templates.json");
+  if (!filename) return;
+  const data = { templates };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById("load-templates").addEventListener("click", () => {
+  document.getElementById("json-upload").click();
+});
+
+document.getElementById("json-upload").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      templates = data.templates || [];
+      renderTemplateList();
+      alert("Templates loaded.");
+    } catch (err) {
+      alert("Invalid JSON: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+});
+
+// ─── Icon upload ────────────────────────────────────────────────────────────────
+document.getElementById("temp-icon-upload-btn").addEventListener("click", () => {
+  document.getElementById("temp-icon-upload").click();
+});
+
+document.getElementById("temp-icon-upload").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const objectUrl = URL.createObjectURL(file);
+  document.getElementById("icon-preview").innerHTML = `<img src="${objectUrl}" style="max-width:100%; max-height:160px; object-fit:contain;">`;
+  let relativePath = file.name;
+  if (file.path && repoRoot) {
+    let fullPath = file.path.replace(/\\/g, '/');
+    relativePath = fullPath.replace(repoRoot.replace(/\\/g, '/'), '').replace(/^[/\\]+/, '');
+    if (!relativePath.startsWith('assets/')) {
+      relativePath = `assets/uploaded/${file.name}`;
+    }
+  }
+  document.getElementById("temp-icon").value = relativePath;
+  addToRecent(relativePath);
+  updateTemplateFromProperties();
+});
+
+// ─── Live updates ───────────────────────────────────────────────────────────────
+["temp-type", "temp-name", "temp-icon", "temp-coins", "temp-damage", "temp-health", "temp-locked", "temp-tooltip", "temp-dialog", "temp-inventory", "temp-respawn-value", "temp-respawn-unit", "temp-drop-chance", "temp-spawn-actions", "temp-growth-hours", "temp-growth-stages", "temp-conditions"].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener("input", () => {
+      if (id === "temp-icon") {
+        el.value = normalizeToRelative(el.value);
+        addToRecent(el.value);
+      }
+      updateTemplateFromProperties();
+    });
+    el.addEventListener("change", () => {
+      if (id === "temp-icon") {
+        el.value = normalizeToRelative(el.value);
+        addToRecent(el.value);
+      }
+      updateTemplateFromProperties();
+    });
+    el.addEventListener("paste", (e) => {
+      setTimeout(() => {
+        if (id === "temp-icon") {
+          el.value = normalizeToRelative(el.value);
+          addToRecent(el.value);
+        }
+        updateTemplateFromProperties();
+      }, 0);
+    });
+  }
+});
+
+// ─── Map Creator ────────────────────────────────────────────────────────────────
+document.getElementById("bg-upload").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  backgroundUrl = URL.createObjectURL(file);
+  document.getElementById("canvas").style.backgroundImage = `url(${backgroundUrl})`;
+});
+
+document.getElementById("add-entity-map").addEventListener("click", () => {
+  const templateId = document.getElementById("add-from-template").value;
+  if (!templateId) return alert("Select a template first");
+  const template = templates.find(t => t.id === templateId);
+  if (!template) return;
+
+  const id = `instance-${Date.now()}`;
+  const entity = {
+    id,
+    templateId,
+    type: template.type,
+    name: template.name,
+    left: 50,
+    top: 50,
+    scale: template.scale || 100,
+    icon: template.icon,
+    locked: template.locked,
+    tooltip: template.tooltip,
+    dialog: template.dialog || [],
+    inventory: template.inventory || [],
+    coins: template.coins,
+    damage: template.damage,
+    health: template.health
+  };
+  currentMapEntities.push(entity);
+
+  const el = document.createElement("div");
+  el.className = "entity";
+  el.dataset.id = id;
+  el.style.left = "50%";
+  el.style.top = "50%";
+  el.style.transform = `scale(${entity.scale / 100})`;
+  el.style.backgroundImage = entity.icon ? `url(${entity.icon})` : "none";
+  el.style.backgroundSize = "contain";
+  el.style.backgroundRepeat = "no-repeat";
+  el.style.borderRadius = entity.icon ? "0" : "50%";
+  el.innerHTML = `<span class="marker-label">${entity.name}</span>`;
+  document.getElementById("canvas").appendChild(el);
+
+  makeDraggable(el);
+  selectMapEntity(id);
+  updateMapEntityList();
+});
+
+function updateMapEntityList() {
+  const list = document.getElementById("entity-list");
+  if (!list) return;
+  list.innerHTML = "";
+  currentMapEntities.forEach(e => {
+    const item = document.createElement("div");
+    item.className = "entity-item";
+    item.textContent = `${e.name} (${e.type})`;
+    if (selectedMapEntityId === e.id) item.classList.add("selected");
+    item.addEventListener("click", () => selectMapEntity(e.id));
+    list.appendChild(item);
+  });
+}
+
+function selectMapEntity(id) {
+  selectedMapEntityId = id;
+  updateMapEntityList();
+  const entity = currentMapEntities.find(e => e.id === id);
+  if (entity) {
+    document.getElementById("map-properties").style.display = "block";
+    document.getElementById("map-name").value = entity.name || "";
+    document.getElementById("map-left").value = entity.left || 50;
+    document.getElementById("map-top").value = entity.top || 50;
+    document.getElementById("map-scale-slider").value = entity.scale || 100;
+    document.getElementById("map-scale").value = entity.scale || 100;
+  } else {
+    document.getElementById("map-properties").style.display = "none";
+  }
+}
+
+// ─── Drag for map entities ──────────────────────────────────────────────────────
 function makeDraggable(el) {
   let isDragging = false;
   let startX, startY, startLeft, startTop;
@@ -238,7 +746,7 @@ function makeDraggable(el) {
     startLeft = parseFloat(el.style.left) || 0;
     startTop = parseFloat(el.style.top) || 0;
     el.classList.add("selected");
-    selectEntity(el.dataset.id);
+    selectMapEntity(el.dataset.id);
     e.preventDefault();
   });
 
@@ -246,239 +754,38 @@ function makeDraggable(el) {
     if (!isDragging) return;
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
-    let newLeft = startLeft + (dx / canvas.clientWidth) * 100;
-    let newTop = startTop + (dy / canvas.clientHeight) * 100;
+    let newLeft = startLeft + (dx / document.getElementById("canvas").clientWidth) * 100;
+    let newTop = startTop + (dy / document.getElementById("canvas").clientHeight) * 100;
 
-    // Snap to 5% grid
-    newLeft = Math.round(newLeft / 5) * 5;
-    newTop = Math.round(newTop / 5) * 5;
+    newLeft = Math.round(newLeft * 100) / 100;
+    newTop = Math.round(newTop * 100) / 100;
 
     el.style.left = newLeft + "%";
     el.style.top = newTop + "%";
 
-    // Update properties
-    document.getElementById("prop-left").value = newLeft;
-    document.getElementById("prop-top").value = newTop;
+    document.getElementById("map-left").value = newLeft.toFixed(1);
+    document.getElementById("map-top").value = newTop.toFixed(1);
   });
 
-  document.addEventListener("mouseup", () => {
-    isDragging = false;
-  });
+  document.addEventListener("mouseup", () => isDragging = false);
 }
 
-// ─── Select entity ──────────────────────────────────────────────────────────────
-function selectEntity(id) {
-  selectedId = id;
-  document.querySelectorAll(".entity").forEach(m => m.classList.remove("selected"));
-  const el = document.querySelector(`[data-id="${id}"]`);
-  if (el) el.classList.add("selected");
+// ─── Save current map to JSON ───────────────────────────────────────────────────
+document.getElementById("save-map")?.addEventListener("click", () => {
+  const filename = prompt("Save map as:", "island-markers.json");
+  if (!filename) return;
 
-  const entity = entities.find(e => e.id === id);
-  if (entity) {
-    properties.style.display = "block";
-    document.getElementById("prop-type").value = entity.type || "marker";
-    document.getElementById("prop-name").value = entity.name || "";
-    document.getElementById("prop-left").value = entity.left || 50;
-    document.getElementById("prop-top").value = entity.top || 50;
-    document.getElementById("prop-scale-slider").value = entity.scale || 100;
-    document.getElementById("prop-scale").value = entity.scale || 100;
-    document.getElementById("prop-icon").value = entity.icon || "";
-    document.getElementById("prop-locked").checked = entity.locked || false;
-    document.getElementById("prop-tooltip").value = entity.tooltip || "";
-    document.getElementById("prop-dialog").value = JSON.stringify(entity.dialog || [], null, 2);
-    document.getElementById("prop-inventory").value = JSON.stringify(entity.inventory || [], null, 2);
-  } else {
-    properties.style.display = "none";
-  }
-}
-
-// ─── Update entity from properties ──────────────────────────────────────────────
-function updateFromProperties() {
-  if (!selectedId) return;
-  const entity = entities.find(e => e.id === selectedId);
-  if (!entity) return;
-
-  entity.type = document.getElementById("prop-type").value;
-  entity.name = document.getElementById("prop-name").value;
-  entity.left = parseFloat(document.getElementById("prop-left").value);
-  entity.top = parseFloat(document.getElementById("prop-top").value);
-  entity.scale = parseFloat(document.getElementById("prop-scale").value);
-  entity.icon = document.getElementById("prop-icon").value;
-  entity.locked = document.getElementById("prop-locked").checked;
-  entity.tooltip = document.getElementById("prop-tooltip").value;
-
-  try {
-    entity.dialog = JSON.parse(document.getElementById("prop-dialog").value);
-  } catch (err) {
-    console.warn("Invalid dialog JSON:", err);
-  }
-
-  try {
-    entity.inventory = JSON.parse(document.getElementById("prop-inventory").value);
-  } catch (err) {
-    console.warn("Invalid inventory JSON:", err);
-  }
-
-  // Update DOM
-  const el = document.querySelector(`[data-id="${selectedId}"]`);
-  if (el) {
-    el.style.left = entity.left + "%";
-    el.style.top = entity.top + "%";
-    el.style.transform = `scale(${entity.scale / 100})`;
-    el.style.backgroundImage = entity.icon ? `url(${entity.icon})` : "none";
-    el.style.backgroundSize = "contain";
-    el.style.backgroundRepeat = "no-repeat";
-    el.style.borderRadius = entity.icon ? "0" : "50%"; // square for images, circle for no icon
-    el.classList.toggle("locked", entity.locked);
-    el.querySelector(".marker-label").textContent = entity.name;
-  }
-}
-
-// ─── Add entity ─────────────────────────────────────────────────────────────────
-document.getElementById("add-entity").addEventListener("click", () => {
-  const type = document.getElementById("entity-type").value;
-  const id = type + "-" + Date.now();
-  const entity = {
-    id,
-    type,
-    name: "New " + type.charAt(0).toUpperCase() + type.slice(1),
-    left: 50,
-    top: 50,
-    scale: 100,
-    icon: "",
-    locked: false,
-    tooltip: "",
-    dialog: [], // Array of dialog nodes for tree
-    inventory: [] // Array of inventory items
-  };
-  entities.push(entity);
-
-  const el = document.createElement("div");
-  el.className = "entity";
-  el.dataset.id = id;
-  el.style.left = "50%";
-  el.style.top = "50%";
-  el.style.transform = "scale(1)";
-  el.innerHTML = `<span class="marker-label">New</span>`;
-  canvas.appendChild(el);
-
-  makeDraggable(el);
-  selectEntity(id);
-  updateEntityList();
-});
-
-// ─── Update entity list ─────────────────────────────────────────────────────────
-function updateEntityList() {
-  entityList.innerHTML = "";
-  entities.forEach(e => {
-    const item = document.createElement("div");
-    item.className = "entity-item";
-    item.textContent = `${e.name || e.id} (${e.type})`;
-    if (selectedId === e.id) item.classList.add("selected");
-    item.addEventListener("click", () => selectEntity(e.id));
-    entityList.appendChild(item);
-  });
-}
-
-// ─── Load background ────────────────────────────────────────────────────────────
-document.getElementById("bg-upload").addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  backgroundUrl = URL.createObjectURL(file);
-  canvas.style.backgroundImage = `url(${backgroundUrl})`;
-});
-
-// ─── Upload icon for entity ─────────────────────────────────────────────────────
-document.getElementById("prop-icon-upload-btn").addEventListener("click", () => {
-  iconUpload.click();
-});
-
-iconUpload.addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  document.getElementById("prop-icon").value = url; // For preview – replace with repo path on save
-  updateFromProperties();
-});
-
-// ─── Save JSON ──────────────────────────────────────────────────────────────────
-document.getElementById("save-json").addEventListener("click", () => {
   const data = {
-    background: "island-full.jpg", // Customize based on current bg
-    entities: entities
+    background: document.getElementById("canvas").style.backgroundImage.slice(5, -2) || "",
+    entities: currentMapEntities
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "entities.json";
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
-});
-
-// ─── Load JSON ──────────────────────────────────────────────────────────────────
-document.getElementById("load-json").addEventListener("click", () => {
-  document.getElementById("json-upload").click();
-});
-
-document.getElementById("json-upload").addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    try {
-      const data = JSON.parse(ev.target.result);
-      entities = data.entities || [];
-      updateEntityList();
-      entities.forEach(e => {
-        const el = document.createElement("div");
-        el.className = "entity" + (e.locked ? " locked" : "");
-        el.dataset.id = e.id;
-        el.style.left = e.left + "%";
-        el.style.top = e.top + "%";
-        el.style.transform = `scale(${e.scale / 100 || 1})`;
-        el.style.backgroundImage = e.icon ? `url(${e.icon})` : "none";
-        el.style.backgroundSize = "contain";
-        el.style.backgroundRepeat = "no-repeat";
-        el.style.borderRadius = e.icon ? "0" : "50%";
-        el.innerHTML = `<span class="marker-label">${e.name || e.id}</span>`;
-        canvas.appendChild(el);
-        makeDraggable(el);
-      });
-    } catch (err) {
-      alert("Invalid JSON: " + err.message);
-    }
-  };
-  reader.readAsText(file);
-});
-
-// ─── Delete selected ────────────────────────────────────────────────────────────
-document.getElementById("delete-selected").addEventListener("click", () => {
-  if (!selectedId) return;
-  entities = entities.filter(e => e.id !== selectedId);
-  const el = document.querySelector(`[data-id="${selectedId}"]`);
-  if (el) el.remove();
-  selectedId = null;
-  properties.style.display = "none";
-  updateEntityList();
-});
-
-// ─── Live updates ───────────────────────────────────────────────────────────────
-["prop-type", "prop-name", "prop-left", "prop-top", "prop-scale-slider", "prop-scale", "prop-locked", "prop-tooltip", "prop-dialog", "prop-inventory", "prop-icon"].forEach(id => {
-  const el = document.getElementById(id);
-  el.addEventListener("input", updateFromProperties);
-  el.addEventListener("change", updateFromProperties);
-});
-
-// ─── Sync slider & number ───────────────────────────────────────────────────────
-document.getElementById("prop-scale-slider").addEventListener("input", (e) => {
-  document.getElementById("prop-scale").value = e.target.value;
-  updateFromProperties();
-});
-
-document.getElementById("prop-scale").addEventListener("input", (e) => {
-  document.getElementById("prop-scale-slider").value = e.target.value;
-  updateFromProperties();
 });
 </script>
 </body>
