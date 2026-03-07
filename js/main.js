@@ -309,7 +309,7 @@ enrichedInvasives.forEach((inv) => {
 document.addEventListener("DOMContentLoaded", () => {
   currentPlayer = loadPlayer();
 
-  document.addEventListener("click", (e) => {
+  document.addEventListener("click", async (e) => {
     const target = e.target;
 
     // Click on island marker
