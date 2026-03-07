@@ -10,13 +10,13 @@
   "theme_color": "#2E7D32",
   "icons": [
     {
-      "src": "/guerrilla-gardeningv2/assets/icon-192.png",
+      "src": "assets/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/guerrilla-gardeningv2/assets/icon-512.png",
+      "src": "assets/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
