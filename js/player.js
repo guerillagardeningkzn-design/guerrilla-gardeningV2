@@ -8,7 +8,7 @@ let player = {
   inventory: {
     seeds: 15,
     wateringCanLevel: 1,
-    shovelLevel: 1
+    shovelLevel: 1,
 	spade: true
   },
   zones: {
