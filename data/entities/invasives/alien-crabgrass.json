@@ -3,7 +3,7 @@
   "name": "Alien Crabgrass",
   "icon": "assets/entities/invasives/crabgrass/crabgrass-01.png",
   "coins": 5,
-  "health": 0,
+  "health": 8,
   "tooltip": "This aggressive alien crabgrass spreads rapidly. You need a spade to dig it out!",
   "mutable": {
     "onDestroy": {
