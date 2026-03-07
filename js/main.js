@@ -86,6 +86,20 @@ function updateCoinsDisplay() {
   // Placeholder for other badges (add logic when you implement them)
   // const gemsEl = document.getElementById("gems-display");
   // if (gemsEl) gemsEl.textContent = currentPlayer.gems ?? 0;
+  
+  // ── Temporary debug: show if player has spade ───────────────────────────────
+  const debugEl = document.createElement("div");
+  debugEl.style.position = "fixed";
+  debugEl.style.bottom = "10px";
+  debugEl.style.left = "10px";
+  debugEl.style.color = "white";
+  debugEl.style.background = "rgba(0,0,0,0.6)";
+  debugEl.style.padding = "6px 12px";
+  debugEl.style.borderRadius = "8px";
+  debugEl.style.fontSize = "0.9rem";
+  debugEl.textContent = `Spade: ${currentPlayer.inventory?.spade ? "Yes ✅" : "No ❌"}`;
+  document.body.appendChild(debugEl);
+  setTimeout(() => debugEl.remove(), 8000); // disappears after 8 seconds
 }
 
 function updateHealthDisplay(health) {
@@ -417,7 +431,7 @@ if (invEl) {
   // Condition check (expand later)
   if (inv.mutable?.onDestroy?.condition === "playerHasItem:spade") {
     // TODO: real inventory check
-    const hasSpade = currentPlayer.inventory?.spade === true; // placeholder
+    const hasSpade = currentPlayer.inventory?.spade === true;
     if (!hasSpade) {
      showMessage(
 		"Tool Required",
