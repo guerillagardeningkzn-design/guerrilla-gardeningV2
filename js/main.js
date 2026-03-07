@@ -381,6 +381,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.addEventListener("click", async (e) => {
     const target = e.target;
+	console.log("Click detected on:", target.tagName, target.className, target.dataset);
 
     // Click on island marker
     const marker = target.closest(".map-marker");
