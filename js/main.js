@@ -162,6 +162,74 @@ function showClearModal(message) {
   });
 }
 
+// ─── INSERT THE NEW FUNCTION HERE ───────────────────────────────────────────────
+function showMessage(title = "Notice", message, durationMs = 0) {
+  const modal = document.createElement("div");
+  modal.style.position = "fixed";
+  modal.style.inset = "0";
+  modal.style.background = "rgba(0, 0, 0, 0.65)";
+  modal.style.display = "flex";
+  modal.style.alignItems = "center";
+  modal.style.justifyContent = "center";
+  modal.style.zIndex = "9998";
+  modal.style.opacity = "0";
+  modal.style.transition = "opacity 0.4s ease";
+
+  modal.innerHTML = `
+    <div style="
+      background: rgba(30, 50, 30, 0.95);
+      border: 2px solid #4CAF50;
+      border-radius: 16px;
+      padding: 24px 32px;
+      max-width: 85%;
+      width: 320px;
+      text-align: center;
+      color: #e8f5e9;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      transform: scale(0.92);
+      transition: transform 0.3s ease;
+    ">
+      ${title ? `<h3 style="margin: 0 0 12px; font-size: 1.4rem; color: #81C784;">${title}</h3>` : ''}
+      <p style="margin: 0 0 20px; font-size: 1.1rem; line-height: 1.4;">${message}</p>
+      <button class="close-msg-btn" style="
+        padding: 10px 28px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+      ">Close</button>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Fade in
+  requestAnimationFrame(() => {
+    modal.style.opacity = "1";
+    modal.querySelector("div").style.transform = "scale(1)";
+  });
+
+  // Close logic
+  const close = () => {
+    modal.style.opacity = "0";
+    modal.querySelector("div").style.transform = "scale(0.92)";
+    setTimeout(() => modal.remove(), 400);
+  };
+
+  modal.querySelector(".close-msg-btn").addEventListener("click", close);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) close();
+  });
+
+  if (durationMs > 0) {
+    setTimeout(close, durationMs);
+  }
+}
+
 // ─── Render ──────────────────────────────────────────────────────────────────────
 async function renderView() {
   const container = document.getElementById("game-container");
@@ -351,7 +419,11 @@ if (invEl) {
     // TODO: real inventory check
     const hasSpade = currentPlayer.inventory?.spade === true; // placeholder
     if (!hasSpade) {
-      alert(inv.mutable.onDestroy.failMessage || "You need a spade to remove this!");
+     showMessage(
+		"Tool Required",
+		inv.mutable.onDestroy.failMessage || "You need a spade to remove this!",
+		4000   // auto-closes after 4 seconds
+	);
       return;
     }
   }
