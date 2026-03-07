@@ -5,11 +5,11 @@ let player = {
   coins: 50,
   energy: 100,
   maxEnergy: 100,
-  inventory: {
+    inventory: {
     seeds: 15,
     wateringCanLevel: 1,
     shovelLevel: 1,
-	spade: true
+    spade: true,
   },
   zones: {
     "beach": 0,
