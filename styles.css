@@ -113,11 +113,16 @@ html, body {
 }
 
 .map-marker.locked {
-  background: rgba(150,150,150,0.6);
+  background: rgba(150,150,150,0.6) !important;
   border-color: #757575;
   cursor: not-allowed;
-  pointer-events: none;
   opacity: 0.65;
+}
+
+.map-marker.locked:hover {
+  transform: translate(-50%, -50%) scale(1.05); /* small feedback */
+  box-shadow: 0 8px 20px rgba(150,150,150,0.8);
+}
 }
 
 .marker-label {
