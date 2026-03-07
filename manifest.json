@@ -1,13 +1,13 @@
 {
   "name": "Guerrilla Gardeningv2",
   "short_name": "Guerrilla",
-  "id": "/guerrilla-gardeningv2/",
-  "start_url": "/guerrilla-gardeningv2/",
-  "scope": "/guerrilla-gardeningv2/",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
   "display": "fullscreen",
-  "orientation": "landscape-primary",
   "background_color": "#000000",
   "theme_color": "#2E7D32",
+  "orientation": "landscape-primary",
   "icons": [
     {
       "src": "assets/icon-192.png",
