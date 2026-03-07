@@ -1,0 +1,56 @@
+{
+  "type": "invasive",
+  "name": "Alien Crabgrass",
+  "icon": "assets/entities/invasives/crabgrass/crabgrass-01.png",
+  "coins": 5,
+  "health": 0,
+  "tooltip": "This aggressive alien crabgrass spreads rapidly. You need a spade to dig it out!",
+  "mutable": {
+    "onDestroy": {
+      "drop": [
+        {
+          "entity": "coin",
+          "count": 5
+        },
+        {
+          "entity": "soil-clump",
+          "chance": 0.4
+        }
+      ],
+      "transform": {},
+      "condition": "playerHasItem:spade",
+      "failMessage": "The crabgrass resists without a spade!"
+    },
+    "onInteract": {
+      "dialogTree": [
+        {
+          "message": "You try to pull the crabgrass... but it's too tough!",
+          "choices": [
+            {
+              "text": "I need a spade",
+              "next": 1
+            },
+            {
+              "text": "Never mind",
+              "next": 2
+            }
+          ]
+        },
+        {
+          "message": "Find a spade to dig it out properly."
+        },
+        {
+          "message": "Okay, leaving it for now..."
+        }
+      ],
+      "condition": "playerHasItem:spade",
+      "failDialog": "You need a spade to remove this!"
+    },
+    "onTimer": {
+      "every": "1h",
+      "spawn": "alien-crabgrass",
+      "radius": 2,
+      "count": 1
+    }
+  }
+}

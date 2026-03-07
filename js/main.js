@@ -3,21 +3,56 @@ import { zones } from '../data/zones.js';
 
 console.log("Guerrilla Gardening - overworld map with markers + golden UI");
 
+// ───────────────────────────────────────────────────────────
+// New: Centralized way to load external entity definitions
+// ───────────────────────────────────────────────────────────
+
+const entityCache = new Map();
+
+async function loadEntityDefinition(entityId) {
+  if (entityCache.has(entityId)) {
+    return entityCache.get(entityId);
+  }
+
+  try {
+    const response = await fetch(`data/entities/invasives/${entityId}.json`);
+    if (!response.ok) throw new Error(`Entity ${entityId} not found`);
+    const data = await response.json();
+    entityCache.set(entityId, data);
+    return data;
+  } catch (err) {
+    console.error("Failed to load entity:", entityId, err);
+    return null;
+  }
+}
+
 // ─── Global state ────────────────────────────────────────────────────────────────
 let currentPlayer;
 let currentView = "island";
 
 // ─── Data ────────────────────────────────────────────────────────────────────────
+// Old inline style still works
 const invasivesByZone = {
   beach: [
     { id: "seaweed1", name: "Invasive Seaweed", coins: 3, health: 5 },
     { id: "seaweed2", name: "More Seaweed", coins: 4, health: 6 },
-    { id: "crabgrass", name: "Alien Crabgrass", coins: 5, health: 8 }
+
+    // ── New: external JSON entity ───────────────────────────────────────────
+    {
+      id: "alien-crabgrass",
+      name: "Alien Crabgrass",           // fallback display name
+      coins: 5,                          // fallback reward
+      health: 8,                         // fallback health contribution
+      isExternal: true                   // flag → load full JSON definition
+    }
+    // { id: "crabgrass", name: "Alien Crabgrass", coins: 5, health: 8 }  ← old version you can remove or keep
   ],
+
   forest: [
     { id: "vine1", name: "Choking Vine", coins: 6, health: 7 },
     { id: "weed2", name: "Foreign Weed", coins: 5, health: 5 }
   ],
+
   mountain: [
     { id: "thistle", name: "Thorny Thistle", coins: 7, health: 10 }
   ]
@@ -128,7 +163,7 @@ function showClearModal(message) {
 }
 
 // ─── Render ──────────────────────────────────────────────────────────────────────
-function renderView() {
+async function renderView() {
   const container = document.getElementById("game-container");
   if (!container) return;
   container.innerHTML = "";
@@ -200,42 +235,71 @@ function renderView() {
 
     const list = document.getElementById("invasives-list");
 
-    invasives.forEach(inv => {
-      const invEl = document.createElement("div");
-      invEl.className = "invasive-item";
-      invEl.dataset.invId = inv.id;
+    // ── New: Load full JSON data for any external entities ────────────────────────────────
+let baseInvasives = invasivesByZone[zoneId] || [];
 
-      let posX = 50;
-      let posY = 50;
-      if (inv.id.includes("seaweed")) { posX = 30; posY = 60; }
-      if (inv.id.includes("vine")) { posX = 70; posY = 40; }
-
-      invEl.style.left = posX + '%';
-      invEl.style.top = posY + '%';
-      invEl.style.position = 'absolute';
-
-      let imagePath = "assets/ui/icons/leaf-health.png";
-      const nameLower = inv.name.toLowerCase();
-
-      if (nameLower.includes("seaweed")) {
-        imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
-      } else if (nameLower.includes("crabgrass")) {
-        imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
-      } else if (nameLower.includes("vine") || nameLower.includes("choking")) {
-        imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
-      } else if (nameLower.includes("thistle") || nameLower.includes("thorny")) {
-        imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
-      } else if (nameLower.includes("weed") || nameLower.includes("foreign")) {
-        imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
+// This is the important new part ↓↓↓
+const enrichedInvasives = await Promise.all(
+  baseInvasives.map(async (inv) => {
+    if (inv.isExternal) {
+      const fullDef = await loadEntityDefinition(inv.id);
+      if (fullDef) {
+        // Merge: base data first, then JSON data overrides it
+        return { ...inv, ...fullDef, isExternal: true };
+      } else {
+        console.warn(`Could not load full definition for ${inv.id} — using fallback`);
+        return inv;
       }
+    }
+    // Normal inline invasives stay as they are
+    return inv;
+  })
+);
 
-      invEl.innerHTML = `
-        <img src="${imagePath}" class="invasive-image" alt="${inv.name}">
-      `;
+// Now use the enriched (complete) data to create DOM elements
+const list = document.getElementById("invasive-list");
+list.innerHTML = ""; // make sure it's empty before we add new items
 
-      list.appendChild(invEl);
-    });
+enrichedInvasives.forEach((inv) => {
+  const invEl = document.createElement("div");
+  invEl.className = "invasive-item";
+  invEl.dataset.invId = inv.id;
 
+  // ── Choose image: prefer JSON icon, fall back to your old name-based logic ──
+  let imagePath = inv.icon; // ← comes from JSON if it exists
+
+  if (!imagePath) {
+    // Your existing fallback logic (keep whatever you already have)
+    const nameLower = inv.name.toLowerCase();
+    if (nameLower.includes("seaweed")) {
+      imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
+    } else if (nameLower.includes("crabgrass") || nameLower.includes("alien")) {
+      imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
+    } else if (nameLower.includes("vine") || nameLower.includes("choking")) {
+      imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
+    } else if (nameLower.includes("thistle") || nameLower.includes("thorny")) {
+      imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
+    } else if (nameLower.includes("weed") || nameLower.includes("foreign")) {
+      imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
+    } else {
+      imagePath = "assets/entities/invasives/default.png"; // fallback
+    }
+  }
+
+  // Create the element
+  invEl.innerHTML = `
+    <img src="${imagePath}" class="invasive-image" alt="${inv.name}">
+    <div class="inv-name">${inv.name}</div>
+  `;
+
+  // Bonus: show tooltip if it exists in JSON
+  if (inv.tooltip) {
+    invEl.title = inv.tooltip;           // native browser tooltip on hover
+    // or later you can make a nicer popup if you want
+  }
+
+  list.appendChild(invEl);
+});
     updateCoinsDisplay();
     updateHealthDisplay(health);
   }
@@ -263,43 +327,67 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Invasive tap
-    const invEl = target.closest(".invasive-item");
-    if (invEl) {
-      const zoneId = currentView.split(":")[1];
-      const invId = invEl.dataset.invId;
-      const invasives = invasivesByZone[zoneId] || [];
-      const inv = invasives.find(i => i.id === invId);
+const invEl = target.closest(".invasive-item");
+if (invEl) {
+  const zoneId = currentView.split(":")[1];
+  const invId = invEl.dataset.invId;
 
-      if (inv) {
-        const changes = {
-          coins: currentPlayer.coins + inv.coins,
-          zones: {
-            ...currentPlayer.zones,
-            [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + inv.health)
-          }
-        };
-        updatePlayer(changes);
+  // Find base definition
+  const baseInv = invasivesByZone[zoneId]?.find(i => i.id === invId);
+  if (!baseInv) return;
 
-        invEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
-        invEl.style.opacity = "0";
-        invEl.style.transform = "scale(0.4) rotate(5deg)";
+  let inv = baseInv;
 
-        setTimeout(() => {
-          invEl.remove();
-          updateCoinsDisplay();
-          updateHealthDisplay(changes.zones[zoneId]);
+  // Load full definition if external
+  if (baseInv.isExternal) {
+    const fullDef = await loadEntityDefinition(invId);
+    if (fullDef) {
+      inv = { ...baseInv, ...fullDef };
+    }
+  }
 
-          const progressFill = document.querySelector(".progress-fill");
-          if (progressFill) progressFill.style.width = changes.zones[zoneId] + "%";
-
-          if (document.querySelectorAll(".invasive-item").length === 0) {
-            const zone = zones.find(z => z.id === zoneId);
-            showClearModal(zone.name + " cleared of invasives! 🌿");
-          }
-        }, 600);
-      }
+  // Condition check (expand later)
+  if (inv.mutable?.onDestroy?.condition === "playerHasItem:spade") {
+    // TODO: real inventory check
+    const hasSpade = currentPlayer.inventory?.spade === true; // placeholder
+    if (!hasSpade) {
+      alert(inv.mutable.onDestroy.failMessage || "You need a spade to remove this!");
       return;
     }
+  }
+
+  // Apply reward
+  const changes = {
+    coins: currentPlayer.coins + (inv.coins || 5),
+    zones: {
+      ...currentPlayer.zones,
+      [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + (inv.health || 8))
+    }
+  };
+
+  updatePlayer(changes);
+
+  // Visual feedback
+  invEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+  invEl.style.opacity = "0";
+  invEl.style.transform = "scale(0.4) rotate(5deg)";
+
+  setTimeout(() => {
+    invEl.remove();
+    updateCoinsDisplay();
+    updateHealthDisplay(changes.zones[zoneId]);
+
+    const progressFill = document.querySelector(".progress-fill");
+    if (progressFill) progressFill.style.width = changes.zones[zoneId] + "%";
+
+    if (document.querySelectorAll(".invasive-item").length === 0) {
+      const zone = zones.find(z => z.id === zoneId);
+      showClearModal(zone.name + " cleared of invasives! 🌿");
+    }
+  }, 600);
+
+  return;
+}
 
     // Back to map button
     if (target.id === "back-to-map") {
