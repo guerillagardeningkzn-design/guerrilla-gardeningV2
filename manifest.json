@@ -5,9 +5,9 @@
   "start_url": "/guerrilla-gardeningv2/",
   "scope": "/guerrilla-gardeningv2/",
   "display": "fullscreen",
+  "orientation": "landscape-primary",
   "background_color": "#000000",
   "theme_color": "#2E7D32",
-  "orientation": "landscape-primary",
   "icons": [
     {
       "src": "/guerrilla-gardeningv2/assets/icon-192.png",
