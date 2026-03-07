@@ -259,7 +259,6 @@ async function renderView() {
 
       if (!unlocked) {
         markerEl.style.opacity = 0.5;
-        markerEl.style.pointerEvents = "none";
       }
 
       markersContainer.appendChild(markerEl);
