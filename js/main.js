@@ -257,7 +257,7 @@ const enrichedInvasives = await Promise.all(
 );
 
 // Now use the enriched (complete) data to create DOM elements
-const list = document.getElementById("invasive-list");
+//const list = document.getElementById("invasive-list");
 list.innerHTML = ""; // make sure it's empty before we add new items
 
 enrichedInvasives.forEach((inv) => {
