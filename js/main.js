@@ -164,7 +164,7 @@ function showClearModal(message) {
   });
 }
 
-// ─── INSERT THE NEW FUNCTION HERE ───────────────────────────────────────────────
+
 function showMessage(title = "Notice", message, durationMs = 0) {
   const modal = document.createElement("div");
   modal.style.position = "fixed";
@@ -230,6 +230,47 @@ function showMessage(title = "Notice", message, durationMs = 0) {
   if (durationMs > 0) {
     setTimeout(close, durationMs);
   }
+}
+
+
+// ─── Floating reward popup (e.g. +5 coins) ──────────────────────────────────────
+function showRewardPopup(targetElement, text, color = "#FFD700", duration = 1200) {
+  if (!targetElement) return;
+
+  const popup = document.createElement("div");
+  popup.textContent = text;
+  popup.style.position = "absolute";
+  popup.style.left = "50%";
+  popup.style.top = "50%";
+  popup.style.transform = "translate(-50%, -50%)";
+  popup.style.color = color;
+  popup.style.fontSize = "1.4rem";
+  popup.style.fontWeight = "bold";
+  popup.style.textShadow = "2px 2px 6px rgba(0,0,0,0.8)";
+  popup.style.pointerEvents = "none";
+  popup.style.zIndex = "150";
+  popup.style.opacity = "0";
+  popup.style.transition = `opacity ${duration/1000}s ease-out, transform ${duration/1000}s ease-out`;
+
+  // Position relative to the clicked/removed element
+  const rect = targetElement.getBoundingClientRect();
+  popup.style.left = `${rect.left + rect.width/2}px`;
+  popup.style.top = `${rect.top + rect.height/2}px`;
+
+  document.body.appendChild(popup);
+
+  // Trigger animation
+  requestAnimationFrame(() => {
+    popup.style.opacity = "1";
+    popup.style.transform = "translate(-50%, -50%) translateY(-60px)";
+  });
+
+  // Fade out & remove
+  setTimeout(() => {
+    popup.style.opacity = "0";
+    popup.style.transform = "translate(-50%, -50%) translateY(-120px)";
+    setTimeout(() => popup.remove(), 600);
+  }, duration - 600);
 }
 
 // ─── Render ──────────────────────────────────────────────────────────────────────
@@ -452,6 +493,12 @@ if (invEl) {
 
   setTimeout(() => {
     invEl.remove();
+	showRewardPopup(
+  invEl,
+  `+${inv.coins || 5} 🪙   +${inv.health || 8}% 🌿`,
+  "#FFFFFF",
+  1600
+);
     updateCoinsDisplay();
     updateHealthDisplay(changes.zones[zoneId]);
 
