@@ -391,7 +391,11 @@ document.addEventListener("DOMContentLoaded", () => {
         currentView = "zone:" + zoneId;
         renderView();
       } else {
-        alert("This zone is locked! Complete the previous area first.");
+        showMessage(
+			"Zone Locked",
+			"You need to clear more invasives in the previous zone first.\nComplete the current area to unlock this one!",
+			5000   // disappears automatically after 5 seconds
+		);
       }
       return;
     }
