@@ -384,7 +384,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	console.log("Click detected on:", target.tagName, target.className, target.dataset);
 
     // Click on island marker
-    const marker = target.closest(".map-marker");
+    const marker = target.closest(".map-marker, [data-zone-id], [data-zoneid]");
     if (marker) {
       const zoneId = marker.dataset.zoneId;
       const zone = zones.find(z => z.id === zoneId);
