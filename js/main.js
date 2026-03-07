@@ -493,12 +493,8 @@ if (invEl) {
 
   setTimeout(() => {
     invEl.remove();
-	showRewardPopup(
-  invEl,
-  `+${inv.coins || 5} 🪙   +${inv.health || 8}% 🌿`,
-  "#FFFFFF",
-  1600
-);
+	showRewardPopup(invEl, `+${inv.coins || 5} 🪙`, "#FFD700", 1400);
+	showRewardPopup(invEl, `+${inv.health || 8}% 🌿`, "#4CAF50", 1400);
     updateCoinsDisplay();
     updateHealthDisplay(changes.zones[zoneId]);
 
