@@ -25,7 +25,18 @@ export function loadPlayer() {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      player = { ...player, ...parsed };
+      player = {
+  ...player,
+  ...parsed,
+  inventory: {
+    ...player.inventory,           // keep defaults
+    ...(parsed.inventory || {})    // apply saved values on top
+  },
+  zones: {
+    ...player.zones,
+    ...(parsed.zones || {})
+  }
+};
       console.log("Player data loaded");
     } catch (err) {
       console.warn("Corrupted save — starting fresh", err);
