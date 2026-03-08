@@ -270,6 +270,35 @@ function showRewardPopup(targetElement, text, color = "#FFD700", duration = 1200
     popup.style.transform = `translate(-50%, -50%) translateY(-140px) scale(0.8)`;
     setTimeout(() => popup.remove(), 400);
   }, duration - 400);
+  
+  
+  function showRewardPopup(targetElement, text, color = "#FFD700", duration = 1200) {
+  if (!targetElement) return;
+
+  const popup = document.createElement("div");
+  popup.textContent = text;
+  // ... all styles ...
+
+  console.log("Popup created – initial opacity:", popup.style.opacity);      // should be "0"
+
+  document.body.appendChild(popup);
+
+  requestAnimationFrame(() => {
+    console.log("RAF fired – setting opacity to 1");
+    popup.style.opacity = "1";
+    popup.style.transform = `translate(-50%, -50%) translateY(-80px) scale(1.1)`;
+  });
+
+  setTimeout(() => {
+    console.log("Fade-out started");
+    popup.style.opacity = "0";
+    popup.style.transform = `translate(-50%, -50%) translateY(-140px) scale(0.8)`;
+    setTimeout(() => {
+      console.log("Popup removed");
+      popup.remove();
+    }, 400);
+  }, duration - 400);
+}
 }
 
 
