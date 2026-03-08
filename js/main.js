@@ -255,7 +255,7 @@ function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, duratio
   popup.style.position = "absolute";
   popup.style.left = "80%";
   popup.style.top = "50%";
-  popup.style.transform = "translate(-50%, -50%)";
+  //popup.style.transform = "translate(-50%, -50%)";
   popup.style.fontSize = "clamp(1.3rem, 4.5vw, 1.8rem)";
   popup.style.fontWeight = "bold";
   popup.style.textShadow = "2px 2px 8px rgba(0,0,0,0.9)";
