@@ -10,7 +10,18 @@ html, body {
   overflow: hidden;
   font-family: 'Poppins', Arial, sans-serif;
   background: #000;
-  touch-action: manipulation;         /* disable double-tap zoom on mobile */
+  touch-action: manipulation; /* disable double-tap zoom on mobile */
+}
+
+/* ─── Root font scaling for responsive text ────────────────────────────────────── */
+html {
+  font-size: 16px; /* desktop default */
+}
+@media (max-width: 768px) {
+  html { font-size: 14px; }
+}
+@media (max-width: 480px) {
+  html { font-size: 12px; }
 }
 
 /* ─── Fullscreen & orientation warning ─────────────────────────────────────────── */
@@ -30,7 +41,6 @@ html, body {
   box-shadow: 0 8px 20px rgba(0,0,0,0.5);
   transition: all 0.3s ease;
 }
-
 #fullscreen-btn:hover {
   transform: scale(1.08);
   box-shadow: 0 12px 30px rgba(76,175,80,0.6);
@@ -49,7 +59,6 @@ html, body {
   padding: 20px;
   z-index: 9998;
 }
-
 .portrait-warning-visible #portrait-warning {
   display: flex;
 }
@@ -60,7 +69,6 @@ html, body {
   inset: 0;
   background: #000;
 }
-
 #map-container {
   width: 100%;
   height: 100%;
@@ -86,7 +94,6 @@ html, body {
   inset: 0;
   z-index: 10;
 }
-
 .map-marker {
   position: absolute;
   width: 64px;
@@ -105,26 +112,21 @@ html, body {
   transform: translate(-50%, -50%);
   transition: all 0.25s ease;
 }
-
 .map-marker:hover {
   transform: translate(-50%, -50%) scale(1.18);
   box-shadow: 0 12px 30px rgba(255,215,0,0.9), 0 0 20px rgba(255,215,0,0.7);
   background: rgba(255,255,255,1);
 }
-
 .map-marker.locked {
   background: rgba(150,150,150,0.6) !important;
   border-color: #757575;
   cursor: not-allowed;
   opacity: 0.65;
 }
-
 .map-marker.locked:hover {
-  transform: translate(-50%, -50%) scale(1.05); /* small feedback */
+  transform: translate(-50%, -50%) scale(1.05);
   box-shadow: 0 8px 20px rgba(150,150,150,0.8);
 }
-}
-
 .marker-label {
   text-align: center;
   line-height: 1.1;
@@ -137,452 +139,22 @@ html, body {
   inset: 0;
   pointer-events: none;
   z-index: 100;
-  padding: 15px;
-  color: white;
-  text-shadow: 1px 1px 4px black;
 }
 
-#ui-overlay > * {
+/* ─── Unified vertical HUD – all on right side, semi-transparent ────────────────── */
+.hud-right-stack {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  z-index: 200;
+}
+
+.hud-badge {
   pointer-events: auto;
-}
-
-.hud-top-left {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 10px 18px;
-  border-radius: 12px;
-  font-size: 1.3rem;
-  font-weight: bold;
-}
-
-/* ─── Back to Map button (only in zones) ───────────────────────────────────────── */
-#back-to-map {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 14px 32px;
-  background: linear-gradient(145deg, #4CAF50, #66BB6A);
-  color: white;
-  border: none;
-  border-radius: 20px;
-  font-size: 1.2rem;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 6px 12px rgba(0,0,0,0.4);
-  transition: all 0.2s ease;
-  z-index: 200;
-}
-
-#back-to-map:hover {
-  background: linear-gradient(145deg, #66BB6A, #81C784);
-  transform: translateX(-50%) scale(1.06);
-}
-
-/* ─── Zone content & invasives ────────────────────────────────────────────────── */
-.zone-content {
-  position: relative;
-  z-index: 3;
-  padding: 20px;
-  color: white;
-  text-shadow: 1px 1px 4px black;
-}
-
-.invasive-item {
-  position: absolute;
-  cursor: pointer;
-  width: 120px;
-  height: 120px;
-  z-index: 15;
-  transition: transform 0.3s ease;
-}
-
-.invasive-item:hover {
-  transform: scale(1.15);
-}
-
-.invasive-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
-}
-
-/* ─── Progress bar ─────────────────────────────────────────────────────────────── */
-.progress-bar {
-  background: rgba(255,255,255,0.3);
-  border-radius: 12px;
-  height: 14px;
-  overflow: hidden;
-  margin: 12px 0;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(to right, #4CAF50, #81C784);
-  transition: width 0.5s ease;
-}
-
-/* ─── HUD badges – small, rounded, semi-transparent (June's Journey style) ──────── */
-./* ─── Base font size scaling (root rem) ────────────────────────────────────────── */
-html {
-  font-size: 16px; /* desktop default */
-}
-
-@media (max-width: 768px) { /* tablets & small laptops */
-  html {
-    font-size: 14px;
-  }
-}
-
-@media (max-width: 480px) { /* phones */
-  html {
-    font-size: 12px;
-  }
-}
-
-/* ─── HUD badges – responsive size with vw/vmin ────────────────────────────────── */
-.hud-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6em;
-  padding: 0.6em 1.2em;
-  border-radius: 999px;
-  font-size: clamp(0.9rem, 2.5vw, 1.1rem); /* scales with screen width */
-  font-weight: bold;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border: 1px solid rgba(255,255,255,0.15);
-  box-shadow: 0 0.4em 1.2em rgba(0,0,0,0.5);
-  color: white;
-  text-shadow: 0 0.1em 0.3em black;
-  transition: transform 0.2s ease;
-}
-
-.hud-badge:hover {
-  transform: scale(1.08);
-}
-
-/* Position & specific colors */
-.hud-coins {
-  position: absolute;
-  top: 1vh;
-  left: 2vw;
-  background: linear-gradient(145deg, #FFD700, #DAA520);
-  border: 0.15em solid #B8860B;
-  color: #1a1a1a;
-  text-shadow: none;
-}
-
-.hud-resources {
-  position: absolute;
-  top: 1vh;
-  right: 2vw;
-  display: flex;
-  gap: 1vw;
-}
-
-.hud-diamonds { background: linear-gradient(145deg, #8E24AA, #AB47BC); border: 0.15em solid #7B1FA2; }
-.hud-stars    { background: linear-gradient(145deg, #FFA000, #FFB300); border: 0.15em solid #FF8F00; }
-.hud-energy   { background: linear-gradient(145deg, #00BCD4, #26C6DA); border: 0.15em solid #0097A7; }
-
-/* ─── Back to Map button – responsive size & position ──────────────────────────── */
-#back-to-map {
-  position: fixed;
-  bottom: 3vh;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: clamp(0.8em, 3vw, 1em) clamp(1.5em, 5vw, 2em);
-  background: rgba(76, 175, 80, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: white;
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 999px;
-  font-size: clamp(1rem, 4vw, 1.1rem);
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 0.6em 1.6em rgba(0,0,0,0.5);
-  transition: all 0.25s ease;
-  z-index: 200;
-  white-space: nowrap;
-}
-
-#back-to-map:hover {
-  background: rgba(76, 175, 80, 1);
-  transform: translateX(-50%) scale(1.08);
-  box-shadow: 0 1em 2.4em rgba(76,175,80,0.5);
-}
-
-/* ─── Health / progress bar – thinner & responsive width ───────────────────────── */
-.progress-bar {
-  height: clamp(8px, 1.2vh, 12px);
-  background: rgba(255,255,255,0.18);
-  border-radius: 12px;
-  overflow: hidden;
-  margin: 0.8em 0;
-  box-shadow: inset 0 0.2em 0.4em rgba(0,0,0,0.5);
-  width: 100%;
-  max-width: clamp(280px, 60vw, 450px);
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(to right, #4CAF50, #8BC34A);
-  transition: width 0.6s ease;
-}
-
-/* ─── Zone title & description – smaller & more integrated on mobile ───────────── */
-.zone-content h2 {
-  font-size: clamp(1.4rem, 5vw, 1.8rem);
-  margin-bottom: 0.5em;
-  background: rgba(0,0,0,0.4);
-  padding: 0.5em 1em;
-  border-radius: 12px;
-  display: inline-block;
-  backdrop-filter: blur(4px);
-}
-
-.zone-content p {
-  font-size: clamp(0.95rem, 3.5vw, 1.1rem);
-  margin-bottom: 1em;
-  background: rgba(0,0,0,0.3);
-  padding: 0.4em 0.8em;
-  border-radius: 10px;
-  display: inline-block;
-}
-
-.zone-content h3 {
-  font-size: clamp(1rem, 3.8vw, 1.1rem);
-  margin: 1.2em 0 0.8em;
-  background: rgba(0,0,0,0.4);
-  padding: 0.4em 0.8em;
-  border-radius: 10px;
-  display: inline-block;
-}
-
-/* ─── Health bar – thinner and more elegant ────────────────────────────────────── */
-.progress-bar {
-  height: 10px;
-  background: rgba(255,255,255,0.18);
-  border-radius: 12px;
-  overflow: hidden;
-  margin: 8px 0;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
-  max-width: 400px;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(to right, #4CAF50, #8BC34A);
-  transition: width 0.6s ease;
-}
-
-/* ─── Invasives instruction – smaller and integrated ───────────────────────────── */
-.zone-content h3 {
-  font-size: 1.1rem;
-  margin: 16px 0 12px;
-  background: rgba(0,0,0,0.4);
-  padding: 6px 14px;
-  border-radius: 10px;
-  display: inline-block;
-}
-
-
-/* ─── New HUD badges ───────────────────────────────────────────────────────────── */
-.hud-toolbox {
-  position: fixed;
-  top: 20px;
-  left: 80px;  // adjust to fit next to coins
-  background: linear-gradient(145deg, #8D6E63, #A1887F);  // brown/wood theme
-  color: white;
-  font-size: 1.2rem;
-  padding: 8px 14px;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-  cursor: pointer;  // clickable
-}
-
-.hud-inventory {
-  position: fixed;
-  top: 20px;
-  right: 160px;  // adjust to fit next to energy
-  background: linear-gradient(145deg, #795548, #5D4037);  // bag/leather theme
-  color: white;
-  font-size: 1.2rem;
-  padding: 8px 14px;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-  cursor: pointer;  // clickable
-}
-
-/* Gallery modals (for toolbox/inventory) */
-.gallery-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-
-.gallery-box {
-  background: rgba(30,50,30,0.95);
-  border: 2px solid #4CAF50;
-  border-radius: 16px;
-  padding: 24px;
-  max-width: 90%;
-  width: 400px;
-  text-align: center;
-  color: #e8f5e9;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-  transform: scale(0.92);
-  transition: transform 0.3s ease;
-}
-
-.gallery-box h3 {
-  margin: 0 0 16px;
-  font-size: 1.5rem;
-  color: #81C784;
-}
-
-.gallery-item {
-  margin: 8px 0;
-  font-size: 1.1rem;
-  padding: 8px;
-  background: rgba(0,0,0,0.3);
-  border-radius: 8px;
-}
-
-
-/* ─── HUD stacking to prevent overlap ──────────────────────────────────────────── */
-.hud-left-stack {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;  /* vertical spacing between badges */
-  z-index: 100;
-}
-
-.hud-resources {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;  /* vertical spacing */
-  align-items: flex-end;
-  z-index: 100;
-}
-
-/* Make badges smaller & consistent */
-.hud-badge {
-  padding: 6px 12px;
-  font-size: 1rem;
-  min-width: 60px;
-  text-align: center;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-  cursor: pointer;  /* clickable */
-  transition: transform 0.2s ease;
-}
-
-.hud-badge:hover {
-  transform: scale(1.05);
-}
-
-/* Toolbox & Inventory specific colors */
-.hud-toolbox {
-  background: linear-gradient(145deg, #8D6E63, #A1887F); /* wood/tool theme */
-}
-
-.hud-inventory {
-  background: linear-gradient(145deg, #795548, #5D4037); /* leather/bag theme */
-}
-
-/* ─── Compact vertical HUD – right side, semi-transparent ───────────────────────── */
-#ui-overlay {
-  pointer-events: none; /* so clicks pass through to game elements */
-}
-
-.hud-right-stack {
-  position: fixed;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;                /* space between badges */
-  align-items: flex-end;
-  z-index: 100;
-}
-
-.hud-badge {
-  pointer-events: auto;     /* only badges clickable */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  height: 36px;
-  padding: 0 10px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: white;
-  background: rgba(0, 0, 0, 0.45);     /* semi-transparent dark */
-  backdrop-filter: blur(6px);          /* glass effect */
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.12);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-  transition: all 0.18s ease;
-}
-
-.hud-badge:hover {
-  background: rgba(0, 0, 0, 0.65);
-  transform: scale(1.06);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-}
-
-/* Specific colors (optional – can remove if you want uniform look) */
-.hud-coins    { background: rgba(255, 193, 7, 0.25); }
-.hud-diamonds { background: rgba(156, 39, 176, 0.25); }
-.hud-stars    { background: rgba(255, 193, 7, 0.25); }
-.hud-energy   { background: rgba(33, 150, 243, 0.25); }
-.hud-toolbox  { background: rgba(141, 110, 99, 0.35); }
-.hud-inventory{ background: rgba(121, 85, 72, 0.35); }
-
-/* Smaller icons inside badges */
-.hud-badge span {
-  font-size: 1.1rem;
-  margin-right: 4px;
-}
-
-
-/* ─── Unified compact vertical HUD – all on right, semi-transparent ─────────────── */
-#ui-overlay {
-  pointer-events: none; /* clicks pass through to game */
-}
-
-.hud-right-stack {
-  position: fixed;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;                    /* space between each badge */
-  align-items: flex-end;
-  z-index: 200;                /* above game content but below modals */
-}
-
-.hud-badge {
-  pointer-events: auto;         /* only badges clickable */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -592,8 +164,8 @@ html {
   font-size: 0.9rem;
   font-weight: 600;
   color: white;
-  background: rgba(0, 0, 0, 0.45);     /* semi-transparent dark base */
-  backdrop-filter: blur(6px);          /* glass/mist effect */
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
   border-radius: 10px;
   border: 1px solid rgba(255,255,255,0.1);
   box-shadow: 0 2px 8px rgba(0,0,0,0.4);
@@ -606,16 +178,112 @@ html {
   box-shadow: 0 4px 16px rgba(0,0,0,0.5);
 }
 
-/* Optional subtle per-badge tint (very light – won't dominate) */
-.hud-coins    { background: rgba(255, 193, 7, 0.18); }
-.hud-diamonds { background: rgba(156, 39, 176, 0.18); }
-.hud-stars    { background: rgba(255, 193, 7, 0.18); }
-.hud-energy   { background: rgba(33, 150, 243, 0.18); }
-.hud-toolbox  { background: rgba(141, 110, 99, 0.28); }
-.hud-inventory{ background: rgba(121, 85, 72, 0.28); }
+/* Subtle per-badge tints (very light) */
+.hud-coins     { background: rgba(255, 193, 7, 0.18); }
+.hud-diamonds  { background: rgba(156, 39, 176, 0.18); }
+.hud-stars     { background: rgba(255, 193, 7, 0.18); }
+.hud-energy    { background: rgba(33, 150, 243, 0.18); }
+.hud-toolbox   { background: rgba(141, 110, 99, 0.28); }
+.hud-inventory { background: rgba(121, 85, 72, 0.28); }
 
-/* Smaller icons inside */
+/* Smaller icons inside badges */
 .hud-badge span {
   font-size: 1.05rem;
   margin-right: 4px;
+}
+
+/* ─── Back to Map button ───────────────────────────────────────────────────────── */
+#back-to-map {
+  position: fixed;
+  bottom: 3vh;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: clamp(0.8em, 3vw, 1em) clamp(1.5em, 5vw, 2em);
+  background: rgba(76, 175, 80, 0.85);
+  backdrop-filter: blur(8px);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 999px;
+  font-size: clamp(1rem, 4vw, 1.1rem);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 0.6em 1.6em rgba(0,0,0,0.5);
+  transition: all 0.25s ease;
+  z-index: 200;
+  white-space: nowrap;
+}
+#back-to-map:hover {
+  background: rgba(76, 175, 80, 1);
+  transform: translateX(-50%) scale(1.08);
+  box-shadow: 0 1em 2.4em rgba(76,175,80,0.5);
+}
+
+/* ─── Zone content & invasives ────────────────────────────────────────────────── */
+.zone-content {
+  position: relative;
+  z-index: 3;
+  padding: 20px;
+  color: white;
+  text-shadow: 1px 1px 4px black;
+}
+.invasive-item {
+  position: absolute;
+  cursor: pointer;
+  width: 120px;
+  height: 120px;
+  z-index: 15;
+  transition: transform 0.3s ease;
+}
+.invasive-item:hover {
+  transform: scale(1.15);
+}
+.invasive-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+}
+
+/* ─── Progress bar ─────────────────────────────────────────────────────────────── */
+.progress-bar {
+  height: clamp(8px, 1.2vh, 12px);
+  background: rgba(255,255,255,0.18);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 0.8em 0;
+  box-shadow: inset 0 0.2em 0.4em rgba(0,0,0,0.5);
+  width: 100%;
+  max-width: clamp(280px, 60vw, 450px);
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, #4CAF50, #8BC34A);
+  transition: width 0.6s ease;
+}
+
+/* ─── Zone title, description & instructions ───────────────────────────────────── */
+.zone-content h2 {
+  font-size: clamp(1.4rem, 5vw, 1.8rem);
+  margin-bottom: 0.5em;
+  background: rgba(0,0,0,0.4);
+  padding: 0.5em 1em;
+  border-radius: 12px;
+  display: inline-block;
+  backdrop-filter: blur(4px);
+}
+.zone-content p {
+  font-size: clamp(0.95rem, 3.5vw, 1.1rem);
+  margin-bottom: 1em;
+  background: rgba(0,0,0,0.3);
+  padding: 0.4em 0.8em;
+  border-radius: 10px;
+  display: inline-block;
+}
+.zone-content h3 {
+  font-size: clamp(1rem, 3.8vw, 1.1rem);
+  margin: 1.2em 0 0.8em;
+  background: rgba(0,0,0,0.4);
+  padding: 0.4em 0.8em;
+  border-radius: 10px;
+  display: inline-block;
 }
