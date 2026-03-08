@@ -250,7 +250,7 @@ function showRewardPopup(targetElement, text, color = "#FFD700", duration = 1200
   popup.style.zIndex = "250";
   popup.style.opacity = "0";
   popup.style.transition = `all ${duration/1000}s cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
-
+console.log("Popup created – initial opacity:", popup.style.opacity);
   // Position at center of removed element
   const rect = targetElement.getBoundingClientRect();
   popup.style.left = `${rect.left + rect.width / 2}px`;
@@ -260,45 +260,22 @@ function showRewardPopup(targetElement, text, color = "#FFD700", duration = 1200
 
   // Animate up + fade in
   requestAnimationFrame(() => {
+	  console.log("RAF fired – setting opacity to 1");
     popup.style.opacity = "1";
     popup.style.transform = `translate(-50%, -50%) translateY(-80px) scale(1.1)`;
   });
-
-  // Fade out + fly higher
-  setTimeout(() => {
-    popup.style.opacity = "0";
-    popup.style.transform = `translate(-50%, -50%) translateY(-140px) scale(0.8)`;
-    setTimeout(() => popup.remove(), 400);
-  }, duration - 400);
-  
-  
-  function showRewardPopup(targetElement, text, color = "#FFD700", duration = 1200) {
-  if (!targetElement) return;
-
-  const popup = document.createElement("div");
-  popup.textContent = text;
-  // ... all styles ...
-
-  console.log("Popup created – initial opacity:", popup.style.opacity);      // should be "0"
-
-  document.body.appendChild(popup);
-
-  requestAnimationFrame(() => {
-    console.log("RAF fired – setting opacity to 1");
-    popup.style.opacity = "1";
-    popup.style.transform = `translate(-50%, -50%) translateY(-80px) scale(1.1)`;
-  });
+setTimeout(() => {
+  console.log("Fade-out started");
+  popup.style.opacity = "0";
+  popup.style.transform = `translate(-50%, -50%) translateY(-140px) scale(0.8)`;
 
   setTimeout(() => {
-    console.log("Fade-out started");
-    popup.style.opacity = "0";
-    popup.style.transform = `translate(-50%, -50%) translateY(-140px) scale(0.8)`;
-    setTimeout(() => {
-      console.log("Popup removed");
-      popup.remove();
-    }, 400);
-  }, duration - 400);
-}
+    popup.remove();
+    console.log("Popup removed");
+  }, 400);
+}, duration - 400);
+  
+  
 }
 
 
