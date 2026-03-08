@@ -232,50 +232,68 @@ function showMessage(title = "Notice", message, durationMs = 0) {
   }
 }
 
-// ─── Floating reward popup (+coins / +health) ────────────────────────────────────
-function showRewardPopup(targetElement, text, color = "#FFD700", duration = 1200) {
-  if (!targetElement) return;
+// ─── Floating reward popup (combined coins + health, directional animation) ─────
+function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, duration = 1400) {
+  if (!targetElement || (coinsDelta === 0 && healthDelta === 0)) return;
 
   const popup = document.createElement("div");
-  popup.textContent = text;
+
+  // Build text
+  let parts = [];
+  if (coinsDelta !== 0) {
+    const sign = coinsDelta > 0 ? "+" : "";
+    parts.push(`<span style="color: ${coinsDelta > 0 ? '#FFD700' : '#ff5252'};">${sign}${Math.abs(coinsDelta)} 🪙</span>`);
+  }
+  if (healthDelta !== 0) {
+    const sign = healthDelta > 0 ? "+" : "";
+    parts.push(`<span style="color: ${healthDelta > 0 ? '#4CAF50' : '#ff5252'};">${sign}${Math.abs(healthDelta)}% 🌿</span>`);
+  }
+
+  popup.innerHTML = parts.join("   ");
+
+  // Base style
   popup.style.position = "absolute";
   popup.style.left = "50%";
   popup.style.top = "50%";
   popup.style.transform = "translate(-50%, -50%)";
-  popup.style.color = color;
-  popup.style.fontSize = "clamp(1.2rem, 4vw, 1.6rem)";
+  popup.style.fontSize = "clamp(1.3rem, 4.5vw, 1.8rem)";
   popup.style.fontWeight = "bold";
-  popup.style.textShadow = "2px 2px 6px rgba(0,0,0,0.9)";
+  popup.style.textShadow = "2px 2px 8px rgba(0,0,0,0.9)";
+  popup.style.padding = "12px 20px";
+  popup.style.borderRadius = "12px";
+  popup.style.background = "rgba(0,0,0,0.65)";
+  popup.style.backdropFilter = "blur(4px)";
   popup.style.pointerEvents = "none";
-  popup.style.zIndex = "250";
+  popup.style.zIndex = "9999";
   popup.style.opacity = "0";
-  popup.style.transition = `all ${duration/1000}s cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
-console.log("Popup created – initial opacity:", popup.style.opacity);
-  // Position at center of removed element
-  popup.style.left = "50%";
-popup.style.top = "50%";
-popup.style.transform = "translate(-50%, -50%)";  // remove the translateY for test
+  popup.style.transition = `all ${duration/1000}s cubic-bezier(0.22, 0.61, 0.36, 1)`;
+
+  // Position near the element (clamped)
+  const rect = targetElement.getBoundingClientRect();
+  let x = rect.left + rect.width / 2;
+  let y = rect.top + rect.height / 2;
+  x = Math.max(80, Math.min(x, window.innerWidth - 80));
+  y = Math.max(80, Math.min(y, window.innerHeight - 120));
+  popup.style.left = `${x}px`;
+  popup.style.top = `${y}px`;
 
   document.body.appendChild(popup);
 
-  // Animate up + fade in
+  // Determine direction
+  const isPositive = (coinsDelta >= 0 && healthDelta >= 0) || (coinsDelta + healthDelta >= 0);
+  const directionY = isPositive ? -90 : +90; // up = negative Y, down = positive Y
+
   requestAnimationFrame(() => {
-	  console.log("RAF fired – setting opacity to 1");
+    void popup.offsetWidth; // force reflow
     popup.style.opacity = "1";
-    popup.style.transform = `translate(-50%, -50%) translateY(-80px) scale(1.1)`;
+    popup.style.transform = `translate(-50%, -50%) translateY(${directionY}px) scale(1.05)`;
   });
-setTimeout(() => {
-  console.log("Fade-out started");
-  popup.style.opacity = "0";
-  popup.style.transform = `translate(-50%, -50%) translateY(-140px) scale(0.8)`;
 
   setTimeout(() => {
-    popup.remove();
-    console.log("Popup removed");
-  }, 400);
-}, duration - 400);
-  
-  
+    popup.style.opacity = "0";
+    popup.style.transform = `translate(-50%, -50%) translateY(${directionY * 1.8}px) scale(0.92)`;
+    setTimeout(() => popup.remove(), 500);
+  }, duration - 500);
 }
 
 
@@ -500,8 +518,7 @@ if (invEl) {
 
   setTimeout(() => {
     invEl.remove();
-	showRewardPopup(invEl, `+${inv.coins || 5} 🪙`, "#FFD700", 1400);
-	showRewardPopup(invEl, `+${inv.health || 8}% 🌿`, "#4CAF50", 1400);
+	showRewardPopup(invEl, inv.coins || 5, inv.health || 8, 1600);
 	  console.log(inv.health);
     updateCoinsDisplay();
     updateHealthDisplay(changes.zones[zoneId]);
