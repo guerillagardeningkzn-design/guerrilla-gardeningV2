@@ -508,3 +508,58 @@ html {
 .hud-inventory {
   background: linear-gradient(145deg, #795548, #5D4037); /* leather/bag theme */
 }
+
+/* ─── Compact vertical HUD – right side, semi-transparent ───────────────────────── */
+#ui-overlay {
+  pointer-events: none; /* so clicks pass through to game elements */
+}
+
+.hud-right-stack {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;                /* space between badges */
+  align-items: flex-end;
+  z-index: 100;
+}
+
+.hud-badge {
+  pointer-events: auto;     /* only badges clickable */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 36px;
+  padding: 0 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+  background: rgba(0, 0, 0, 0.45);     /* semi-transparent dark */
+  backdrop-filter: blur(6px);          /* glass effect */
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  transition: all 0.18s ease;
+}
+
+.hud-badge:hover {
+  background: rgba(0, 0, 0, 0.65);
+  transform: scale(1.06);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+
+/* Specific colors (optional – can remove if you want uniform look) */
+.hud-coins    { background: rgba(255, 193, 7, 0.25); }
+.hud-diamonds { background: rgba(156, 39, 176, 0.25); }
+.hud-stars    { background: rgba(255, 193, 7, 0.25); }
+.hud-energy   { background: rgba(33, 150, 243, 0.25); }
+.hud-toolbox  { background: rgba(141, 110, 99, 0.35); }
+.hud-inventory{ background: rgba(121, 85, 72, 0.35); }
+
+/* Smaller icons inside badges */
+.hud-badge span {
+  font-size: 1.1rem;
+  margin-right: 4px;
+}
