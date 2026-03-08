@@ -383,19 +383,19 @@ const enrichedInvasives = await Promise.all(
       const fullDef = await loadEntityDefinition(inv.id);
 
       if (fullDef) {
-        // Merge: base data first, then JSON overrides
         const merged = { ...inv, ...fullDef, isExternal: true };
 
-        // Force numeric fields (protects against string values from JSON)
-        if (typeof merged.coins  === 'string') merged.coins  = Number(merged.coins);
-        if (typeof merged.health === 'string') merged.health = Number(merged.health);
+        // Force numeric – and fallback if invalid
+        merged.coins  = Number(fullDef.coins)  ?? inv.coins  ?? 5;
+        merged.health = Number(fullDef.health) ?? inv.health ?? 8;
 
-        // Optional: add more fields here in the future
-        // if (typeof merged.value === 'string') merged.value = Number(merged.value);
-
-        // Optional: fallback if conversion failed (NaN → default)
-        if (isNaN(merged.coins))  merged.coins  = inv.coins  ?? 5;
-        if (isNaN(merged.health)) merged.health = inv.health ?? 8;
+        // Optional: log suspicious values (very useful during dev)
+        if (typeof fullDef.coins === 'string') {
+          console.warn(`coins was string in JSON: "${fullDef.coins}" → converted to ${merged.coins}`);
+        }
+        if (typeof fullDef.health === 'string') {
+          console.warn(`health was string in JSON: "${fullDef.health}" → converted to ${merged.health}`);
+        }
 
         return merged;
       } else {
@@ -404,7 +404,7 @@ const enrichedInvasives = await Promise.all(
       }
     }
 
-    // Normal inline invasives stay unchanged
+    // Normal inline invasives stay as they are
     return inv;
   })
 );
@@ -596,6 +596,8 @@ if (inv.mutable?.onDestroy?.drop) {
 
   setTimeout(() => {
     invEl.remove();
+	const safeCoins  = Number(inv.coins)  || 5;   // NaN → 5
+	const safeHealth = Number(inv.health) || 8;   // NaN → 8
 
     showRewardPopup(invEl, inv.coins || 5, inv.health || 8, 1600);
     console.log("Health delta from invasive:", inv.health);
