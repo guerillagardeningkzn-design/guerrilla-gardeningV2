@@ -252,9 +252,9 @@ function showRewardPopup(targetElement, text, color = "#FFD700", duration = 1200
   popup.style.transition = `all ${duration/1000}s cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
 console.log("Popup created – initial opacity:", popup.style.opacity);
   // Position at center of removed element
-  const rect = targetElement.getBoundingClientRect();
-  popup.style.left = `${rect.left + rect.width / 2}px`;
-  popup.style.top = `${rect.top + rect.height / 2}px`;
+  popup.style.left = "50%";
+popup.style.top = "50%";
+popup.style.transform = "translate(-50%, -50%)";  // remove the translateY for test
 
   document.body.appendChild(popup);
 
