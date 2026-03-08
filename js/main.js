@@ -31,28 +31,19 @@ let currentPlayer;
 let currentView = "island";
 
 // ─── Data ────────────────────────────────────────────────────────────────────────
-// Old inline style still works
 const invasivesByZone = {
   beach: [
     { id: "seaweed1", name: "Invasive Seaweed", coins: 3, health: 5 },
     { id: "seaweed2", name: "More Seaweed", coins: 4, health: 6 },
-
-    // ── New: external JSON entity ───────────────────────────────────────────
     {
       id: "alien-crabgrass",
-      name: "Alien Crabgrass",           // fallback display name
-      coins: 5,                          // fallback reward
-      health: 8,                         // fallback health contribution
-      isExternal: true                   // flag → load full JSON definition
+      isExternal: true
     }
-    // { id: "crabgrass", name: "Alien Crabgrass", coins: 5, health: 8 }  ← old version you can remove or keep
   ],
-
   forest: [
     { id: "vine1", name: "Choking Vine", coins: 6, health: 7 },
     { id: "weed2", name: "Foreign Weed", coins: 5, health: 5 }
   ],
-
   mountain: [
     { id: "thistle", name: "Thorny Thistle", coins: 7, health: 10 }
   ]
@@ -82,12 +73,6 @@ function updateCoinsDisplay() {
       setTimeout(() => coinContainer.classList.remove("pulse"), 800);
     }
   }
-
-  // Placeholder for other badges (add logic when you implement them)
-  // const gemsEl = document.getElementById("gems-display");
-  // if (gemsEl) gemsEl.textContent = currentPlayer.gems ?? 0;
-  
-  
 }
 
 function updateHealthDisplay(health) {
@@ -97,7 +82,7 @@ function updateHealthDisplay(health) {
   if (text) text.textContent = "Health: " + health + "%";
 }
 
-// ─── Custom modal for "area cleared" message ────────────────────────────────────
+// ─── Modals ──────────────────────────────────────────────────────────────────────
 function showClearModal(message) {
   const modal = document.createElement("div");
   modal.style.position = "fixed";
@@ -141,20 +126,17 @@ function showClearModal(message) {
 
   document.body.appendChild(modal);
 
-  // Fade in
   setTimeout(() => {
     modal.style.opacity = "1";
     modal.querySelector("div").style.transform = "scale(1)";
   }, 50);
 
-  // Close on OK click
   modal.querySelector("#modal-ok-btn").addEventListener("click", () => {
     modal.style.opacity = "0";
     modal.querySelector("div").style.transform = "scale(0.9)";
     setTimeout(() => modal.remove(), 400);
   });
 
-  // Close on outside click (optional)
   modal.addEventListener("click", (e) => {
     if (e.target === modal) {
       modal.style.opacity = "0";
@@ -163,7 +145,6 @@ function showClearModal(message) {
     }
   });
 }
-
 
 function showMessage(title = "Notice", message, durationMs = 0) {
   const modal = document.createElement("div");
@@ -209,13 +190,11 @@ function showMessage(title = "Notice", message, durationMs = 0) {
 
   document.body.appendChild(modal);
 
-  // Fade in
   requestAnimationFrame(() => {
     modal.style.opacity = "1";
     modal.querySelector("div").style.transform = "scale(1)";
   });
 
-  // Close logic
   const close = () => {
     modal.style.opacity = "0";
     modal.querySelector("div").style.transform = "scale(0.92)";
@@ -227,16 +206,13 @@ function showMessage(title = "Notice", message, durationMs = 0) {
     if (e.target === modal) close();
   });
 
-  if (durationMs > 0) {
-    setTimeout(close, durationMs);
-  }
+  if (durationMs > 0) setTimeout(close, durationMs);
 }
 
-// ─── Floating reward popup – positioned relative to removed element ─────────────
+// ─── Floating reward popup (loud debug version for now) ─────────────────────────
 function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, duration = 1400) {
-  if (!targetElement || (coinsDelta === 0 && healthDelta === 0)) return;
+  if (!targetElement) return;
 
-  // Last line of defense: force numbers here too
   const safeCoins  = Number(coinsDelta)  || 0;
   const safeHealth = Number(healthDelta) || 0;
 
@@ -254,10 +230,43 @@ function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, duratio
     parts.push(`<span style="color: ${safeHealth > 0 ? '#4CAF50' : '#ff5252'};">${sign}${Math.abs(safeHealth)}% 🌿</span>`);
   }
 
-  popup.innerHTML = parts.join("   ");
+  popup.innerHTML = parts.join("   ") || "[No reward]";
 
-  // ... rest of your positioning / style / animation code remains unchanged ...
+  // LOUD DEBUG STYLE – makes it impossible to miss
+  popup.style.cssText = `
+    position: fixed !important;
+    left: 50% !important;
+    top: 30% !important;
+    transform: translate(-50%, -50%) !important;
+    background: #ff1744 !important;
+    color: white !important;
+    font-size: 3rem !important;
+    font-weight: bold !important;
+    padding: 40px 60px !important;
+    border: 6px solid yellow !important;
+    border-radius: 20px !important;
+    z-index: 99999 !important;
+    box-shadow: 0 0 40px rgba(255,0,0,0.8) !important;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 1.5s ease;
+  `;
+
+  document.body.appendChild(popup);
+
+  console.log("Popup appended – innerHTML:", popup.innerHTML);
+
+  requestAnimationFrame(() => {
+    void popup.offsetWidth;
+    popup.style.opacity = "1";
+  });
+
+  setTimeout(() => {
+    popup.style.opacity = "0";
+    setTimeout(() => popup.remove(), 500);
+  }, duration);
 }
+
 // ─── Render ──────────────────────────────────────────────────────────────────────
 async function renderView() {
   const container = document.getElementById("game-container");
@@ -309,107 +318,79 @@ async function renderView() {
     else if (zoneId === "forest") bgPath = "assets/backgrounds/forest/main-misty.jpg";
     else if (zoneId === "mountain") bgPath = "assets/backgrounds/mountain/main-rocky.jpg";
 
-    let detailHtml = `
-      <div class="zone-detail">
-        <img src="${bgPath}" class="zone-bg-img" alt="${zone.name} background">
-        <div class="zone-content">
-          <h2>${zone.name}</h2>
-          <p>${zone.description}</p>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: ${health}%"></div>
-          </div>
-          <p class="health-text">Health: ${health}%</p>
-          <h3>Tap to remove invasives:</h3>
-          <div id="invasives-list"></div>
+    container.innerHTML = `
+      <img src="${bgPath}" class="zone-bg-img" alt="${zone.name} background">
+      <div class="zone-content">
+        <h2>${zone.name}</h2>
+        <p>${zone.description}</p>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: ${health}%"></div>
         </div>
+        <p class="health-text">Health: ${health}%</p>
+        <h3>Tap to remove invasives:</h3>
+        <div id="invasives-list"></div>
         <button id="back-to-map">Back to Map</button>
       </div>
     `;
 
-    container.innerHTML = detailHtml;
-
     const list = document.getElementById("invasives-list");
 
-    // ── New: Load full JSON data for any external entities ────────────────────────────────
-let baseInvasives = invasivesByZone[zoneId] || [];
+    let baseInvasives = invasivesByZone[zoneId] || [];
 
-// This is the important new part ↓↓↓
-const enrichedInvasives = await Promise.all(
-  baseInvasives.map(async (inv) => {
-    if (inv.isExternal) {
-      const fullDef = await loadEntityDefinition(inv.id);
+    const enrichedInvasives = await Promise.all(
+      baseInvasives.map(async (inv) => {
+        if (inv.isExternal) {
+          const fullDef = await loadEntityDefinition(inv.id);
+          if (fullDef) {
+            const merged = { ...inv, ...fullDef, isExternal: true };
 
-      if (fullDef) {
-        const merged = { ...inv, ...fullDef, isExternal: true };
+            merged.coins  = Number(fullDef.coins)  ?? inv.coins  ?? 5;
+            merged.health = Number(fullDef.health) ?? inv.health ?? 8;
 
-        // Force numeric – and fallback if invalid
-        merged.coins  = Number(fullDef.coins)  ?? inv.coins  ?? 5;
-        merged.health = Number(fullDef.health) ?? inv.health ?? 8;
+            if (typeof fullDef.coins === 'string') {
+              console.warn(`coins was string in JSON: "${fullDef.coins}" → ${merged.coins}`);
+            }
+            if (typeof fullDef.health === 'string') {
+              console.warn(`health was string in JSON: "${fullDef.health}" → ${merged.health}`);
+            }
 
-        // Optional: log suspicious values (very useful during dev)
-        if (typeof fullDef.coins === 'string') {
-          console.warn(`coins was string in JSON: "${fullDef.coins}" → converted to ${merged.coins}`);
+            return merged;
+          }
+          console.warn(`Could not load ${inv.id} — using fallback`);
+          return inv;
         }
-        if (typeof fullDef.health === 'string') {
-          console.warn(`health was string in JSON: "${fullDef.health}" → converted to ${merged.health}`);
-        }
-
-        return merged;
-      } else {
-        console.warn(`Could not load full definition for ${inv.id} — using fallback`);
         return inv;
+      })
+    );
+
+    list.innerHTML = "";
+
+    enrichedInvasives.forEach((inv) => {
+      const invEl = document.createElement("div");
+      invEl.className = "invasive-item";
+      invEl.dataset.invId = inv.id;
+
+      let imagePath = inv.icon || "";
+      if (!imagePath) {
+        const nameLower = inv.name.toLowerCase();
+        if (nameLower.includes("seaweed")) imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
+        else if (nameLower.includes("crabgrass") || nameLower.includes("alien")) imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
+        else if (nameLower.includes("vine")) imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
+        else if (nameLower.includes("thistle")) imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
+        else if (nameLower.includes("weed")) imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
+        else imagePath = "assets/entities/invasives/default.png";
       }
-    }
 
-    // Normal inline invasives stay as they are
-    return inv;
-  })
-);
+      invEl.innerHTML = `
+        <img src="${imagePath}" class="invasive-image" alt="${inv.name}">
+        <div class="inv-name">${inv.name}</div>
+      `;
 
-// Now use the enriched (complete) data to create DOM elements
-//const list = document.getElementById("invasive-list");
-list.innerHTML = ""; // make sure it's empty before we add new items
+      if (inv.tooltip) invEl.title = inv.tooltip;
 
-enrichedInvasives.forEach((inv) => {
-  const invEl = document.createElement("div");
-  invEl.className = "invasive-item";
-  invEl.dataset.invId = inv.id;
+      list.appendChild(invEl);
+    });
 
-  // ── Choose image: prefer JSON icon, fall back to your old name-based logic ──
-  let imagePath = inv.icon; // ← comes from JSON if it exists
-
-  if (!imagePath) {
-    // Your existing fallback logic (keep whatever you already have)
-    const nameLower = inv.name.toLowerCase();
-    if (nameLower.includes("seaweed")) {
-      imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
-    } else if (nameLower.includes("crabgrass") || nameLower.includes("alien")) {
-      imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
-    } else if (nameLower.includes("vine") || nameLower.includes("choking")) {
-      imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
-    } else if (nameLower.includes("thistle") || nameLower.includes("thorny")) {
-      imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
-    } else if (nameLower.includes("weed") || nameLower.includes("foreign")) {
-      imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
-    } else {
-      imagePath = "assets/entities/invasives/default.png"; // fallback
-    }
-  }
-
-  // Create the element
-  invEl.innerHTML = `
-    <img src="${imagePath}" class="invasive-image" alt="${inv.name}">
-    <div class="inv-name">${inv.name}</div>
-  `;
-
-  // Bonus: show tooltip if it exists in JSON
-  if (inv.tooltip) {
-    invEl.title = inv.tooltip;           // native browser tooltip on hover
-    // or later you can make a nicer popup if you want
-  }
-
-  list.appendChild(invEl);
-});
     updateCoinsDisplay();
     updateHealthDisplay(health);
   }
@@ -421,10 +402,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.addEventListener("click", async (e) => {
     const target = e.target;
-	console.log("Click detected on:", target.tagName, target.className, target.dataset);
+    console.log("Click detected on:", target.tagName, target.className, target.dataset);
 
-    // Click on island marker
-    const marker = target.closest(".map-marker, [data-zone-id], [data-zoneid]");
+    // Island marker
+    const marker = target.closest(".map-marker, [data-zone-id]");
     if (marker) {
       const zoneId = marker.dataset.zoneId;
       const zone = zones.find(z => z.id === zoneId);
@@ -433,150 +414,106 @@ document.addEventListener("DOMContentLoaded", () => {
         renderView();
       } else {
         showMessage(
-			"Zone Locked",
-			"You need to clear more invasives in the previous zone first.\nComplete the current area to unlock this one!",
-			5000   // disappears automatically after 5 seconds
-		);
+          "Zone Locked",
+          "You need to clear more invasives in the previous zone first.\nComplete the current area to unlock this one!",
+          5000
+        );
       }
       return;
     }
 
     // Invasive tap
-const invEl = target.closest(".invasive-item");
-if (invEl) {
-  const zoneId = currentView.split(":")[1];
-  const invId = invEl.dataset.invId;
+    const invEl = target.closest(".invasive-item");
+    if (invEl) {
+      const zoneId = currentView.split(":")[1];
+      const invId = invEl.dataset.invId;
 
-  // Find base definition
-  const baseInv = invasivesByZone[zoneId]?.find(i => i.id === invId);
-  if (!baseInv) return;
+      const baseInv = invasivesByZone[zoneId]?.find(i => i.id === invId);
+      if (!baseInv) return;
 
-  let inv = baseInv;
+      let inv = baseInv;
 
-  // Load full definition if external
-  if (baseInv.isExternal) {
-    const fullDef = await loadEntityDefinition(invId);
-    if (fullDef) {
-      inv = { ...baseInv, ...fullDef };
-    }
-  }
-  
-  // ── ADD THESE DEBUG LOGS HERE ────────────────────────────────────────────────
-console.log("Raw inv.coins:", inv.coins, typeof inv.coins);
-console.log("Raw inv.health:", inv.health, typeof inv.health);
-console.log("After || fallback:", inv.coins || 5, inv.health || 8);
+      if (baseInv.isExternal) {
+        const fullDef = await loadEntityDefinition(invId);
+        if (fullDef) {
+          inv = { ...baseInv, ...fullDef, isExternal: true };
 
-  // Condition check
-  if (inv.mutable?.onDestroy?.condition === "playerHasItem:spade") {
-    const hasSpade = currentPlayer.inventory?.spade === true;
-    if (!hasSpade) {
-      showMessage(
-        "Tool Required",
-        inv.mutable.onDestroy.failMessage || "You need a spade to remove this!",
-        4000
-      );
-      return;
-    }
-  }
+          inv.coins  = Number(fullDef.coins)  ?? baseInv.coins  ?? 5;
+          inv.health = Number(fullDef.health) ?? baseInv.health ?? 8;
 
-  // Apply reward
-  const changes = {
-    coins: currentPlayer.coins + (inv.coins || 5),
-    zones: {
-      ...currentPlayer.zones,
-      [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + (inv.health || 8))
-    }
-  };
-  updatePlayer(changes);
-  
-  // ── Process JSON drops (extra items / bonuses) ────────────────────────────────
-if (inv.mutable?.onDestroy?.drop && Array.isArray(inv.mutable.onDestroy.drop)) {
-  inv.mutable.onDestroy.drop.forEach(dropRule => {
-    const entity = dropRule.entity;
-    const count  = Number(dropRule.count) || 1;
-    const chance = Number(dropRule.chance) || 1; // 1 = 100%
-
-    if (Math.random() < chance) {
-      if (entity === "coin") {
-        // Optional: extra coins beyond base
-        currentPlayer.coins += count;
-        showRewardPopup(invEl, `+${count} 🪙 (bonus)`, "#FFCA28", 1800);
+          if (typeof fullDef.coins === 'string') {
+            console.warn(`coins string → ${inv.coins}`);
+          }
+          if (typeof fullDef.health === 'string') {
+            console.warn(`health string → ${inv.health}`);
+          }
+        }
       }
-      else if (entity === "soil-clump") {
-        currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
-        showRewardPopup(invEl, `+${count} Soil Clump 🌱`, "#8D6E63", 1800);
-        console.log(`Gained ${count} soil clump(s)`);
+
+      console.log("Raw inv.coins:", inv.coins, typeof inv.coins);
+      console.log("Raw inv.health:", inv.health, typeof inv.health);
+
+      if (inv.mutable?.onDestroy?.condition === "playerHasItem:spade") {
+        const hasSpade = currentPlayer.inventory?.spade === true;
+        if (!hasSpade) {
+          showMessage("Tool Required", inv.mutable.onDestroy.failMessage || "You need a spade!", 4000);
+          return;
+        }
       }
-      // Future: add more types here (seeds, rare items, etc.)
-    }
-  });
 
-  // Save inventory change immediately
-  savePlayer();
-}
-  
-  // ── Process drops from JSON ─────────────────────────────────────────────────────
-if (inv.mutable?.onDestroy?.drop) {
-  inv.mutable.onDestroy.drop.forEach(dropItem => {
-    if (dropItem.entity === "coin") {
-      // Guaranteed coins are already in base reward → skip or add extra
-      // (your choice — here we only add if it's bonus)
-    } else if (dropItem.entity === "soil-clump") {
-      const chance = dropItem.chance || 1; // 1 = 100%
-      if (Math.random() < chance) {
-        const count = dropItem.count || 1;
-        currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
+      const changes = {
+        coins: currentPlayer.coins + (inv.coins || 5),
+        zones: {
+          ...currentPlayer.zones,
+          [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + (inv.health || 8))
+        }
+      };
+      updatePlayer(changes);
 
-        // Optional: show a second popup for bonus drop
-        showRewardPopup(
-          invEl,
-          `+${count} Soil Clump 🌱`,
-          "#8D6E63", // brown-ish
-          1800
-        );
+      // ── Process drops ────────────────────────────────────────────────────────────
+      if (inv.mutable?.onDestroy?.drop && Array.isArray(inv.mutable.onDestroy.drop)) {
+        inv.mutable.onDestroy.drop.forEach(dropRule => {
+          const entity = dropRule.entity;
+          const count  = Number(dropRule.count) || 1;
+          const chance = Number(dropRule.chance) || 1;
 
-        console.log(`Gained ${count} soil clump(s)`);
+          if (Math.random() < chance) {
+            if (entity === "soil-clump") {
+              currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
+              console.log(`Gained ${count} soil clump(s)`);
+            }
+          }
+        });
+        savePlayer();
       }
-    }
-    // Add more entity types later (e.g. seeds, rare items)
-  });
 
-  // Save after inventory change
-  savePlayer();
-}
-  
+      // Visual feedback
+      invEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+      invEl.style.opacity = "0";
+      invEl.style.transform = "scale(0.4) rotate(5deg)";
 
-  // Visual feedback
-  invEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
-  invEl.style.opacity = "0";
-  invEl.style.transform = "scale(0.4) rotate(5deg)";
+      setTimeout(() => {
+        invEl.remove();
 
-  setTimeout(() => {
-    invEl.remove();
-	const safeCoins  = Number(inv.coins)  || 5;   // NaN → 5
-	const safeHealth = Number(inv.health) || 8;   // NaN → 8
+        showRewardPopup(invEl, inv.coins || 5, inv.health || 8, 1600);
+        console.log("Health delta from invasive:", inv.health);
 
-    showRewardPopup(invEl, inv.coins || 5, inv.health || 8, 1600);
-    console.log("Health delta from invasive:", inv.health);
+        updateCoinsDisplay();
+        updateHealthDisplay(changes.zones[zoneId]);
 
-    updateCoinsDisplay();
-    updateHealthDisplay(changes.zones[zoneId]);
+        const progressFill = document.querySelector(".progress-fill");
+        if (progressFill) {
+          progressFill.style.width = changes.zones[zoneId] + "%";
+        }
 
-    const progressFill = document.querySelector(".progress-fill");
-    if (progressFill) {
-      progressFill.style.width = changes.zones[zoneId] + "%";
+        if (document.querySelectorAll(".invasive-item").length === 0) {
+          const zone = zones.find(z => z.id === zoneId);
+          showClearModal(zone.name + " cleared of invasives! 🌿");
+        }
+      }, 600);
     }
 
-    if (document.querySelectorAll(".invasive-item").length === 0) {
-      const zone = zones.find(z => z.id === zoneId);
-      showClearModal(zone.name + " cleared of invasives! 🌿");
-    }
-  }, 600);
-
-  return;  // ← safe here; stops further click processing
-}
-
-    // Back to map button
+    // Back to map
     if (target.id === "back-to-map") {
       currentView = "island";
       renderView();
@@ -587,47 +524,34 @@ if (inv.mutable?.onDestroy?.drop) {
   console.log("Game loaded – island map with markers");
 });
 
-// ─── Fullscreen & landscape support ─────────────────────────────────────────────
+// ─── Fullscreen & orientation ────────────────────────────────────────────────────
 async function enterFullscreen() {
   const elem = document.documentElement;
-
   try {
-    if (elem.requestFullscreen) {
-      await elem.requestFullscreen();
-    } else if (elem.webkitRequestFullscreen) {
-      await elem.webkitRequestFullscreen();
-    } else if (elem.msRequestFullscreen) {
-      await elem.msRequestFullscreen();
-    }
+    if (elem.requestFullscreen) await elem.requestFullscreen();
+    else if (elem.webkitRequestFullscreen) await elem.webkitRequestFullscreen();
+    else if (elem.msRequestFullscreen) await elem.msRequestFullscreen();
     console.log("Entered fullscreen");
 
-    // Hide fullscreen button on success
     const btn = document.getElementById("fullscreen-btn");
     if (btn) btn.style.display = "none";
 
-    // Try to lock orientation (Android/Chrome only)
-    if (screen.orientation && screen.orientation.lock) {
-      try {
-        await screen.orientation.lock("landscape");
-        console.log("Locked to landscape");
-      } catch (err) {
-        console.warn("Orientation lock not supported:", err);
-      }
+    if (screen.orientation?.lock) {
+      await screen.orientation.lock("landscape").catch(() => {});
     }
   } catch (err) {
     console.error("Fullscreen failed:", err);
   }
 }
 
-// Portrait warning
 function checkOrientation() {
   const warning = document.getElementById("portrait-warning");
   if (window.innerHeight > window.innerWidth) {
     document.body.classList.add("portrait-warning-visible");
-    if (warning) warning.style.display = "flex";
+    warning.style.display = "flex";
   } else {
     document.body.classList.remove("portrait-warning-visible");
-    if (warning) warning.style.display = "none";
+    warning.style.display = "none";
   }
 }
 
@@ -636,9 +560,6 @@ window.addEventListener("orientationchange", checkOrientation);
 
 document.addEventListener("DOMContentLoaded", () => {
   checkOrientation();
-
   const btn = document.getElementById("fullscreen-btn");
-  if (btn) {
-    btn.addEventListener("click", enterFullscreen);
-  }
+  if (btn) btn.addEventListener("click", enterFullscreen);
 });
