@@ -486,16 +486,15 @@ if (invEl) {
     }
   }
 
-  // Condition check (expand later)
+  // Condition check
   if (inv.mutable?.onDestroy?.condition === "playerHasItem:spade") {
-    // TODO: real inventory check
     const hasSpade = currentPlayer.inventory?.spade === true;
     if (!hasSpade) {
-     showMessage(
-		"Tool Required",
-		inv.mutable.onDestroy.failMessage || "You need a spade to remove this!",
-		4000   // auto-closes after 4 seconds
-	);
+      showMessage(
+        "Tool Required",
+        inv.mutable.onDestroy.failMessage || "You need a spade to remove this!",
+        4000
+      );
       return;
     }
   }
@@ -508,7 +507,6 @@ if (invEl) {
       [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + (inv.health || 8))
     }
   };
-
   updatePlayer(changes);
 
   // Visual feedback
@@ -518,13 +516,17 @@ if (invEl) {
 
   setTimeout(() => {
     invEl.remove();
-	showRewardPopup(invEl, inv.coins || 5, inv.health || 8, 1600);
-	  console.log(inv.health);
+
+    showRewardPopup(invEl, inv.coins || 5, inv.health || 8, 1600);
+    console.log("Health delta from invasive:", inv.health);
+
     updateCoinsDisplay();
     updateHealthDisplay(changes.zones[zoneId]);
 
     const progressFill = document.querySelector(".progress-fill");
-    if (progressFill) progressFill.style.width = changes.zones[zoneId] + "%";
+    if (progressFill) {
+      progressFill.style.width = changes.zones[zoneId] + "%";
+    }
 
     if (document.querySelectorAll(".invasive-item").length === 0) {
       const zone = zones.find(z => z.id === zoneId);
@@ -532,7 +534,7 @@ if (invEl) {
     }
   }, 600);
 
-  return;
+  return;  // ← safe here; stops further click processing
 }
 
     // Back to map button
