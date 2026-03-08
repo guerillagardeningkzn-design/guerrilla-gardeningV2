@@ -511,6 +511,37 @@ if (invEl) {
     }
   };
   updatePlayer(changes);
+  
+  // ── Process drops from JSON ─────────────────────────────────────────────────────
+if (inv.mutable?.onDestroy?.drop) {
+  inv.mutable.onDestroy.drop.forEach(dropItem => {
+    if (dropItem.entity === "coin") {
+      // Guaranteed coins are already in base reward → skip or add extra
+      // (your choice — here we only add if it's bonus)
+    } else if (dropItem.entity === "soil-clump") {
+      const chance = dropItem.chance || 1; // 1 = 100%
+      if (Math.random() < chance) {
+        const count = dropItem.count || 1;
+        currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
+
+        // Optional: show a second popup for bonus drop
+        showRewardPopup(
+          invEl,
+          `+${count} Soil Clump 🌱`,
+          "#8D6E63", // brown-ish
+          1800
+        );
+
+        console.log(`Gained ${count} soil clump(s)`);
+      }
+    }
+    // Add more entity types later (e.g. seeds, rare items)
+  });
+
+  // Save after inventory change
+  savePlayer();
+}
+  
 
   // Visual feedback
   invEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";

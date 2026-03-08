@@ -9,6 +9,7 @@ let player = {
     seeds: 15,
     wateringCanLevel: 1,
     shovelLevel: 1,
+	soilClumps: 0,
     spade: true,
   },
   zones: {
