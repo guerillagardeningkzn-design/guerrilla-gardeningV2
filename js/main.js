@@ -232,13 +232,13 @@ function showMessage(title = "Notice", message, durationMs = 0) {
   }
 }
 
-// ─── Floating reward popup (combined coins + health, directional animation) ─────
+// ─── Floating reward popup – positioned relative to removed element ─────────────
 function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, duration = 1400) {
   if (!targetElement || (coinsDelta === 0 && healthDelta === 0)) return;
 
   const popup = document.createElement("div");
 
-  // Build text
+  // Build combined text
   let parts = [];
   if (coinsDelta !== 0) {
     const sign = coinsDelta > 0 ? "+" : "";
@@ -248,55 +248,58 @@ function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, duratio
     const sign = healthDelta > 0 ? "+" : "";
     parts.push(`<span style="color: ${healthDelta > 0 ? '#4CAF50' : '#ff5252'};">${sign}${Math.abs(healthDelta)}% 🌿</span>`);
   }
-
   popup.innerHTML = parts.join("   ");
 
   // Base style
-  popup.style.position = "absolute";
-  popup.style.left = "80%";
-  popup.style.top = "50%";
-  //popup.style.transform = "translate(-50%, -50%)";
-  popup.style.fontSize = "clamp(1.3rem, 4.5vw, 1.8rem)";
-  popup.style.fontWeight = "bold";
-  popup.style.textShadow = "2px 2px 8px rgba(0,0,0,0.9)";
-  popup.style.padding = "12px 20px";
-  popup.style.borderRadius = "12px";
-  popup.style.background = "rgba(0,0,0,0.65)";
-  popup.style.backdropFilter = "blur(4px)";
+  popup.style.position = "fixed";           // fixed = viewport, ignores scrolling parents
   popup.style.pointerEvents = "none";
   popup.style.zIndex = "9999";
+  popup.style.padding = "10px 18px";
+  popup.style.borderRadius = "12px";
+  popup.style.background = "rgba(0,0,0,0.7)";
+  popup.style.backdropFilter = "blur(4px)";
+  popup.style.color = "white";
+  popup.style.fontSize = "clamp(1.2rem, 4vw, 1.7rem)";
+  popup.style.fontWeight = "bold";
+  popup.style.textShadow = "1px 1px 4px black";
+  popup.style.whiteSpace = "nowrap";
   popup.style.opacity = "0";
-  popup.style.transition = `all ${duration/1000}s cubic-bezier(0.22, 0.61, 0.36, 1)`;
+  popup.style.transition = `all ${duration/1000}s ease-out`;
 
-  // Position near the element (clamped)
+  // ── KEY PART: position relative to the removed element ───────────────────────
   const rect = targetElement.getBoundingClientRect();
+
+  // Center of the element
   let x = rect.left + rect.width / 2;
   let y = rect.top + rect.height / 2;
-  x = Math.max(80, Math.min(x, window.innerWidth - 80));
-  y = Math.max(80, Math.min(y, window.innerHeight - 120));
+
+  // Optional: shift slightly upward so it doesn't cover the spot
+  y -= 40;   // pixels above the center — adjust as needed (higher number = higher up)
+
+  // Clamp to screen edges (prevents going off-screen)
+  x = Math.max(100, Math.min(x, window.innerWidth - 100));
+  y = Math.max(60, Math.min(y, window.innerHeight - 140));
+
   popup.style.left = `${x}px`;
   popup.style.top = `${y}px`;
+  popup.style.transform = "translate(-50%, -50%)";   // center the popup on our calculated point
 
   document.body.appendChild(popup);
 
-  // Determine direction
-  const isPositive = (coinsDelta >= 0 && healthDelta >= 0) || (coinsDelta + healthDelta >= 0);
-  const directionY = isPositive ? -90 : +90; // up = negative Y, down = positive Y
-
+  // Animate in: float up + appear
   requestAnimationFrame(() => {
-    void popup.offsetWidth; // force reflow
+    void popup.offsetWidth; // force reflow so transition works
     popup.style.opacity = "1";
-    popup.style.transform = `translate(-50%, -50%) translateY(${directionY}px) scale(1.05)`;
+    popup.style.transform = `translate(-50%, -50%) translateY(-60px)`; // float upward
   });
 
+  // Animate out: fade + continue upward
   setTimeout(() => {
     popup.style.opacity = "0";
-    popup.style.transform = `translate(-50%, -50%) translateY(${directionY * 1.8}px) scale(0.92)`;
+    popup.style.transform = `translate(-50%, -50%) translateY(-140px)`;
     setTimeout(() => popup.remove(), 500);
   }, duration - 500);
 }
-
-
 
 // ─── Render ──────────────────────────────────────────────────────────────────────
 async function renderView() {
