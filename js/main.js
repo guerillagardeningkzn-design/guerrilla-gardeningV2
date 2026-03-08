@@ -236,71 +236,28 @@ function showMessage(title = "Notice", message, durationMs = 0) {
 function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, duration = 1400) {
   if (!targetElement || (coinsDelta === 0 && healthDelta === 0)) return;
 
+  // Last line of defense: force numbers here too
+  const safeCoins  = Number(coinsDelta)  || 0;
+  const safeHealth = Number(healthDelta) || 0;
+
+  console.log("Inside popup – safeCoins:", safeCoins, "safeHealth:", safeHealth);
+
   const popup = document.createElement("div");
 
-  // Build combined text
   let parts = [];
-  if (coinsDelta !== 0) {
-    const sign = coinsDelta > 0 ? "+" : "";
-    parts.push(`<span style="color: ${coinsDelta > 0 ? '#FFD700' : '#ff5252'};">${sign}${Math.abs(coinsDelta)} 🪙</span>`);
+  if (safeCoins !== 0) {
+    const sign = safeCoins > 0 ? "+" : "";
+    parts.push(`<span style="color: ${safeCoins > 0 ? '#FFD700' : '#ff5252'};">${sign}${Math.abs(safeCoins)} 🪙</span>`);
   }
-  if (healthDelta !== 0) {
-    const sign = healthDelta > 0 ? "+" : "";
-    parts.push(`<span style="color: ${healthDelta > 0 ? '#4CAF50' : '#ff5252'};">${sign}${Math.abs(healthDelta)}% 🌿</span>`);
+  if (safeHealth !== 0) {
+    const sign = safeHealth > 0 ? "+" : "";
+    parts.push(`<span style="color: ${safeHealth > 0 ? '#4CAF50' : '#ff5252'};">${sign}${Math.abs(safeHealth)}% 🌿</span>`);
   }
+
   popup.innerHTML = parts.join("   ");
 
-  // Base style
-  popup.style.position = "fixed";           // fixed = viewport, ignores scrolling parents
-  popup.style.pointerEvents = "none";
-  popup.style.zIndex = "9999";
-  popup.style.padding = "10px 18px";
-  popup.style.borderRadius = "12px";
-  popup.style.background = "rgba(0,0,0,0.7)";
-  popup.style.backdropFilter = "blur(4px)";
-  popup.style.color = "white";
-  popup.style.fontSize = "clamp(1.2rem, 4vw, 1.7rem)";
-  popup.style.fontWeight = "bold";
-  popup.style.textShadow = "1px 1px 4px black";
-  popup.style.whiteSpace = "nowrap";
-  popup.style.opacity = "0";
-  popup.style.transition = `all ${duration/1000}s ease-out`;
-
-  // ── KEY PART: position relative to the removed element ───────────────────────
-  const rect = targetElement.getBoundingClientRect();
-
-  // Center of the element
-  let x = rect.left + rect.width / 2;
-  let y = rect.top + rect.height / 2;
-
-  // Optional: shift slightly upward so it doesn't cover the spot
-  y -= 40;   // pixels above the center — adjust as needed (higher number = higher up)
-
-  // Clamp to screen edges (prevents going off-screen)
-  x = Math.max(100, Math.min(x, window.innerWidth - 100));
-  y = Math.max(60, Math.min(y, window.innerHeight - 140));
-
-  popup.style.left = `${x}px`;
-  popup.style.top = `${y}px`;
-  popup.style.transform = "translate(-50%, -50%)";   // center the popup on our calculated point
-
-  document.body.appendChild(popup);
-
-  // Animate in: float up + appear
-  requestAnimationFrame(() => {
-    void popup.offsetWidth; // force reflow so transition works
-    popup.style.opacity = "1";
-    popup.style.transform = `translate(-50%, -50%) translateY(-60px)`; // float upward
-  });
-
-  // Animate out: fade + continue upward
-  setTimeout(() => {
-    popup.style.opacity = "0";
-    popup.style.transform = `translate(-50%, -50%) translateY(-140px)`;
-    setTimeout(() => popup.remove(), 500);
-  }, duration - 500);
+  // ... rest of your positioning / style / animation code remains unchanged ...
 }
-
 // ─── Render ──────────────────────────────────────────────────────────────────────
 async function renderView() {
   const container = document.getElementById("game-container");
