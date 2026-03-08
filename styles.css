@@ -392,3 +392,71 @@ html {
   display: inline-block;
 }
 
+
+/* ─── New HUD badges ───────────────────────────────────────────────────────────── */
+.hud-toolbox {
+  position: fixed;
+  top: 20px;
+  left: 80px;  // adjust to fit next to coins
+  background: linear-gradient(145deg, #8D6E63, #A1887F);  // brown/wood theme
+  color: white;
+  font-size: 1.2rem;
+  padding: 8px 14px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  cursor: pointer;  // clickable
+}
+
+.hud-inventory {
+  position: fixed;
+  top: 20px;
+  right: 160px;  // adjust to fit next to energy
+  background: linear-gradient(145deg, #795548, #5D4037);  // bag/leather theme
+  color: white;
+  font-size: 1.2rem;
+  padding: 8px 14px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  cursor: pointer;  // clickable
+}
+
+/* Gallery modals (for toolbox/inventory) */
+.gallery-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.gallery-box {
+  background: rgba(30,50,30,0.95);
+  border: 2px solid #4CAF50;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 90%;
+  width: 400px;
+  text-align: center;
+  color: #e8f5e9;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  transform: scale(0.92);
+  transition: transform 0.3s ease;
+}
+
+.gallery-box h3 {
+  margin: 0 0 16px;
+  font-size: 1.5rem;
+  color: #81C784;
+}
+
+.gallery-item {
+  margin: 8px 0;
+  font-size: 1.1rem;
+  padding: 8px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 8px;
+}

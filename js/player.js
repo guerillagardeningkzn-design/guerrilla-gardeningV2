@@ -6,12 +6,16 @@ let player = {
   energy: 100,
   maxEnergy: 100,
     inventory: {
-    seeds: 15,
-    wateringCanLevel: 1,
-    shovelLevel: 1,
-	soilClumps: 0,
-    spade: true,
-  },
+	seeds: 15,
+	wateringCanLevel: 1,
+	shovelLevel: 1,
+	spade: true,
+	scissors: false,  // example tool – false = not owned
+	toolboxLevel: 1,  // 1 = basic (🛠️), 2 = advanced (🛠️+), 3 = master (🛠️++)
+	soilClumps: 0,    // from drops
+	fertilizer: 0,    // example item
+	clayBalls: 0      // for new patches
+	},
   zones: {
     "beach": 0,
     "forest": 0,
@@ -67,7 +71,17 @@ export function resetPlayer() {
     coins: 50,
     energy: 100,
     maxEnergy: 100,
-    inventory: { seeds: 15, wateringCanLevel: 1, shovelLevel: 1, soilClumps: 0 },
+    inventory: { 
+	seeds: 15, 
+	wateringCanLevel: 1, 
+	shovelLevel: 1,
+	spade: true,
+	scissors: false,
+	toolboxLevel: 1,
+	soilClumps: 0,
+	fertilizer: 0,
+	clayBalls: 0
+	},
     zones: { "beach": 0, "forest": 0, "mountain": 0 },
     lastPlayed: null,
     sessionActions: 0
