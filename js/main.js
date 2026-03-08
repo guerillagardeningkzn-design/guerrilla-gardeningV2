@@ -488,6 +488,11 @@ if (invEl) {
       inv = { ...baseInv, ...fullDef };
     }
   }
+  
+  // ── ADD THESE DEBUG LOGS HERE ────────────────────────────────────────────────
+console.log("Raw inv.coins:", inv.coins, typeof inv.coins);
+console.log("Raw inv.health:", inv.health, typeof inv.health);
+console.log("After || fallback:", inv.coins || 5, inv.health || 8);
 
   // Condition check
   if (inv.mutable?.onDestroy?.condition === "playerHasItem:spade") {
