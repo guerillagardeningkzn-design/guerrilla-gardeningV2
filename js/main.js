@@ -496,6 +496,7 @@ if (invEl) {
     invEl.remove();
 	showRewardPopup(invEl, `+${inv.coins || 5} 🪙`, "#FFD700", 1400);
 	showRewardPopup(invEl, `+${inv.health || 8}% 🌿`, "#4CAF50", 1400);
+	  console.log(inv.health);
     updateCoinsDisplay();
     updateHealthDisplay(changes.zones[zoneId]);
 
