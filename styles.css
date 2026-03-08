@@ -460,3 +460,51 @@ html {
   background: rgba(0,0,0,0.3);
   border-radius: 8px;
 }
+
+
+/* ─── HUD stacking to prevent overlap ──────────────────────────────────────────── */
+.hud-left-stack {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;  /* vertical spacing between badges */
+  z-index: 100;
+}
+
+.hud-resources {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;  /* vertical spacing */
+  align-items: flex-end;
+  z-index: 100;
+}
+
+/* Make badges smaller & consistent */
+.hud-badge {
+  padding: 6px 12px;
+  font-size: 1rem;
+  min-width: 60px;
+  text-align: center;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  cursor: pointer;  /* clickable */
+  transition: transform 0.2s ease;
+}
+
+.hud-badge:hover {
+  transform: scale(1.05);
+}
+
+/* Toolbox & Inventory specific colors */
+.hud-toolbox {
+  background: linear-gradient(145deg, #8D6E63, #A1887F); /* wood/tool theme */
+}
+
+.hud-inventory {
+  background: linear-gradient(145deg, #795548, #5D4037); /* leather/bag theme */
+}

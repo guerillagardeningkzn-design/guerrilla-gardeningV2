@@ -36,12 +36,17 @@
 
   <!-- Fixed UI overlay – always visible -->
   <div id="ui-overlay">
-  <!-- Coins badge – top-left -->
-  <div class="hud-badge hud-coins">
-    <span id="coins-display">0</span> 🪙
+  <!-- Left side stack: Coins + Toolbox -->
+  <div class="hud-left-stack">
+    <div class="hud-badge hud-coins">
+      <span id="coins-display">0</span> 🪙
+    </div>
+    <div class="hud-badge hud-toolbox">
+      <span id="toolbox-icon">🛠️</span>
+    </div>
   </div>
 
-  <!-- Resources cluster – top-right -->
+  <!-- Right side stack: Resources + Inventory -->
   <div class="hud-resources">
     <div class="hud-badge hud-diamonds">
       💎 <span id="diamonds-display">0</span>
@@ -52,15 +57,9 @@
     <div class="hud-badge hud-energy">
       ⚡ <span id="energy-display">100</span>
     </div>
-  </div>
-
-  <!-- ── ADD THE NEW TOOLBOX AND INVENTORY BADGES HERE ──────────────────────── -->
-  <div class="hud-badge hud-toolbox">
-    <span id="toolbox-icon">🛠️</span>
-  </div>
-
-  <div class="hud-badge hud-inventory">
-    <span id="inventory-icon">🎒</span>
+    <div class="hud-badge hud-inventory">
+      <span id="inventory-icon">🎒</span>
+    </div>
   </div>
 </div>
 
