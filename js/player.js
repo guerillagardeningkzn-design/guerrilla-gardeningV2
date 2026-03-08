@@ -67,7 +67,7 @@ export function resetPlayer() {
     coins: 50,
     energy: 100,
     maxEnergy: 100,
-    inventory: { seeds: 15, wateringCanLevel: 1, shovelLevel: 1 },
+    inventory: { seeds: 15, wateringCanLevel: 1, shovelLevel: 1, soilClumps: 0 },
     zones: { "beach": 0, "forest": 0, "mountain": 0 },
     lastPlayed: null,
     sessionActions: 0

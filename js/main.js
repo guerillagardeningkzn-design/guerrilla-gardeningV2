@@ -532,6 +532,32 @@ console.log("After || fallback:", inv.coins || 5, inv.health || 8);
   };
   updatePlayer(changes);
   
+  // ── Process JSON drops (extra items / bonuses) ────────────────────────────────
+if (inv.mutable?.onDestroy?.drop && Array.isArray(inv.mutable.onDestroy.drop)) {
+  inv.mutable.onDestroy.drop.forEach(dropRule => {
+    const entity = dropRule.entity;
+    const count  = Number(dropRule.count) || 1;
+    const chance = Number(dropRule.chance) || 1; // 1 = 100%
+
+    if (Math.random() < chance) {
+      if (entity === "coin") {
+        // Optional: extra coins beyond base
+        currentPlayer.coins += count;
+        showRewardPopup(invEl, `+${count} 🪙 (bonus)`, "#FFCA28", 1800);
+      }
+      else if (entity === "soil-clump") {
+        currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
+        showRewardPopup(invEl, `+${count} Soil Clump 🌱`, "#8D6E63", 1800);
+        console.log(`Gained ${count} soil clump(s)`);
+      }
+      // Future: add more types here (seeds, rare items, etc.)
+    }
+  });
+
+  // Save inventory change immediately
+  savePlayer();
+}
+  
   // ── Process drops from JSON ─────────────────────────────────────────────────────
 if (inv.mutable?.onDestroy?.drop) {
   inv.mutable.onDestroy.drop.forEach(dropItem => {
