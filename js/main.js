@@ -381,15 +381,30 @@ const enrichedInvasives = await Promise.all(
   baseInvasives.map(async (inv) => {
     if (inv.isExternal) {
       const fullDef = await loadEntityDefinition(inv.id);
+
       if (fullDef) {
-        // Merge: base data first, then JSON data overrides it
-        return { ...inv, ...fullDef, isExternal: true };
+        // Merge: base data first, then JSON overrides
+        const merged = { ...inv, ...fullDef, isExternal: true };
+
+        // Force numeric fields (protects against string values from JSON)
+        if (typeof merged.coins  === 'string') merged.coins  = Number(merged.coins);
+        if (typeof merged.health === 'string') merged.health = Number(merged.health);
+
+        // Optional: add more fields here in the future
+        // if (typeof merged.value === 'string') merged.value = Number(merged.value);
+
+        // Optional: fallback if conversion failed (NaN → default)
+        if (isNaN(merged.coins))  merged.coins  = inv.coins  ?? 5;
+        if (isNaN(merged.health)) merged.health = inv.health ?? 8;
+
+        return merged;
       } else {
         console.warn(`Could not load full definition for ${inv.id} — using fallback`);
         return inv;
       }
     }
-    // Normal inline invasives stay as they are
+
+    // Normal inline invasives stay unchanged
     return inv;
   })
 );
