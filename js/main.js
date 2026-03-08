@@ -232,6 +232,46 @@ function showMessage(title = "Notice", message, durationMs = 0) {
   }
 }
 
+// ─── Floating reward popup (+coins / +health) ────────────────────────────────────
+function showRewardPopup(targetElement, text, color = "#FFD700", duration = 1200) {
+  if (!targetElement) return;
+
+  const popup = document.createElement("div");
+  popup.textContent = text;
+  popup.style.position = "absolute";
+  popup.style.left = "50%";
+  popup.style.top = "50%";
+  popup.style.transform = "translate(-50%, -50%)";
+  popup.style.color = color;
+  popup.style.fontSize = "clamp(1.2rem, 4vw, 1.6rem)";
+  popup.style.fontWeight = "bold";
+  popup.style.textShadow = "2px 2px 6px rgba(0,0,0,0.9)";
+  popup.style.pointerEvents = "none";
+  popup.style.zIndex = "250";
+  popup.style.opacity = "0";
+  popup.style.transition = `all ${duration/1000}s cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
+
+  // Position at center of removed element
+  const rect = targetElement.getBoundingClientRect();
+  popup.style.left = `${rect.left + rect.width / 2}px`;
+  popup.style.top = `${rect.top + rect.height / 2}px`;
+
+  document.body.appendChild(popup);
+
+  // Animate up + fade in
+  requestAnimationFrame(() => {
+    popup.style.opacity = "1";
+    popup.style.transform = `translate(-50%, -50%) translateY(-80px) scale(1.1)`;
+  });
+
+  // Fade out + fly higher
+  setTimeout(() => {
+    popup.style.opacity = "0";
+    popup.style.transform = `translate(-50%, -50%) translateY(-140px) scale(0.8)`;
+    setTimeout(() => popup.remove(), 400);
+  }, duration - 400);
+}
+
 
 // ─── Floating reward popup (e.g. +5 coins) ──────────────────────────────────────
 function showRewardPopup(targetElement, text, color = "#FFD700", duration = 1200) {
