@@ -563,3 +563,59 @@ html {
   font-size: 1.1rem;
   margin-right: 4px;
 }
+
+
+/* ─── Unified compact vertical HUD – all on right, semi-transparent ─────────────── */
+#ui-overlay {
+  pointer-events: none; /* clicks pass through to game */
+}
+
+.hud-right-stack {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;                    /* space between each badge */
+  align-items: flex-end;
+  z-index: 200;                /* above game content but below modals */
+}
+
+.hud-badge {
+  pointer-events: auto;         /* only badges clickable */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  height: 34px;
+  padding: 0 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+  background: rgba(0, 0, 0, 0.45);     /* semi-transparent dark base */
+  backdrop-filter: blur(6px);          /* glass/mist effect */
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  transition: all 0.18s ease;
+}
+
+.hud-badge:hover {
+  background: rgba(0, 0, 0, 0.65);
+  transform: scale(1.08);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+
+/* Optional subtle per-badge tint (very light – won't dominate) */
+.hud-coins    { background: rgba(255, 193, 7, 0.18); }
+.hud-diamonds { background: rgba(156, 39, 176, 0.18); }
+.hud-stars    { background: rgba(255, 193, 7, 0.18); }
+.hud-energy   { background: rgba(33, 150, 243, 0.18); }
+.hud-toolbox  { background: rgba(141, 110, 99, 0.28); }
+.hud-inventory{ background: rgba(121, 85, 72, 0.28); }
+
+/* Smaller icons inside */
+.hud-badge span {
+  font-size: 1.05rem;
+  margin-right: 4px;
+}
