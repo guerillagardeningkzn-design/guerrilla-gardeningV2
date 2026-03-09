@@ -209,6 +209,52 @@ function showMessage(title = "Notice", message, durationMs = 0) {
   if (durationMs > 0) setTimeout(close, durationMs);
 }
 
+// ─── Toolbox gallery modal ──────────────────────────────────────────────────────
+function showToolboxGallery() {
+  const tools = [];
+  if (currentPlayer.inventory.spade) tools.push("Spade – Dig tough invasives");
+  if (currentPlayer.inventory.scissors) tools.push("Scissors – Cut vines");
+  // Add more tools here as you implement them
+
+  const level = currentPlayer.inventory.toolboxLevel || 1;
+  const capacity = level * 5; // example: level 1 = 5 slots, level 2 = 10, etc.
+
+  let html = `
+    <h3>Toolbox (Level ${level} – Capacity: ${capacity})</h3>
+  `;
+
+  if (tools.length === 0) {
+    html += '<p style="color: #ff9800;">No tools yet. Find or craft some!</p>';
+  } else {
+    html += tools.map(tool => `<div class="gallery-item">${tool}</div>`).join('');
+  }
+
+  html += '<p>Upgrade your toolbox to carry more tools!</p>';
+
+  showMessage("Toolbox", html, 0); // 0 = no auto-close
+}
+
+// ─── Inventory gallery modal ────────────────────────────────────────────────────
+function showInventoryGallery() {
+  const items = [
+    `Seeds: ${currentPlayer.inventory.seeds || 0}`,
+    `Soil Clumps: ${currentPlayer.inventory.soilClumps || 0}`,
+    `Fertilizer: ${currentPlayer.inventory.fertilizer || 0}`,
+    `Clay Balls: ${currentPlayer.inventory.clayBalls || 0}`
+    // Add more items as you introduce them
+  ];
+
+  let html = '<h3>Inventory</h3>';
+  html += items.map(item => `<div class="gallery-item">${item}</div>`).join('');
+
+  if (items.every(i => i.includes('0'))) {
+    html += '<p style="color: #ff9800;">Your inventory is empty. Keep clearing invasives!</p>';
+  }
+
+  showMessage("Inventory", html, 0);
+}
+
+
 // ─── Interactive dialog modal from JSON dialogTree ──────────────────────────────
 function showDialogTree(inv, dialogTree, currentIndex = 0) {
   if (!dialogTree || !Array.isArray(dialogTree) || currentIndex >= dialogTree.length) {
