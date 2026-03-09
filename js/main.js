@@ -216,6 +216,102 @@ function showMessage(title = "Notice", message, durationMs = 0) {
   if (durationMs > 0) setTimeout(close, durationMs);
 }
 
+// ─── Interactive dialog modal (missing function restored) ───────────────────────
+function showDialogTree(entity, dialogTree, currentIndex = 0) {
+  if (!dialogTree || !Array.isArray(dialogTree) || currentIndex >= dialogTree.length) {
+    return;
+  }
+
+  const node = dialogTree[currentIndex];
+  const modal = document.createElement("div");
+  modal.style.position = "fixed";
+  modal.style.inset = "0";
+  modal.style.background = "rgba(0,0,0,0.75)";
+  modal.style.display = "flex";
+  modal.style.alignItems = "center";
+  modal.style.justifyContent = "center";
+  modal.style.zIndex = "9999";
+  modal.style.opacity = "0";
+  modal.style.transition = "opacity 0.4s ease";
+
+  let html = `
+    <div style="
+      background: rgba(30,50,30,0.95);
+      border: 2px solid #4CAF50;
+      border-radius: 16px;
+      padding: 24px 32px;
+      max-width: 90%;
+      width: 400px;
+      text-align: center;
+      color: #e8f5e9;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      transform: scale(0.92);
+      transition: transform 0.3s ease;
+    ">
+      <p style="font-size: 1.15rem; margin-bottom: 20px; line-height: 1.4;">${node.message}</p>
+  `;
+
+  if (node.choices && Array.isArray(node.choices)) {
+    html += '<div style="display: flex; flex-direction: column; gap: 12px;">';
+    node.choices.forEach(choice => {
+      html += `
+        <button class="dialog-choice" data-next="${choice.next}" style="
+          padding: 12px 24px;
+          background: #4CAF50;
+          color: white;
+          border: none;
+          border-radius: 12px;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: background 0.2s;
+        ">${choice.text}</button>
+      `;
+    });
+    html += '</div>';
+  } else {
+    html += `
+      <button class="dialog-close" style="
+        padding: 12px 32px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        cursor: pointer;
+      ">OK</button>
+    `;
+  }
+
+  html += '</div>';
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+
+  requestAnimationFrame(() => {
+    modal.style.opacity = "1";
+    modal.querySelector("div").style.transform = "scale(1)";
+  });
+
+  modal.querySelectorAll(".dialog-choice").forEach(btn => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      ev.preventDefault();
+      const nextIndex = parseInt(btn.dataset.next);
+      modal.remove();
+      showDialogTree(entity, dialogTree, nextIndex);
+    });
+  });
+
+  modal.querySelector(".dialog-close")?.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    ev.preventDefault();
+    modal.remove();
+  });
+
+  modal.addEventListener("click", (ev) => {
+    if (ev.target === modal) modal.remove();
+  });
+}
+
 // ─── Reward popup ────────────────────────────────────────────────────────────────
 function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusText = "", duration = 1400) {
   if (!targetElement) return;
@@ -223,7 +319,7 @@ function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusTe
   const safeCoins  = Number(coinsDelta)  || 0;
   const safeHealth = Number(healthDelta) || 0;
 
-  console.log("Inside popup – safeCoins:", safeCoins, "safeHealth:", safeHealth);
+  console.log("Reward popup → coins:", safeCoins, "health:", safeHealth, "bonus:", bonusText);
 
   const popup = document.createElement("div");
 
@@ -242,7 +338,6 @@ function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusTe
 
   popup.innerHTML = parts.join("   ") || "[No reward]";
 
-  // LOUD DEBUG STYLE – remove later for normal appearance
   popup.style.cssText = `
     position: fixed !important;
     left: 50% !important;
@@ -276,7 +371,7 @@ function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusTe
   }, duration);
 }
 
-// ─── Toolbox gallery modal ──────────────────────────────────────────────────────
+// ─── Toolbox & Inventory galleries ──────────────────────────────────────────────
 function showToolboxGallery() {
   const tools = [];
   if (currentPlayer.inventory.spade) tools.push("Spade – Dig tough invasives");
@@ -285,9 +380,7 @@ function showToolboxGallery() {
   const level = currentPlayer.inventory.toolboxLevel || 1;
   const capacity = level * 5;
 
-  let html = `
-    <h3>Toolbox (Level ${level} – Capacity: ${capacity})</h3>
-  `;
+  let html = `<h3>Toolbox (Level ${level} – Capacity: ${capacity})</h3>`;
 
   if (tools.length === 0) {
     html += '<p style="color: #ff9800;">No tools yet. Find or craft some!</p>';
@@ -300,7 +393,6 @@ function showToolboxGallery() {
   showMessage("Toolbox", html, 0);
 }
 
-// ─── Inventory gallery modal ────────────────────────────────────────────────────
 function showInventoryGallery() {
   const items = [
     `Seeds: ${currentPlayer.inventory.seeds || 0}`,
