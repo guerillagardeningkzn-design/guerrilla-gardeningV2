@@ -289,13 +289,15 @@ function showDialogTree(inv, dialogTree, currentIndex = 0) {
   });
 
   // Handle choice clicks
-  modal.querySelectorAll(".dialog-choice").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const nextIndex = parseInt(btn.dataset.next);
-      modal.remove();
-      showDialogTree(inv, dialogTree, nextIndex);
-    });
+ modal.querySelectorAll(".dialog-choice").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();              // ← prevent bubbling to document listener
+    e.preventDefault();               // ← good practice for buttons
+    const nextIndex = parseInt(btn.dataset.next);
+    modal.remove();
+    showDialogTree(inv, dialogTree, nextIndex);
   });
+});
 
   // Handle close (no choices case)
   modal.querySelector(".dialog-close")?.addEventListener("click", () => {
