@@ -468,7 +468,7 @@ if (!imagePath) {
   const nameLower = (entity.name || entity.id || "").toLowerCase();
 
   if (nameLower.includes("palm") || nameLower.includes("baby-palm")) {
-    imagePath = "https://raw.githubusercontent.com/guerrillagardeningkzn-design/guerrilla-gardeningV2/refs/heads/main/assets/entities/natives/palm/palm-baby.png";  // ← FIXED PATH
+    imagePath = "assets/entities/natives/palm/palm-baby.png";  // ← relative path – this will work
   } else if (nameLower.includes("seaweed")) {
     imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
   } else if (nameLower.includes("crabgrass") || nameLower.includes("alien")) {
@@ -482,8 +482,7 @@ if (!imagePath) {
   } else {
     imagePath = "assets/entities/default.png";
   }
-}
-  el.innerHTML = `
+} el.innerHTML = `
     <img src="${imagePath}" class="${entity.type === "native" ? "native-image" : "invasive-image"}" alt="${entity.name || entity.id}">
     <div class="entity-name">${entity.name || entity.id}</div>
   `;
