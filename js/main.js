@@ -325,7 +325,7 @@ function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusTe
   }, duration);
 }
 
-// ─── Render ──────────────────────────────────────────────────────────────────────
+// ─── Render ────────────────────────────────────────────────────────────────────── 
 async function renderView() {
   const container = document.getElementById("game-container");
   if (!container) return;
