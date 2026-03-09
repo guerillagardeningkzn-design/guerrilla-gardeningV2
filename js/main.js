@@ -617,39 +617,53 @@ if (entityEl) {
 
   console.log(`Processing ${entityType}: ${entity.name || entityId}`);
 
-  // ── Tool condition check (works for both invasives & natives) ───────────────────
+  // ── Tool condition check (works for both) ───────────────────────────────────────
   const condition = entity.mutable?.onDestroy?.condition;
   if (condition) {
     let hasTool = false;
+    let toolName = "";
+
     if (condition === "playerHasItem:spade") {
       hasTool = currentPlayer.inventory?.spade === true;
+      toolName = "spade";
     } else if (condition === "playerHasItem:sickle") {
       hasTool = currentPlayer.inventory?.sickle === true;
-      // add more tools here later
+      toolName = "sickle";
     }
 
     if (!hasTool) {
       if (entity.mutable?.onInteract?.dialogTree && Array.isArray(entity.mutable.onInteract.dialogTree)) {
         showDialogTree(entity, entity.mutable.onInteract.dialogTree, 0);
       } else {
-        showMessage("Tool Required", entity.mutable.onDestroy.failMessage || "You need the right tool!", 4000);
+        showMessage("Tool Required", entity.mutable.onDestroy.failMessage || `You need a ${toolName}!`, 4000);
       }
       return;
     }
   }
 
-  // ── Removal / harvesting logic (expand for natives later) ──────────────────────
+  // ── Action: removal (invasive) or harvest (native) ──────────────────────────────
   if (entityType === "native") {
-    // Future: harvest seeds, replace with adult palm, etc.
-    showMessage("Harvest Success", "You carefully collected a seed from the young palm!", 4000);
-    // Example reward (add real inventory logic later)
+    // Harvest seed from palm
     currentPlayer.inventory.seeds = (currentPlayer.inventory.seeds || 0) + 1;
     savePlayer();
-    entityEl.remove(); // temporary — later replace with mature version
+
+    showMessage("Harvest Success", "You carefully collected 1 seed from the young palm!", 4000);
+
+    // Visual removal (later replace with mature palm entity)
+    entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+    entityEl.style.opacity = "0";
+    entityEl.style.transform = "scale(0.4) rotate(5deg)";
+
+    setTimeout(() => {
+      entityEl.remove();
+      // Optional: add reward popup for seed
+      showRewardPopup(entityEl, 0, 0, "+1 Seed 🌱", 1600);
+    }, 600);
+
     return;
   }
 
-  // Invasive removal
+  // Invasive removal (unchanged)
   const changes = {
     coins: currentPlayer.coins + (entity.coins || 5),
     zones: {
