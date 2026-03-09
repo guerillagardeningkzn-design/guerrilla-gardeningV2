@@ -209,6 +209,105 @@ function showMessage(title = "Notice", message, durationMs = 0) {
   if (durationMs > 0) setTimeout(close, durationMs);
 }
 
+// ─── Interactive dialog modal from JSON dialogTree ──────────────────────────────
+function showDialogTree(inv, dialogTree, currentIndex = 0) {
+  if (!dialogTree || !Array.isArray(dialogTree) || currentIndex >= dialogTree.length) {
+    // End of tree — close silently
+    return;
+  }
+
+  const node = dialogTree[currentIndex];
+
+  const modal = document.createElement("div");
+  modal.style.position = "fixed";
+  modal.style.inset = "0";
+  modal.style.background = "rgba(0,0,0,0.75)";
+  modal.style.display = "flex";
+  modal.style.alignItems = "center";
+  modal.style.justifyContent = "center";
+  modal.style.zIndex = "9999";
+  modal.style.opacity = "0";
+  modal.style.transition = "opacity 0.4s ease";
+
+  let html = `
+    <div style="
+      background: rgba(30,50,30,0.95);
+      border: 2px solid #4CAF50;
+      border-radius: 16px;
+      padding: 24px 32px;
+      max-width: 90%;
+      width: 400px;
+      text-align: center;
+      color: #e8f5e9;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      transform: scale(0.92);
+      transition: transform 0.3s ease;
+    ">
+      <p style="font-size: 1.15rem; margin-bottom: 20px; line-height: 1.4;">${node.message}</p>
+  `;
+
+  if (node.choices && Array.isArray(node.choices)) {
+    html += '<div style="display: flex; flex-direction: column; gap: 12px;">';
+    node.choices.forEach(choice => {
+      html += `
+        <button class="dialog-choice" data-next="${choice.next}" style="
+          padding: 12px 24px;
+          background: #4CAF50;
+          color: white;
+          border: none;
+          border-radius: 12px;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: background 0.2s;
+        ">${choice.text}</button>
+      `;
+    });
+    html += '</div>';
+  } else {
+    // No choices → just OK to close
+    html += `
+      <button class="dialog-close" style="
+        padding: 12px 32px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        cursor: pointer;
+      ">OK</button>
+    `;
+  }
+
+  html += '</div>';
+
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+
+  requestAnimationFrame(() => {
+    modal.style.opacity = "1";
+    modal.querySelector("div").style.transform = "scale(1)";
+  });
+
+  // Handle choice clicks
+  modal.querySelectorAll(".dialog-choice").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const nextIndex = parseInt(btn.dataset.next);
+      modal.remove();
+      showDialogTree(inv, dialogTree, nextIndex);
+    });
+  });
+
+  // Handle close (no choices case)
+  modal.querySelector(".dialog-close")?.addEventListener("click", () => {
+    modal.remove();
+  });
+
+  // Close on outside click
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) modal.remove();
+  });
+}
+
 // ─── Floating reward popup – with bonus text support ────────────────────────────
 function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusText = "", duration = 1400) {
   if (!targetElement) return;
@@ -450,13 +549,23 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Raw inv.health:", inv.health, typeof inv.health);
 
       if (inv.mutable?.onDestroy?.condition === "playerHasItem:spade") {
-        const hasSpade = currentPlayer.inventory?.spade === true;
-        if (!hasSpade) {
-          showMessage("Tool Required", inv.mutable.onDestroy.failMessage || "You need a spade!", 4000);
-          return;
-        }
-      }
+  const hasSpade = currentPlayer.inventory?.spade === true;
 
+  if (!hasSpade) {
+    // Show dialog tree instead of simple message
+    if (inv.mutable?.onInteract?.dialogTree && Array.isArray(inv.mutable.onInteract.dialogTree)) {
+      showDialogTree(inv, inv.mutable.onInteract.dialogTree, 0);
+    } else {
+      // Fallback if no dialog tree defined
+      showMessage(
+        "Tool Required",
+        inv.mutable.onDestroy.failMessage || "You need a spade to remove this!",
+        4000
+      );
+    }
+    return;
+  }
+}
       const changes = {
         coins: currentPlayer.coins + (inv.coins || 5),
         zones: {
