@@ -287,3 +287,25 @@ html {
   border-radius: 10px;
   display: inline-block;
 }
+
+/* ─── Natives vs invasives ─────────────────────────────────────────────────────── */
+.native-item {
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.native-item:hover {
+  transform: scale(1.12);
+}
+
+.native-image {
+  filter: drop-shadow(0 4px 8px rgba(0,100,0,0.5)); /* green tint */
+  opacity: 0.92;
+}
+
+.entity-name {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #e8f5e9;
+  text-shadow: 1px 1px 3px black;
+}

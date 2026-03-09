@@ -49,6 +49,19 @@ const invasivesByZone = {
   ]
 };
 
+// ── Natives / plants (parallel to invasives) ────────────────────────────────────
+const nativesByZone = {
+  beach: [
+    {
+      id: "baby-palm",
+      isExternal: true
+    }
+    // Add more natives later
+  ],
+  forest: [],
+  mountain: []
+};
+
 const zoneMarkers = [
   { id: "beach", name: "Sunny Beach", left: 20, top: 75 },
   { id: "forest", name: "Misty Forest", left: 55, top: 40 },
@@ -374,8 +387,9 @@ async function renderView() {
       </div>
     `;
 
-    const list = document.getElementById("invasives-list");
+        const list = document.getElementById("invasives-list");
 
+    // ── Load invasives ──────────────────────────────────────────────────────────────
     let baseInvasives = invasivesByZone[zoneId] || [];
 
     const enrichedInvasives = await Promise.all(
@@ -389,15 +403,15 @@ async function renderView() {
             merged.health = Number(fullDef.health) ?? inv.health ?? 8;
 
             if (typeof fullDef.coins === 'string') {
-              console.warn(`coins was string in JSON: "${fullDef.coins}" → converted to ${merged.coins}`);
+              console.warn(`invasive coins string → ${merged.coins}`);
             }
             if (typeof fullDef.health === 'string') {
-              console.warn(`health was string in JSON: "${fullDef.health}" → converted to ${merged.health}`);
+              console.warn(`invasive health string → ${merged.health}`);
             }
 
             return merged;
           } else {
-            console.warn(`Could not load full definition for ${inv.id} — using fallback`);
+            console.warn(`Could not load invasive ${inv.id} — using fallback`);
             return inv;
           }
         }
@@ -405,32 +419,77 @@ async function renderView() {
       })
     );
 
+    // ── Load natives (same merge logic) ────────────────────────────────────────────
+    let baseNatives = nativesByZone[zoneId] || [];
+
+    const enrichedNatives = await Promise.all(
+      baseNatives.map(async (native) => {
+        if (native.isExternal) {
+          const fullDef = await loadEntityDefinition(native.id);
+          if (fullDef) {
+            const merged = { ...native, ...fullDef, isExternal: true, type: "native" };
+
+            merged.coins  = Number(fullDef.coins)  ?? native.coins  ?? 2;   // lower default
+            merged.health = Number(fullDef.health) ?? native.health ?? 3;
+
+            if (typeof fullDef.coins === 'string') {
+              console.warn(`native coins string → ${merged.coins}`);
+            }
+            if (typeof fullDef.health === 'string') {
+              console.warn(`native health string → ${merged.health}`);
+            }
+
+            return merged;
+          } else {
+            console.warn(`Could not load native ${native.id} — using fallback`);
+            return native;
+          }
+        }
+        return { ...native, type: "native" };
+      })
+    );
+
+    // ── Combine both into one list ─────────────────────────────────────────────────
+    const allEntities = [...enrichedInvasives, ...enrichedNatives];
+
+    // ── Render combined list ────────────────────────────────────────────────────────
     list.innerHTML = "";
+    allEntities.forEach((entity) => {
+      const el = document.createElement("div");
 
-    enrichedInvasives.forEach((inv) => {
-      const invEl = document.createElement("div");
-      invEl.className = "invasive-item";
-      invEl.dataset.invId = inv.id;
+      // Class: invasive-item or native-item
+      el.className = entity.type === "native" ? "native-item" : "invasive-item";
+      el.dataset.entityId = entity.id;
+      el.dataset.type = entity.type || "invasive";
 
-      let imagePath = inv.icon || "";
+      let imagePath = entity.icon || "";
       if (!imagePath) {
-        const nameLower = inv.name.toLowerCase();
-        if (nameLower.includes("seaweed")) imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
-        else if (nameLower.includes("crabgrass") || nameLower.includes("alien")) imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
-        else if (nameLower.includes("vine") || nameLower.includes("choking")) imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
-        else if (nameLower.includes("thistle") || nameLower.includes("thorny")) imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
-        else if (nameLower.includes("weed") || nameLower.includes("foreign")) imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
-        else imagePath = "assets/entities/invasives/default.png";
+        const nameLower = entity.name.toLowerCase();
+        if (nameLower.includes("palm") || nameLower.includes("baby-palm")) {
+          imagePath = "assets/entities/natives/palm-baby.png"; // your PNG
+        } else if (nameLower.includes("seaweed")) {
+          imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
+        } else if (nameLower.includes("crabgrass") || nameLower.includes("alien")) {
+          imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
+        } else if (nameLower.includes("vine")) {
+          imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
+        } else if (nameLower.includes("thistle")) {
+          imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
+        } else if (nameLower.includes("weed")) {
+          imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
+        } else {
+          imagePath = "assets/entities/default.png";
+        }
       }
 
-      invEl.innerHTML = `
-        <img src="${imagePath}" class="invasive-image" alt="${inv.name}">
-        <div class="inv-name">${inv.name}</div>
+      el.innerHTML = `
+        <img src="${imagePath}" class="${entity.type === "native" ? "native-image" : "invasive-image"}" alt="${entity.name}">
+        <div class="entity-name">${entity.name}</div>
       `;
 
-      if (inv.tooltip) invEl.title = inv.tooltip;
+      if (entity.tooltip) el.title = entity.tooltip;
 
-      list.appendChild(invEl);
+      list.appendChild(el);
     });
 
     updateCoinsDisplay();
@@ -474,6 +533,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!baseInv) return;
 
       let inv = baseInv;
+	  
+	// Protect natives from removal (for now)
+	if (invEl.classList.contains("native-item")) {
+		showMessage("Protected Plant", "This is a native species — protect it, don't remove it!", 3000);
+	return;
+	}
 
       if (baseInv.isExternal) {
         const fullDef = await loadEntityDefinition(invId);
