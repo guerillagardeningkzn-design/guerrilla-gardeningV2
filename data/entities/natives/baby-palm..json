@@ -1,0 +1,15 @@
+{
+  "type": "native",
+  "name": "Baby Palm",
+  "icon": "assets/entities/natives/palm-baby.png",
+  "coins": 2,
+  "health": 3,
+  "tooltip": "Young palm growing strong!",
+  "mutable": {
+    "onTimer": {
+      "every": "2h",
+      "spawn": "baby-palm",
+      "count": 1
+    }
+  }
+}

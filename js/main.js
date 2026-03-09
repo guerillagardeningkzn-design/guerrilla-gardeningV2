@@ -209,155 +209,6 @@ function showMessage(title = "Notice", message, durationMs = 0) {
   if (durationMs > 0) setTimeout(close, durationMs);
 }
 
-// ─── Toolbox gallery modal ──────────────────────────────────────────────────────
-function showToolboxGallery() {
-  const tools = [];
-  if (currentPlayer.inventory.spade) tools.push("Spade – Dig tough invasives");
-  if (currentPlayer.inventory.scissors) tools.push("Scissors – Cut vines");
-  // Add more tools here as you implement them
-
-  const level = currentPlayer.inventory.toolboxLevel || 1;
-  const capacity = level * 5; // example: level 1 = 5 slots, level 2 = 10, etc.
-
-  let html = `
-    <h3>Toolbox (Level ${level} – Capacity: ${capacity})</h3>
-  `;
-
-  if (tools.length === 0) {
-    html += '<p style="color: #ff9800;">No tools yet. Find or craft some!</p>';
-  } else {
-    html += tools.map(tool => `<div class="gallery-item">${tool}</div>`).join('');
-  }
-
-  html += '<p>Upgrade your toolbox to carry more tools!</p>';
-
-  showMessage("Toolbox", html, 0); // 0 = no auto-close
-}
-
-// ─── Inventory gallery modal ────────────────────────────────────────────────────
-function showInventoryGallery() {
-  const items = [
-    `Seeds: ${currentPlayer.inventory.seeds || 0}`,
-    `Soil Clumps: ${currentPlayer.inventory.soilClumps || 0}`,
-    `Fertilizer: ${currentPlayer.inventory.fertilizer || 0}`,
-    `Clay Balls: ${currentPlayer.inventory.clayBalls || 0}`
-    // Add more items as you introduce them
-  ];
-
-  let html = '<h3>Inventory</h3>';
-  html += items.map(item => `<div class="gallery-item">${item}</div>`).join('');
-
-  if (items.every(i => i.includes('0'))) {
-    html += '<p style="color: #ff9800;">Your inventory is empty. Keep clearing invasives!</p>';
-  }
-
-  showMessage("Inventory", html, 0);
-}
-
-
-// ─── Interactive dialog modal from JSON dialogTree ──────────────────────────────
-function showDialogTree(inv, dialogTree, currentIndex = 0) {
-  if (!dialogTree || !Array.isArray(dialogTree) || currentIndex >= dialogTree.length) {
-    // End of tree — close silently
-    return;
-  }
-
-  const node = dialogTree[currentIndex];
-
-  const modal = document.createElement("div");
-  modal.style.position = "fixed";
-  modal.style.inset = "0";
-  modal.style.background = "rgba(0,0,0,0.75)";
-  modal.style.display = "flex";
-  modal.style.alignItems = "center";
-  modal.style.justifyContent = "center";
-  modal.style.zIndex = "9999";
-  modal.style.opacity = "0";
-  modal.style.transition = "opacity 0.4s ease";
-
-  let html = `
-    <div style="
-      background: rgba(30,50,30,0.95);
-      border: 2px solid #4CAF50;
-      border-radius: 16px;
-      padding: 24px 32px;
-      max-width: 90%;
-      width: 400px;
-      text-align: center;
-      color: #e8f5e9;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-      transform: scale(0.92);
-      transition: transform 0.3s ease;
-    ">
-      <p style="font-size: 1.15rem; margin-bottom: 20px; line-height: 1.4;">${node.message}</p>
-  `;
-
-  if (node.choices && Array.isArray(node.choices)) {
-    html += '<div style="display: flex; flex-direction: column; gap: 12px;">';
-    node.choices.forEach(choice => {
-      html += `
-        <button class="dialog-choice" data-next="${choice.next}" style="
-          padding: 12px 24px;
-          background: #4CAF50;
-          color: white;
-          border: none;
-          border-radius: 12px;
-          font-size: 1rem;
-          cursor: pointer;
-          transition: background 0.2s;
-        ">${choice.text}</button>
-      `;
-    });
-    html += '</div>';
-  } else {
-    // No choices → just OK to close
-    html += `
-      <button class="dialog-close" style="
-        padding: 12px 32px;
-        background: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 12px;
-        font-size: 1rem;
-        cursor: pointer;
-      ">OK</button>
-    `;
-  }
-
-  html += '</div>';
-
-  modal.innerHTML = html;
-  document.body.appendChild(modal);
-
-  requestAnimationFrame(() => {
-    modal.style.opacity = "1";
-    modal.querySelector("div").style.transform = "scale(1)";
-  });
-
-  // Handle choice clicks
- modal.querySelectorAll(".dialog-choice").forEach(btn => {
-  btn.addEventListener("click", (e) => {
-    e.stopPropagation();              // ← prevent bubbling to document listener
-    e.preventDefault();               // ← good practice for buttons
-    const nextIndex = parseInt(btn.dataset.next);
-    modal.remove();
-    showDialogTree(inv, dialogTree, nextIndex);
-  });
-});
-
-  // Handle close (no choices case)
-  modal.querySelector(".dialog-close")?.addEventListener("click", (e) => {
-  e.stopPropagation();
-  e.preventDefault();
-  modal.remove();
-});
-
-  // Close on outside click
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) modal.remove();
-  });
-}
-
 // ─── Floating reward popup – with bonus text support ────────────────────────────
 function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusText = "", duration = 1400) {
   if (!targetElement) return;
@@ -416,6 +267,94 @@ function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusTe
     popup.style.opacity = "0";
     setTimeout(() => popup.remove(), 500);
   }, duration);
+}
+
+// ─── Interactive dialog modal ────────────────────────────────────────────────────
+function showDialogTree(inv, dialogTree, currentIndex = 0) {
+  if (!dialogTree || !Array.isArray(dialogTree) || currentIndex >= dialogTree.length) {
+    return;
+  }
+  const node = dialogTree[currentIndex];
+  const modal = document.createElement("div");
+  modal.style.position = "fixed";
+  modal.style.inset = "0";
+  modal.style.background = "rgba(0,0,0,0.75)";
+  modal.style.display = "flex";
+  modal.style.alignItems = "center";
+  modal.style.justifyContent = "center";
+  modal.style.zIndex = "9999";
+  modal.style.opacity = "0";
+  modal.style.transition = "opacity 0.4s ease";
+  let html = `
+    <div style="
+      background: rgba(30,50,30,0.95);
+      border: 2px solid #4CAF50;
+      border-radius: 16px;
+      padding: 24px 32px;
+      max-width: 90%;
+      width: 400px;
+      text-align: center;
+      color: #e8f5e9;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      transform: scale(0.92);
+      transition: transform 0.3s ease;
+    ">
+      <p style="font-size: 1.15rem; margin-bottom: 20px; line-height: 1.4;">${node.message}</p>
+  `;
+  if (node.choices && Array.isArray(node.choices)) {
+    html += '<div style="display: flex; flex-direction: column; gap: 12px;">';
+    node.choices.forEach(choice => {
+      html += `
+        <button class="dialog-choice" data-next="${choice.next}" style="
+          padding: 12px 24px;
+          background: #4CAF50;
+          color: white;
+          border: none;
+          border-radius: 12px;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: background 0.2s;
+        ">${choice.text}</button>
+      `;
+    });
+    html += '</div>';
+  } else {
+    html += `
+      <button class="dialog-close" style="
+        padding: 12px 32px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        cursor: pointer;
+      ">OK</button>
+    `;
+  }
+  html += '</div>';
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+  requestAnimationFrame(() => {
+    modal.style.opacity = "1";
+    modal.querySelector("div").style.transform = "scale(1)";
+  });
+  modal.querySelectorAll(".dialog-choice").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const nextIndex = parseInt(btn.dataset.next);
+      modal.remove();
+      showDialogTree(inv, dialogTree, nextIndex);
+    });
+  });
+  modal.querySelector(".dialog-close")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    modal.remove();
+  });
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) modal.remove();
+  });
 }
 
 // ─── Render ──────────────────────────────────────────────────────────────────────
@@ -497,16 +436,17 @@ async function renderView() {
             merged.health = Number(fullDef.health) ?? inv.health ?? 8;
 
             if (typeof fullDef.coins === 'string') {
-              console.warn(`coins string → ${merged.coins}`);
+              console.warn(`coins was string in JSON: "${fullDef.coins}" → converted to ${merged.coins}`);
             }
             if (typeof fullDef.health === 'string') {
-              console.warn(`health string → ${merged.health}`);
+              console.warn(`health was string in JSON: "${fullDef.health}" → converted to ${merged.health}`);
             }
 
             return merged;
+          } else {
+            console.warn(`Could not load full definition for ${inv.id} — using fallback`);
+            return inv;
           }
-          console.warn(`Could not load ${inv.id} — using fallback`);
-          return inv;
         }
         return inv;
       })
@@ -522,12 +462,19 @@ async function renderView() {
       let imagePath = inv.icon || "";
       if (!imagePath) {
         const nameLower = inv.name.toLowerCase();
-        if (nameLower.includes("seaweed")) imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
-        else if (nameLower.includes("crabgrass") || nameLower.includes("alien")) imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
-        else if (nameLower.includes("vine")) imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
-        else if (nameLower.includes("thistle")) imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
-        else if (nameLower.includes("weed")) imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
-        else imagePath = "assets/entities/invasives/default.png";
+        if (nameLower.includes("seaweed")) {
+          imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
+        } else if (nameLower.includes("crabgrass") || nameLower.includes("alien")) {
+          imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
+        } else if (nameLower.includes("vine") || nameLower.includes("choking")) {
+          imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
+        } else if (nameLower.includes("thistle") || nameLower.includes("thorny")) {
+          imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
+        } else if (nameLower.includes("weed") || nameLower.includes("foreign")) {
+          imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
+        } else {
+          imagePath = "assets/entities/invasives/default.png";
+        }
       }
 
       invEl.innerHTML = `
@@ -587,7 +534,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (fullDef) {
           inv = { ...baseInv, ...fullDef, isExternal: true };
 
-          inv.coins  = Number(fullDef.coins)  ?? baseInv.coins  ?? 5;
+          inv.coins = Number(fullDef.coins) ?? baseInv.coins ?? 5;
           inv.health = Number(fullDef.health) ?? baseInv.health ?? 8;
 
           if (typeof fullDef.coins === 'string') console.warn(`coins string → ${inv.coins}`);
@@ -599,23 +546,17 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Raw inv.health:", inv.health, typeof inv.health);
 
       if (inv.mutable?.onDestroy?.condition === "playerHasItem:spade") {
-  const hasSpade = currentPlayer.inventory?.spade === true;
+        const hasSpade = currentPlayer.inventory?.spade === true;
+        if (!hasSpade) {
+          if (inv.mutable?.onInteract?.dialogTree && Array.isArray(inv.mutable.onInteract.dialogTree)) {
+            showDialogTree(inv, inv.mutable.onInteract.dialogTree, 0);
+          } else {
+            showMessage("Tool Required", inv.mutable.onDestroy.failMessage || "You need a spade!", 4000);
+          }
+          return;
+        }
+      }
 
-  if (!hasSpade) {
-    // Show dialog tree instead of simple message
-    if (inv.mutable?.onInteract?.dialogTree && Array.isArray(inv.mutable.onInteract.dialogTree)) {
-      showDialogTree(inv, inv.mutable.onInteract.dialogTree, 0);
-    } else {
-      // Fallback if no dialog tree defined
-      showMessage(
-        "Tool Required",
-        inv.mutable.onDestroy.failMessage || "You need a spade to remove this!",
-        4000
-      );
-    }
-    return;
-  }
-}
       const changes = {
         coins: currentPlayer.coins + (inv.coins || 5),
         zones: {
@@ -629,12 +570,10 @@ document.addEventListener("DOMContentLoaded", () => {
       let bonusText = "";
       if (inv.mutable?.onDestroy?.drop && Array.isArray(inv.mutable.onDestroy.drop)) {
         const bonusParts = [];
-
         inv.mutable.onDestroy.drop.forEach(dropRule => {
           const entity = dropRule.entity;
-          const count  = Number(dropRule.count) || 1;
+          const count = Number(dropRule.count) || 1;
           const chance = Number(dropRule.chance) || 1;
-
           if (Math.random() < chance) {
             if (entity === "soil-clump") {
               currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
@@ -644,11 +583,9 @@ document.addEventListener("DOMContentLoaded", () => {
             // Add other drop types here later
           }
         });
-
         if (bonusParts.length > 0) {
           bonusText = bonusParts.join("   ");
         }
-
         savePlayer();
       }
 
@@ -660,9 +597,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(() => {
         invEl.remove();
 
-        // Single popup call with bonus text
         showRewardPopup(invEl, inv.coins || 5, inv.health || 8, bonusText, 1600);
-
         console.log("Health delta from invasive:", inv.health);
 
         updateCoinsDisplay();
@@ -685,7 +620,8 @@ document.addEventListener("DOMContentLoaded", () => {
       currentView = "island";
       renderView();
     }
-// Toolbox click – open gallery
+
+    // Toolbox click – open gallery
     if (target.closest(".hud-toolbox")) {
       showToolboxGallery();
       return;
