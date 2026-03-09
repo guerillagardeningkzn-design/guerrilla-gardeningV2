@@ -209,7 +209,7 @@ function showMessage(title = "Notice", message, durationMs = 0) {
   if (durationMs > 0) setTimeout(close, durationMs);
 }
 
-// ─── Floating reward popup – with bonus text support ────────────────────────────
+// ─── Reward popup ────────────────────────────────────────────────────────────────
 function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusText = "", duration = 1400) {
   if (!targetElement) return;
 
@@ -235,7 +235,7 @@ function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusTe
 
   popup.innerHTML = parts.join("   ") || "[No reward]";
 
-  // LOUD DEBUG STYLE – remove later for normal appearance
+  // LOUD DEBUG STYLE – remove this block later
   popup.style.cssText = `
     position: fixed !important;
     left: 50% !important;
@@ -267,6 +267,47 @@ function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusTe
     popup.style.opacity = "0";
     setTimeout(() => popup.remove(), 500);
   }, duration);
+}
+
+// ─── Toolbox gallery modal ──────────────────────────────────────────────────────
+function showToolboxGallery() {
+  const tools = [];
+  if (currentPlayer.inventory.spade) tools.push("Spade – Dig tough invasives");
+  if (currentPlayer.inventory.scissors) tools.push("Scissors – Cut vines");
+
+  const level = currentPlayer.inventory.toolboxLevel || 1;
+  const capacity = level * 5;
+
+  let html = `<h3>Toolbox (Level ${level} – Capacity: ${capacity})</h3>`;
+
+  if (tools.length === 0) {
+    html += '<p style="color: #ff9800;">No tools yet. Find or craft some!</p>';
+  } else {
+    html += tools.map(tool => `<div class="gallery-item">${tool}</div>`).join('');
+  }
+
+  html += '<p>Upgrade your toolbox to carry more tools!</p>';
+
+  showMessage("Toolbox", html, 0);
+}
+
+// ─── Inventory gallery modal ────────────────────────────────────────────────────
+function showInventoryGallery() {
+  const items = [
+    `Seeds: ${currentPlayer.inventory.seeds || 0}`,
+    `Soil Clumps: ${currentPlayer.inventory.soilClumps || 0}`,
+    `Fertilizer: ${currentPlayer.inventory.fertilizer || 0}`,
+    `Clay Balls: ${currentPlayer.inventory.clayBalls || 0}`
+  ];
+
+  let html = '<h3>Inventory</h3>';
+  html += items.map(item => `<div class="gallery-item">${item}</div>`).join('');
+
+  if (items.every(i => i.includes('0'))) {
+    html += '<p style="color: #ff9800;">Your inventory is empty. Keep clearing invasives!</p>';
+  }
+
+  showMessage("Inventory", html, 0);
 }
 
 // ─── Render ──────────────────────────────────────────────────────────────────────
