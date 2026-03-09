@@ -617,61 +617,57 @@ if (entityEl) {
 
   console.log(`Processing ${entityType}: ${entity.name || entityId}`);
 
-  // ── Tool condition check (works for both) ───────────────────────────────────────
-  const condition = entity.mutable?.onDestroy?.condition;
-  if (condition) {
-    let hasTool = false;
-    let toolName = "";
+  // ── Tool condition check (works for both invasives & natives) ───────────────────
+const condition = entity.mutable?.onDestroy?.condition;
+if (condition) {
+  let hasTool = false;
+  let toolName = "";
 
-    if (condition === "playerHasItem:spade") {
-      hasTool = currentPlayer.inventory?.spade === true;
-      toolName = "spade";
-    } else if (condition === "playerHasItem:sickle") {
-      hasTool = currentPlayer.inventory?.sickle === true;
-      toolName = "sickle";
-    }
-
-    if (!hasTool) {
-      if (entity.mutable?.onInteract?.dialogTree && Array.isArray(entity.mutable.onInteract.dialogTree)) {
-        showDialogTree(entity, entity.mutable.onInteract.dialogTree, 0);
-      } else {
-        showMessage("Tool Required", entity.mutable.onDestroy.failMessage || `You need a ${toolName}!`, 4000);
-      }
-      return;
-    }
+  if (condition === "playerHasItem:spade") {
+    hasTool = currentPlayer.inventory?.spade === true;
+    toolName = "spade";
+  } else if (condition === "playerHasItem:sickle") {
+    hasTool = currentPlayer.inventory?.sickle === true;
+    toolName = "sickle";
   }
 
-  // ── Action: removal (invasive) or harvest (native) ──────────────────────────────
-  if (entityType === "native") {
-    // Harvest seed from palm
-    currentPlayer.inventory.seeds = (currentPlayer.inventory.seeds || 0) + 1;
-    savePlayer();
-
-    showMessage("Harvest Success", "You carefully collected 1 seed from the young palm!", 4000);
-
-    // Visual removal (later replace with mature palm entity)
-    entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
-    entityEl.style.opacity = "0";
-    entityEl.style.transform = "scale(0.4) rotate(5deg)";
-
-    setTimeout(() => {
-      entityEl.remove();
-      // Optional: add reward popup for seed
-      showRewardPopup(entityEl, 0, 0, "+1 Seed 🌱", 1600);
-    }, 600);
-
+  if (!hasTool) {
+    // When tool missing: show fail message instead of dialog tree
+    showMessage("Tool Required", entity.mutable.onDestroy.failMessage || `You need a ${toolName} to handle this properly!`, 4000);
     return;
   }
+}
 
-  // Invasive removal (unchanged)
-  const changes = {
-    coins: currentPlayer.coins + (entity.coins || 5),
-    zones: {
-      ...currentPlayer.zones,
-      [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + (entity.health || 8))
-    }
-  };
-  updatePlayer(changes);
+// ── Action: removal (invasive) or harvest (native) ──────────────────────────────
+if (entityType === "native") {
+  // Harvest seed from palm (only reaches here if sickle present)
+  currentPlayer.inventory.seeds = (currentPlayer.inventory.seeds || 0) + 1;
+  savePlayer();
+
+  showMessage("Harvest Success", "You carefully collected 1 seed from the young palm!", 4000);
+
+  // Visual removal (later: replace with mature palm)
+  entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+  entityEl.style.opacity = "0";
+  entityEl.style.transform = "scale(0.4) rotate(5deg)";
+
+  setTimeout(() => {
+    entityEl.remove();
+    showRewardPopup(entityEl, 0, 0, "+1 Seed 🌱", 1600);
+  }, 600);
+
+  return;
+}
+
+// ── Invasive removal (unchanged) ────────────────────────────────────────────────
+const changes = {
+  coins: currentPlayer.coins + (entity.coins || 5),
+  zones: {
+    ...currentPlayer.zones,
+    [zoneId]: Math.min(100, (currentPlayer.zones[zoneId] || 0) + (entity.health || 8))
+  }
+};
+updatePlayer(changes);
 
   let bonusText = "";
   if (entity.mutable?.onDestroy?.drop && Array.isArray(entity.mutable.onDestroy.drop)) {

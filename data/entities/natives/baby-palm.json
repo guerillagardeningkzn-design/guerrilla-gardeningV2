@@ -7,27 +7,28 @@
   "tooltip": "Young palm growing strong!",
   "mutable": {
     "onDestroy": {
-      "drop": [
-        { "entity": "seed", "count": 1 },
-        { "entity": "soil-clump", "chance": 0.3 }
-      ],
       "condition": "playerHasItem:sickle",
-      "failMessage": "Too young to harvest without care!"
+      "failMessage": "The young palm is too delicate — you need a sickle to harvest safely!",
+      "drop": [
+        {
+          "entity": "seed",
+          "count": 1,
+          "chance": 1.0
+        }
+      ]
     },
     "onInteract": {
       "dialogTree": [
         {
-          "message": "This young palm needs protection...",
+          "message": "This young palm needs care...",
           "choices": [
-            { "text": "Leave it", "next": 1 },
-            { "text": "Harvest seed (needs sickle)", "next": 2 }
+            { "text": "Leave it growing", "next": 1 },
+            { "text": "Harvest a seed (with sickle)", "next": 2 }
           ]
         },
-        { "message": "Good choice — let it grow." },
+        { "message": "Good choice — let it grow strong." },
         { "message": "You carefully take a seed..." }
-      ],
-      "condition": "playerHasItem:sickle",
-      "failDialog": "Need sickle for safe harvest."
+      ]
     },
     "onTimer": {
       "every": "2h",
