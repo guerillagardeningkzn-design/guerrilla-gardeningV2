@@ -309,3 +309,13 @@ html {
   color: #e8f5e9;
   text-shadow: 1px 1px 3px black;
 }
+
+.invasive-item img,
+.native-item img {
+  width: 100%;
+  height: auto;
+  max-height: 120px;          /* or whatever size matches your weeds */
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}

@@ -1,11 +1,34 @@
 {
   "type": "native",
   "name": "Baby Palm",
-  "icon": "assets/entities/natives/palm/baby-palm.png",
+  "icon": "assets/entities/natives/palm/palm-baby.png",
   "coins": 2,
   "health": 3,
   "tooltip": "Young palm growing strong!",
   "mutable": {
+    "onDestroy": {
+      "drop": [
+        { "entity": "seed", "count": 1 },
+        { "entity": "soil-clump", "chance": 0.3 }
+      ],
+      "condition": "playerHasItem:sickle",
+      "failMessage": "Too young to harvest without care!"
+    },
+    "onInteract": {
+      "dialogTree": [
+        {
+          "message": "This young palm needs protection...",
+          "choices": [
+            { "text": "Leave it", "next": 1 },
+            { "text": "Harvest seed (needs sickle)", "next": 2 }
+          ]
+        },
+        { "message": "Good choice — let it grow." },
+        { "message": "You carefully take a seed..." }
+      ],
+      "condition": "playerHasItem:sickle",
+      "failDialog": "Need sickle for safe harvest."
+    },
     "onTimer": {
       "every": "2h",
       "spawn": "baby-palm",
