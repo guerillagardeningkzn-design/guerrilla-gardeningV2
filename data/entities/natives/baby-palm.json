@@ -1,7 +1,7 @@
 {
   "type": "native",
   "name": "Baby Palm",
-  "icon": "assets/entities/natives/palm/palm-baby.png",
+  "icon": "assets/entities/natives/palm/baby-palm.png",
   "coins": 2,
   "health": 3,
   "tooltip": "Young palm growing strong!",
