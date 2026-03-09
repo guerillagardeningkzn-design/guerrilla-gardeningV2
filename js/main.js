@@ -9,19 +9,21 @@ console.log("Guerrilla Gardening - overworld map with markers + golden UI");
 
 const entityCache = new Map();
 
-async function loadEntityDefinition(entityId) {
+async function loadEntityDefinition(entityId, category = "invasives") {
   if (entityCache.has(entityId)) {
     return entityCache.get(entityId);
   }
 
+  const path = `data/entities/${category}/${entityId}.json`;
+
   try {
-    const response = await fetch(`data/entities/invasives/${entityId}.json`);
-    if (!response.ok) throw new Error(`Entity ${entityId} not found`);
+    const response = await fetch(path);
+    if (!response.ok) throw new Error(`Entity ${entityId} not found in ${category}`);
     const data = await response.json();
     entityCache.set(entityId, data);
     return data;
   } catch (err) {
-    console.error("Failed to load entity:", entityId, err);
+    console.error("Failed to load entity:", entityId, "from", path, err);
     return null;
   }
 }
@@ -425,7 +427,7 @@ async function renderView() {
     const enrichedNatives = await Promise.all(
       baseNatives.map(async (native) => {
         if (native.isExternal) {
-          const fullDef = await loadEntityDefinition(native.id);
+          const fullDef = await loadEntityDefinition(native.id, "natives");
           if (fullDef) {
             const merged = { ...native, ...fullDef, isExternal: true, type: "native" };
 
@@ -455,42 +457,42 @@ async function renderView() {
     // ── Render combined list ────────────────────────────────────────────────────────
     list.innerHTML = "";
     allEntities.forEach((entity) => {
-      const el = document.createElement("div");
+  const el = document.createElement("div");
 
-      // Class: invasive-item or native-item
-      el.className = entity.type === "native" ? "native-item" : "invasive-item";
-      el.dataset.entityId = entity.id;
-      el.dataset.type = entity.type || "invasive";
+  el.className = entity.type === "native" ? "native-item" : "invasive-item";
+  el.dataset.entityId = entity.id;
+  el.dataset.type = entity.type || "invasive";
 
-      let imagePath = entity.icon || "";
-      if (!imagePath) {
-        const nameLower = entity.name.toLowerCase();
-        if (nameLower.includes("palm") || nameLower.includes("baby-palm")) {
-          imagePath = "assets/entities/natives/palm-baby.png"; // your PNG
-        } else if (nameLower.includes("seaweed")) {
-          imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
-        } else if (nameLower.includes("crabgrass") || nameLower.includes("alien")) {
-          imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
-        } else if (nameLower.includes("vine")) {
-          imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
-        } else if (nameLower.includes("thistle")) {
-          imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
-        } else if (nameLower.includes("weed")) {
-          imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
-        } else {
-          imagePath = "assets/entities/default.png";
-        }
-      }
+  let imagePath = entity.icon || "";
+  if (!imagePath) {
+    const nameLower = (entity.name || entity.id || "").toLowerCase();  // SAFE
 
-      el.innerHTML = `
-        <img src="${imagePath}" class="${entity.type === "native" ? "native-image" : "invasive-image"}" alt="${entity.name}">
-        <div class="entity-name">${entity.name}</div>
-      `;
+    if (nameLower.includes("palm") || nameLower.includes("baby-palm")) {
+      imagePath = "assets/entities/natives/palm-baby.png";
+    } else if (nameLower.includes("seaweed")) {
+      imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
+    } else if (nameLower.includes("crabgrass") || nameLower.includes("alien")) {
+      imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
+    } else if (nameLower.includes("vine")) {
+      imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
+    } else if (nameLower.includes("thistle")) {
+      imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
+    } else if (nameLower.includes("weed")) {
+      imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
+    } else {
+      imagePath = "assets/entities/default.png";
+    }
+  }
 
-      if (entity.tooltip) el.title = entity.tooltip;
+  el.innerHTML = `
+    <img src="${imagePath}" class="${entity.type === "native" ? "native-image" : "invasive-image"}" alt="${entity.name || entity.id}">
+    <div class="entity-name">${entity.name || entity.id}</div>
+  `;
 
-      list.appendChild(el);
-    });
+  if (entity.tooltip) el.title = entity.tooltip;
+
+  list.appendChild(el);
+});
 
     updateCoinsDisplay();
     updateHealthDisplay(health);
