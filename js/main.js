@@ -265,7 +265,7 @@ function showInventoryGallery() {
 }
 
 // ─── Floating reward popup (loud debug version for now) ─────────────────────────
-function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, duration = 1400) {
+function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusText = "", duration = 1400) {
   if (!targetElement) return;
 
   const safeCoins  = Number(coinsDelta)  || 0;
@@ -284,7 +284,10 @@ function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, duratio
     const sign = safeHealth > 0 ? "+" : "";
     parts.push(`<span style="color: ${safeHealth > 0 ? '#4CAF50' : '#ff5252'};">${sign}${Math.abs(safeHealth)}% 🌿</span>`);
   }
-
+	  // Add bonus text if any (e.g. soil clump drop)
+  if (bonusText) {
+    parts.push(`<span style="color: #8D6E63;">${bonusText}</span>`); // brown for soil
+  }
   popup.innerHTML = parts.join("   ") || "[No reward]";
 
   // LOUD DEBUG STYLE – makes it impossible to miss
@@ -526,47 +529,58 @@ document.addEventListener("DOMContentLoaded", () => {
       updatePlayer(changes);
 
       // ── Process drops ────────────────────────────────────────────────────────────
-      if (inv.mutable?.onDestroy?.drop && Array.isArray(inv.mutable.onDestroy.drop)) {
-        inv.mutable.onDestroy.drop.forEach(dropRule => {
-          const entity = dropRule.entity;
-          const count  = Number(dropRule.count) || 1;
-          const chance = Number(dropRule.chance) || 1;
+      // ── Process JSON drops (extra items / bonuses) ────────────────────────────────
+// ... after reward calculation & updatePlayer(changes) ...
 
-          if (Math.random() < chance) {
-            if (entity === "soil-clump") {
-              currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
-              console.log(`Gained ${count} soil clump(s)`);
-            }
-          }
-        });
-        savePlayer();
+// Collect bonus text for popup
+let bonusText = "";
+if (inv.mutable?.onDestroy?.drop && Array.isArray(inv.mutable.onDestroy.drop)) {
+  const bonusParts = [];
+  inv.mutable.onDestroy.drop.forEach(dropRule => {
+    const entity = dropRule.entity;
+    const count  = Number(dropRule.count) || 1;
+    const chance = Number(dropRule.chance) || 1;
+
+    if (Math.random() < chance) {
+      if (entity === "soil-clump") {
+        currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
+        bonusParts.push(`+${count} Soil Clump 🌱`);
+        console.log(`Gained ${count} soil clump(s)`);
       }
-
-      // Visual feedback
-      invEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
-      invEl.style.opacity = "0";
-      invEl.style.transform = "scale(0.4) rotate(5deg)";
-
-      setTimeout(() => {
-        invEl.remove();
-
-        showRewardPopup(invEl, inv.coins || 5, inv.health || 8, 1600);
-        console.log("Health delta from invasive:", inv.health);
-
-        updateCoinsDisplay();
-        updateHealthDisplay(changes.zones[zoneId]);
-
-        const progressFill = document.querySelector(".progress-fill");
-        if (progressFill) {
-          progressFill.style.width = changes.zones[zoneId] + "%";
-        }
-
-        if (document.querySelectorAll(".invasive-item").length === 0) {
-          const zone = zones.find(z => z.id === zoneId);
-          showClearModal(zone.name + " cleared of invasives! 🌿");
-        }
-      }, 600);
     }
+  });
+  if (bonusParts.length > 0) {
+    bonusText = bonusParts.join("   ");
+  }
+  savePlayer();
+}
+
+// Visual feedback
+invEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+invEl.style.opacity = "0";
+invEl.style.transform = "scale(0.4) rotate(5deg)";
+
+setTimeout(() => {
+  invEl.remove();
+
+  // Now pass the collected bonusText
+  showRewardPopup(invEl, inv.coins || 5, inv.health || 8, bonusText, 1600);
+
+  console.log("Health delta from invasive:", inv.health);
+
+  updateCoinsDisplay();
+  updateHealthDisplay(changes.zones[zoneId]);
+
+  const progressFill = document.querySelector(".progress-fill");
+  if (progressFill) {
+    progressFill.style.width = changes.zones[zoneId] + "%";
+  }
+
+  if (document.querySelectorAll(".invasive-item").length === 0) {
+    const zone = zones.find(z => z.id === zoneId);
+    showClearModal(zone.name + " cleared of invasives! 🌿");
+  }
+}, 600);
 
     // Back to map
     if (target.id === "back-to-map") {
