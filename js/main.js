@@ -468,7 +468,7 @@ if (!imagePath) {
   const nameLower = (entity.name || entity.id || "").toLowerCase();
 
   if (nameLower.includes("palm") || nameLower.includes("baby-palm")) {
-    imagePath = "assets/entities/natives/palm/baby-palm.png";  // ← FIXED PATH
+    imagePath = "assets/entities/natives/palm/palm-baby.png";  // ← FIXED PATH
   } else if (nameLower.includes("seaweed")) {
     imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
   } else if (nameLower.includes("crabgrass") || nameLower.includes("alien")) {
