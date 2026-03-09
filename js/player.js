@@ -9,7 +9,8 @@ let player = {
 	seeds: 15,
 	wateringCanLevel: 1,
 	shovelLevel: 1,
-	spade: false,
+	spade: true,
+	sickle: false,
 	scissors: false,  // example tool – false = not owned
 	toolboxLevel: 1,  // 1 = basic (🛠️), 2 = advanced (🛠️+), 3 = master (🛠️++)
 	soilClumps: 0,    // from drops
