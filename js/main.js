@@ -4,7 +4,7 @@ import { zones } from '../data/zones.js';
 console.log("Guerrilla Gardening - overworld map with markers + golden UI");
 
 // ───────────────────────────────────────────────────────────
-// New: Centralized way to load external entity definitions
+// Centralized way to load external entity definitions
 // ───────────────────────────────────────────────────────────
 
 const entityCache = new Map();
@@ -73,20 +73,6 @@ function updateCoinsDisplay() {
       setTimeout(() => coinContainer.classList.remove("pulse"), 800);
     }
   }
-  
-  // Update toolbox icon
-const toolboxIcon = document.getElementById("toolbox-icon");
-if (toolboxIcon) {
-  const level = currentPlayer.inventory.toolboxLevel || 1;
-  toolboxIcon.textContent = level === 1 ? "🛠️" : level === 2 ? "🛠️+" : "🛠️++";
-}
-
-// Update inventory icon (optional: change based on fullness)
-const inventoryIcon = document.getElementById("inventory-icon");
-if (inventoryIcon) {
-  inventoryIcon.textContent = "🎒";
-}
-
 }
 
 function updateHealthDisplay(health) {
@@ -223,48 +209,7 @@ function showMessage(title = "Notice", message, durationMs = 0) {
   if (durationMs > 0) setTimeout(close, durationMs);
 }
 
-// ─── Toolbox gallery modal ──────────────────────────────────────────────────────
-function showToolboxGallery() {
-  const tools = [];
-  if (currentPlayer.inventory.spade) tools.push("Spade: Dig out tough weeds");
-  if (currentPlayer.inventory.scissors) tools.push("Scissors: Cut vines");
-  // Add more tools later
-
-  const level = currentPlayer.inventory.toolboxLevel || 1;
-  const capacity = level * 5;  // example: level 1 = 5 slots
-
-  const html = `
-    <h3>Toolbox (Level ${level} – Capacity: ${capacity})</h3>
-    ${tools.map(tool => `<div class="gallery-item">${tool}</div>`).join('')}
-    <p>Upgrade to increase capacity!</p>
-  `;
-
-  const modal = showMessage("Toolbox", html, 0); // 0 = no auto-close
-  // Optional: update icon based on level
-  const iconEl = document.getElementById("toolbox-icon");
-  if (iconEl) {
-    iconEl.textContent = level === 1 ? "🛠️" : level === 2 ? "🛠️+" : "🛠️++";
-  }
-}
-
-// ─── Inventory gallery modal ────────────────────────────────────────────────────
-function showInventoryGallery() {
-  const items = [];
-  items.push(`Seeds: ${currentPlayer.inventory.seeds}`);
-  items.push(`Soil Clumps: ${currentPlayer.inventory.soilClumps}`);
-  items.push(`Fertilizer: ${currentPlayer.inventory.fertilizer}`);
-  items.push(`Clay Balls: ${currentPlayer.inventory.clayBalls}`);
-  // Add more items later
-
-  const html = `
-    <h3>Inventory</h3>
-    ${items.map(item => `<div class="gallery-item">${item}</div>`).join('')}
-  `;
-
-  showMessage("Inventory", html, 0);
-}
-
-// ─── Floating reward popup (loud debug version for now) ─────────────────────────
+// ─── Floating reward popup – with bonus text support ────────────────────────────
 function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusText = "", duration = 1400) {
   if (!targetElement) return;
 
@@ -284,13 +229,13 @@ function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusTe
     const sign = safeHealth > 0 ? "+" : "";
     parts.push(`<span style="color: ${safeHealth > 0 ? '#4CAF50' : '#ff5252'};">${sign}${Math.abs(safeHealth)}% 🌿</span>`);
   }
-	  // Add bonus text if any (e.g. soil clump drop)
   if (bonusText) {
-    parts.push(`<span style="color: #8D6E63;">${bonusText}</span>`); // brown for soil
+    parts.push(`<span style="color: #8D6E63;">${bonusText}</span>`);
   }
+
   popup.innerHTML = parts.join("   ") || "[No reward]";
 
-  // LOUD DEBUG STYLE – makes it impossible to miss
+  // LOUD DEBUG STYLE (remove later)
   popup.style.cssText = `
     position: fixed !important;
     left: 50% !important;
@@ -311,7 +256,6 @@ function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusTe
   `;
 
   document.body.appendChild(popup);
-
   console.log("Popup appended – innerHTML:", popup.innerHTML);
 
   requestAnimationFrame(() => {
@@ -325,7 +269,7 @@ function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusTe
   }, duration);
 }
 
-// ─── Render ────────────────────────────────────────────────────────────────────── 
+// ─── Render ──────────────────────────────────────────────────────────────────────
 async function renderView() {
   const container = document.getElementById("game-container");
   if (!container) return;
@@ -350,9 +294,7 @@ async function renderView() {
       markerEl.dataset.zoneId = marker.id;
       markerEl.innerHTML = `<span class="marker-label">${marker.name}</span>`;
 
-      if (!unlocked) {
-        markerEl.style.opacity = 0.5;
-      }
+      if (!unlocked) markerEl.style.opacity = 0.5;
 
       markersContainer.appendChild(markerEl);
     });
@@ -406,10 +348,10 @@ async function renderView() {
             merged.health = Number(fullDef.health) ?? inv.health ?? 8;
 
             if (typeof fullDef.coins === 'string') {
-              console.warn(`coins was string in JSON: "${fullDef.coins}" → ${merged.coins}`);
+              console.warn(`coins string → ${merged.coins}`);
             }
             if (typeof fullDef.health === 'string') {
-              console.warn(`health was string in JSON: "${fullDef.health}" → ${merged.health}`);
+              console.warn(`health string → ${merged.health}`);
             }
 
             return merged;
@@ -499,12 +441,8 @@ document.addEventListener("DOMContentLoaded", () => {
           inv.coins  = Number(fullDef.coins)  ?? baseInv.coins  ?? 5;
           inv.health = Number(fullDef.health) ?? baseInv.health ?? 8;
 
-          if (typeof fullDef.coins === 'string') {
-            console.warn(`coins string → ${inv.coins}`);
-          }
-          if (typeof fullDef.health === 'string') {
-            console.warn(`health string → ${inv.health}`);
-          }
+          if (typeof fullDef.coins === 'string') console.warn(`coins string → ${inv.coins}`);
+          if (typeof fullDef.health === 'string') console.warn(`health string → ${inv.health}`);
         }
       }
 
@@ -528,77 +466,66 @@ document.addEventListener("DOMContentLoaded", () => {
       };
       updatePlayer(changes);
 
-      // ── Process drops ────────────────────────────────────────────────────────────
-      // ── Process JSON drops (extra items / bonuses) ────────────────────────────────
-// ... after reward calculation & updatePlayer(changes) ...
+      // ── Process drops & collect bonus text ───────────────────────────────────────
+      let bonusText = "";
+      if (inv.mutable?.onDestroy?.drop && Array.isArray(inv.mutable.onDestroy.drop)) {
+        const bonusParts = [];
 
-// Collect bonus text for popup
-let bonusText = "";
-if (inv.mutable?.onDestroy?.drop && Array.isArray(inv.mutable.onDestroy.drop)) {
-  const bonusParts = [];
-  inv.mutable.onDestroy.drop.forEach(dropRule => {
-    const entity = dropRule.entity;
-    const count  = Number(dropRule.count) || 1;
-    const chance = Number(dropRule.chance) || 1;
+        inv.mutable.onDestroy.drop.forEach(dropRule => {
+          const entity = dropRule.entity;
+          const count  = Number(dropRule.count) || 1;
+          const chance = Number(dropRule.chance) || 1;
 
-    if (Math.random() < chance) {
-      if (entity === "soil-clump") {
-        currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
-        bonusParts.push(`+${count} Soil Clump 🌱`);
-        console.log(`Gained ${count} soil clump(s)`);
+          if (Math.random() < chance) {
+            if (entity === "soil-clump") {
+              currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
+              bonusParts.push(`+${count} Soil Clump 🌱`);
+              console.log(`Gained ${count} soil clump(s)`);
+            }
+            // Add other drop types here later
+          }
+        });
+
+        if (bonusParts.length > 0) {
+          bonusText = bonusParts.join("   ");
+        }
+
+        savePlayer();
       }
+
+      // Visual feedback
+      invEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+      invEl.style.opacity = "0";
+      invEl.style.transform = "scale(0.4) rotate(5deg)";
+
+      setTimeout(() => {
+        invEl.remove();
+
+        // Single popup call with bonus text
+        showRewardPopup(invEl, inv.coins || 5, inv.health || 8, bonusText, 1600);
+
+        console.log("Health delta from invasive:", inv.health);
+
+        updateCoinsDisplay();
+        updateHealthDisplay(changes.zones[zoneId]);
+
+        const progressFill = document.querySelector(".progress-fill");
+        if (progressFill) {
+          progressFill.style.width = changes.zones[zoneId] + "%";
+        }
+
+        if (document.querySelectorAll(".invasive-item").length === 0) {
+          const zone = zones.find(z => z.id === zoneId);
+          showClearModal(zone.name + " cleared of invasives! 🌿");
+        }
+      }, 600);
     }
-  });
-  if (bonusParts.length > 0) {
-    bonusText = bonusParts.join("   ");
-  }
-  savePlayer();
-}
-
-// Visual feedback
-invEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
-invEl.style.opacity = "0";
-invEl.style.transform = "scale(0.4) rotate(5deg)";
-
-setTimeout(() => {
-  invEl.remove();
-
-  // Now pass the collected bonusText
-  showRewardPopup(invEl, inv.coins || 5, inv.health || 8, bonusText, 1600);
-
-  console.log("Health delta from invasive:", inv.health);
-
-  updateCoinsDisplay();
-  updateHealthDisplay(changes.zones[zoneId]);
-
-  const progressFill = document.querySelector(".progress-fill");
-  if (progressFill) {
-    progressFill.style.width = changes.zones[zoneId] + "%";
-  }
-
-  if (document.querySelectorAll(".invasive-item").length === 0) {
-    const zone = zones.find(z => z.id === zoneId);
-    showClearModal(zone.name + " cleared of invasives! 🌿");
-  }
-}, 600);
 
     // Back to map
     if (target.id === "back-to-map") {
       currentView = "island";
       renderView();
     }
-	
-	// Toolbox click – open gallery
-	if (target.closest(".hud-toolbox")) {
-		showToolboxGallery();
-	return;
-	}
-
-// Inventory click – open gallery
-if (target.closest(".hud-inventory")) {
-  showInventoryGallery();
-  return;
-}
   });
 
   renderView();
