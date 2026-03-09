@@ -464,26 +464,25 @@ async function renderView() {
   el.dataset.type = entity.type || "invasive";
 
   let imagePath = entity.icon || "";
-  if (!imagePath) {
-    const nameLower = (entity.name || entity.id || "").toLowerCase();  // SAFE
+if (!imagePath) {
+  const nameLower = (entity.name || entity.id || "").toLowerCase();
 
-    if (nameLower.includes("palm") || nameLower.includes("baby-palm")) {
-      imagePath = "assets/entities/natives/palm/palm-baby.png";
-    } else if (nameLower.includes("seaweed")) {
-      imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
-    } else if (nameLower.includes("crabgrass") || nameLower.includes("alien")) {
-      imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
-    } else if (nameLower.includes("vine")) {
-      imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
-    } else if (nameLower.includes("thistle")) {
-      imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
-    } else if (nameLower.includes("weed")) {
-      imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
-    } else {
-      imagePath = "assets/entities/default.png";
-    }
+  if (nameLower.includes("palm") || nameLower.includes("baby-palm")) {
+    imagePath = "assets/entities/natives/palm/baby-palm.png";  // ← FIXED PATH
+  } else if (nameLower.includes("seaweed")) {
+    imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
+  } else if (nameLower.includes("crabgrass") || nameLower.includes("alien")) {
+    imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
+  } else if (nameLower.includes("vine")) {
+    imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
+  } else if (nameLower.includes("thistle")) {
+    imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
+  } else if (nameLower.includes("weed")) {
+    imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
+  } else {
+    imagePath = "assets/entities/default.png";
   }
-
+}
   el.innerHTML = `
     <img src="${imagePath}" class="${entity.type === "native" ? "native-image" : "invasive-image"}" alt="${entity.name || entity.id}">
     <div class="entity-name">${entity.name || entity.id}</div>
