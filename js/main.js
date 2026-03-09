@@ -209,49 +209,64 @@ function showMessage(title = "Notice", message, durationMs = 0) {
   if (durationMs > 0) setTimeout(close, durationMs);
 }
 
-// ─── Toolbox gallery modal ──────────────────────────────────────────────────────
-function showToolboxGallery() {
-  const tools = [];
-  if (currentPlayer.inventory.spade) tools.push("Spade – Dig tough invasives");
-  if (currentPlayer.inventory.scissors) tools.push("Scissors – Cut vines");
-  // Add more tools here as you implement them
+// ─── Floating reward popup – with bonus text support ────────────────────────────
+function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusText = "", duration = 1400) {
+  if (!targetElement) return;
 
-  const level = currentPlayer.inventory.toolboxLevel || 1;
-  const capacity = level * 5; // example: level 1 = 5 slots, level 2 = 10, etc.
+  const safeCoins  = Number(coinsDelta)  || 0;
+  const safeHealth = Number(healthDelta) || 0;
 
-  let html = `
-    <h3>Toolbox (Level ${level} – Capacity: ${capacity})</h3>
+  console.log("Inside popup – safeCoins:", safeCoins, "safeHealth:", safeHealth);
+
+  const popup = document.createElement("div");
+
+  let parts = [];
+  if (safeCoins !== 0) {
+    const sign = safeCoins > 0 ? "+" : "";
+    parts.push(`<span style="color: ${safeCoins > 0 ? '#FFD700' : '#ff5252'};">${sign}${Math.abs(safeCoins)} 🪙</span>`);
+  }
+  if (safeHealth !== 0) {
+    const sign = safeHealth > 0 ? "+" : "";
+    parts.push(`<span style="color: ${safeHealth > 0 ? '#4CAF50' : '#ff5252'};">${sign}${Math.abs(safeHealth)}% 🌿</span>`);
+  }
+  if (bonusText) {
+    parts.push(`<span style="color: #8D6E63;">${bonusText}</span>`);
+  }
+
+  popup.innerHTML = parts.join("   ") || "[No reward]";
+
+  // LOUD DEBUG STYLE – remove later for normal appearance
+  popup.style.cssText = `
+    position: fixed !important;
+    left: 50% !important;
+    top: 30% !important;
+    transform: translate(-50%, -50%) !important;
+    background: #ff1744 !important;
+    color: white !important;
+    font-size: 3rem !important;
+    font-weight: bold !important;
+    padding: 40px 60px !important;
+    border: 6px solid yellow !important;
+    border-radius: 20px !important;
+    z-index: 99999 !important;
+    box-shadow: 0 0 40px rgba(255,0,0,0.8) !important;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 1.5s ease;
   `;
 
-  if (tools.length === 0) {
-    html += '<p style="color: #ff9800;">No tools yet. Find or craft some!</p>';
-  } else {
-    html += tools.map(tool => `<div class="gallery-item">${tool}</div>`).join('');
-  }
+  document.body.appendChild(popup);
+  console.log("Popup appended – innerHTML:", popup.innerHTML);
 
-  html += '<p>Upgrade your toolbox to carry more tools!</p>';
+  requestAnimationFrame(() => {
+    void popup.offsetWidth;
+    popup.style.opacity = "1";
+  });
 
-  showMessage("Toolbox", html, 0); // 0 = no auto-close
-}
-
-// ─── Inventory gallery modal ────────────────────────────────────────────────────
-function showInventoryGallery() {
-  const items = [
-    `Seeds: ${currentPlayer.inventory.seeds || 0}`,
-    `Soil Clumps: ${currentPlayer.inventory.soilClumps || 0}`,
-    `Fertilizer: ${currentPlayer.inventory.fertilizer || 0}`,
-    `Clay Balls: ${currentPlayer.inventory.clayBalls || 0}`
-    // Add more items as you introduce them
-  ];
-
-  let html = '<h3>Inventory</h3>';
-  html += items.map(item => `<div class="gallery-item">${item}</div>`).join('');
-
-  if (items.every(i => i.includes('0'))) {
-    html += '<p style="color: #ff9800;">Your inventory is empty. Keep clearing invasives!</p>';
-  }
-
-  showMessage("Inventory", html, 0);
+  setTimeout(() => {
+    popup.style.opacity = "0";
+    setTimeout(() => popup.remove(), 500);
+  }, duration);
 }
 
 // ─── Render ──────────────────────────────────────────────────────────────────────
