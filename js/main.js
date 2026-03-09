@@ -300,9 +300,11 @@ function showDialogTree(inv, dialogTree, currentIndex = 0) {
 });
 
   // Handle close (no choices case)
-  modal.querySelector(".dialog-close")?.addEventListener("click", () => {
-    modal.remove();
-  });
+  modal.querySelector(".dialog-close")?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  e.preventDefault();
+  modal.remove();
+});
 
   // Close on outside click
   modal.addEventListener("click", (e) => {
@@ -636,6 +638,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (target.id === "back-to-map") {
       currentView = "island";
       renderView();
+    }
+// Toolbox click – open gallery
+    if (target.closest(".hud-toolbox")) {
+      showToolboxGallery();
+      return;
+    }
+
+    // Inventory click – open gallery
+    if (target.closest(".hud-inventory")) {
+      showInventoryGallery();
+      return;
     }
   });
 
