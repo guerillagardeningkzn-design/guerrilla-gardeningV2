@@ -209,152 +209,49 @@ function showMessage(title = "Notice", message, durationMs = 0) {
   if (durationMs > 0) setTimeout(close, durationMs);
 }
 
-// ─── Floating reward popup – with bonus text support ────────────────────────────
-function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusText = "", duration = 1400) {
-  if (!targetElement) return;
+// ─── Toolbox gallery modal ──────────────────────────────────────────────────────
+function showToolboxGallery() {
+  const tools = [];
+  if (currentPlayer.inventory.spade) tools.push("Spade – Dig tough invasives");
+  if (currentPlayer.inventory.scissors) tools.push("Scissors – Cut vines");
+  // Add more tools here as you implement them
 
-  const safeCoins  = Number(coinsDelta)  || 0;
-  const safeHealth = Number(healthDelta) || 0;
+  const level = currentPlayer.inventory.toolboxLevel || 1;
+  const capacity = level * 5; // example: level 1 = 5 slots, level 2 = 10, etc.
 
-  console.log("Inside popup – safeCoins:", safeCoins, "safeHealth:", safeHealth);
-
-  const popup = document.createElement("div");
-
-  let parts = [];
-  if (safeCoins !== 0) {
-    const sign = safeCoins > 0 ? "+" : "";
-    parts.push(`<span style="color: ${safeCoins > 0 ? '#FFD700' : '#ff5252'};">${sign}${Math.abs(safeCoins)} 🪙</span>`);
-  }
-  if (safeHealth !== 0) {
-    const sign = safeHealth > 0 ? "+" : "";
-    parts.push(`<span style="color: ${safeHealth > 0 ? '#4CAF50' : '#ff5252'};">${sign}${Math.abs(safeHealth)}% 🌿</span>`);
-  }
-  if (bonusText) {
-    parts.push(`<span style="color: #8D6E63;">${bonusText}</span>`);
-  }
-
-  popup.innerHTML = parts.join("   ") || "[No reward]";
-
-  // LOUD DEBUG STYLE (remove later)
-  popup.style.cssText = `
-    position: fixed !important;
-    left: 50% !important;
-    top: 30% !important;
-    transform: translate(-50%, -50%) !important;
-    background: #ff1744 !important;
-    color: white !important;
-    font-size: 3rem !important;
-    font-weight: bold !important;
-    padding: 40px 60px !important;
-    border: 6px solid yellow !important;
-    border-radius: 20px !important;
-    z-index: 99999 !important;
-    box-shadow: 0 0 40px rgba(255,0,0,0.8) !important;
-    opacity: 0;
-    pointer-events: none;
-    transition: all 1.5s ease;
+  let html = `
+    <h3>Toolbox (Level ${level} – Capacity: ${capacity})</h3>
   `;
 
-  document.body.appendChild(popup);
-  console.log("Popup appended – innerHTML:", popup.innerHTML);
+  if (tools.length === 0) {
+    html += '<p style="color: #ff9800;">No tools yet. Find or craft some!</p>';
+  } else {
+    html += tools.map(tool => `<div class="gallery-item">${tool}</div>`).join('');
+  }
 
-  requestAnimationFrame(() => {
-    void popup.offsetWidth;
-    popup.style.opacity = "1";
-  });
+  html += '<p>Upgrade your toolbox to carry more tools!</p>';
 
-  setTimeout(() => {
-    popup.style.opacity = "0";
-    setTimeout(() => popup.remove(), 500);
-  }, duration);
+  showMessage("Toolbox", html, 0); // 0 = no auto-close
 }
 
-// ─── Interactive dialog modal ────────────────────────────────────────────────────
-function showDialogTree(inv, dialogTree, currentIndex = 0) {
-  if (!dialogTree || !Array.isArray(dialogTree) || currentIndex >= dialogTree.length) {
-    return;
+// ─── Inventory gallery modal ────────────────────────────────────────────────────
+function showInventoryGallery() {
+  const items = [
+    `Seeds: ${currentPlayer.inventory.seeds || 0}`,
+    `Soil Clumps: ${currentPlayer.inventory.soilClumps || 0}`,
+    `Fertilizer: ${currentPlayer.inventory.fertilizer || 0}`,
+    `Clay Balls: ${currentPlayer.inventory.clayBalls || 0}`
+    // Add more items as you introduce them
+  ];
+
+  let html = '<h3>Inventory</h3>';
+  html += items.map(item => `<div class="gallery-item">${item}</div>`).join('');
+
+  if (items.every(i => i.includes('0'))) {
+    html += '<p style="color: #ff9800;">Your inventory is empty. Keep clearing invasives!</p>';
   }
-  const node = dialogTree[currentIndex];
-  const modal = document.createElement("div");
-  modal.style.position = "fixed";
-  modal.style.inset = "0";
-  modal.style.background = "rgba(0,0,0,0.75)";
-  modal.style.display = "flex";
-  modal.style.alignItems = "center";
-  modal.style.justifyContent = "center";
-  modal.style.zIndex = "9999";
-  modal.style.opacity = "0";
-  modal.style.transition = "opacity 0.4s ease";
-  let html = `
-    <div style="
-      background: rgba(30,50,30,0.95);
-      border: 2px solid #4CAF50;
-      border-radius: 16px;
-      padding: 24px 32px;
-      max-width: 90%;
-      width: 400px;
-      text-align: center;
-      color: #e8f5e9;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-      transform: scale(0.92);
-      transition: transform 0.3s ease;
-    ">
-      <p style="font-size: 1.15rem; margin-bottom: 20px; line-height: 1.4;">${node.message}</p>
-  `;
-  if (node.choices && Array.isArray(node.choices)) {
-    html += '<div style="display: flex; flex-direction: column; gap: 12px;">';
-    node.choices.forEach(choice => {
-      html += `
-        <button class="dialog-choice" data-next="${choice.next}" style="
-          padding: 12px 24px;
-          background: #4CAF50;
-          color: white;
-          border: none;
-          border-radius: 12px;
-          font-size: 1rem;
-          cursor: pointer;
-          transition: background 0.2s;
-        ">${choice.text}</button>
-      `;
-    });
-    html += '</div>';
-  } else {
-    html += `
-      <button class="dialog-close" style="
-        padding: 12px 32px;
-        background: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 12px;
-        font-size: 1rem;
-        cursor: pointer;
-      ">OK</button>
-    `;
-  }
-  html += '</div>';
-  modal.innerHTML = html;
-  document.body.appendChild(modal);
-  requestAnimationFrame(() => {
-    modal.style.opacity = "1";
-    modal.querySelector("div").style.transform = "scale(1)";
-  });
-  modal.querySelectorAll(".dialog-choice").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      const nextIndex = parseInt(btn.dataset.next);
-      modal.remove();
-      showDialogTree(inv, dialogTree, nextIndex);
-    });
-  });
-  modal.querySelector(".dialog-close")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    modal.remove();
-  });
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) modal.remove();
-  });
+
+  showMessage("Inventory", html, 0);
 }
 
 // ─── Render ──────────────────────────────────────────────────────────────────────
@@ -462,19 +359,12 @@ async function renderView() {
       let imagePath = inv.icon || "";
       if (!imagePath) {
         const nameLower = inv.name.toLowerCase();
-        if (nameLower.includes("seaweed")) {
-          imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
-        } else if (nameLower.includes("crabgrass") || nameLower.includes("alien")) {
-          imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
-        } else if (nameLower.includes("vine") || nameLower.includes("choking")) {
-          imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
-        } else if (nameLower.includes("thistle") || nameLower.includes("thorny")) {
-          imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
-        } else if (nameLower.includes("weed") || nameLower.includes("foreign")) {
-          imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
-        } else {
-          imagePath = "assets/entities/invasives/default.png";
-        }
+        if (nameLower.includes("seaweed")) imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
+        else if (nameLower.includes("crabgrass") || nameLower.includes("alien")) imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
+        else if (nameLower.includes("vine") || nameLower.includes("choking")) imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
+        else if (nameLower.includes("thistle") || nameLower.includes("thorny")) imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
+        else if (nameLower.includes("weed") || nameLower.includes("foreign")) imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
+        else imagePath = "assets/entities/invasives/default.png";
       }
 
       invEl.innerHTML = `
