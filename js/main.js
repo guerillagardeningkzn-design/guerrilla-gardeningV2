@@ -440,20 +440,29 @@ function showInventoryGallery() {
   }, 100); // small delay so modal is in DOM
 }
 function showSeedPacksPlaceholder() {
-  // Calculate total seeds per type for display
+  console.log("Opening Seed Packs — current seeds:", currentPlayer.inventory.seeds);
+
   let seedSummary = [];
   let totalSeeds = 0;
 
-  if (currentPlayer.inventory.seeds && typeof currentPlayer.inventory.seeds === 'object') {
-    Object.keys(currentPlayer.inventory.seeds).forEach(parentId => {
-      const seedsArray = currentPlayer.inventory.seeds[parentId];
-      if (Array.isArray(seedsArray)) {
-        const count = seedsArray.length;
+  const seedsData = currentPlayer.inventory.seeds || {};
+
+  Object.keys(seedsData).forEach(parentId => {
+    const seedArray = seedsData[parentId];
+    if (Array.isArray(seedArray)) {
+      const count = seedArray.length;
+      if (count > 0) {
         totalSeeds += count;
-        seedSummary.push(`${parentId.replace(/-/g, ' ')} Seeds: ${count}`);
+        // Human-readable name
+        const displayName = parentId
+          .replace(/-/g, ' ')
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+        seedSummary.push(`${displayName} Seeds: ${count}`);
       }
-    });
-  }
+    }
+  });
 
   let html = '<h3>Seed Packs</h3>';
 
