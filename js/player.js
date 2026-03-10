@@ -1,85 +1,86 @@
-// js/player.js
+// player.js
 const SAVE_KEY = "guerrillaGardeningSave-v1";
 
-let player = {
+// Single source of truth for default player state
+const DEFAULT_PLAYER = {
   coins: 50,
   energy: 100,
   maxEnergy: 100,
-    inventory: {
-	seeds: {},
-	wateringCanLevel: 1,
-	shovelLevel: 1,
-	spade: true,
-	sickle: true,
-	scissors: true,  // example tool – false = not owned
-	toolboxLevel: 1,  // 1 = basic (🛠️), 2 = advanced (🛠️+), 3 = master (🛠️++)
-	soilClumps: 0,    // from drops
-	fertilizer: 0,    // example item
-	clayBalls: 0      // for new patches
-	},
+  inventory: {
+    seeds: {},                  // object of arrays for per-seed DNA instances
+    soilClumps: 0,
+    fertilizer: 0,
+    clayBalls: 0,
+    wateringCanLevel: 1,
+    shovelLevel: 1,
+    spade: true,                // owned by default
+    sickle: true,               // owned by default (for palm harvest)
+    scissors: true,             // example
+    toolboxLevel: 1             // 1 = basic, etc.
+  },
   zones: {
-    "beach": 0,
-    "forest": 0,
-    "mountain": 0
+    beach: 0,
+    forest: 0,
+    mountain: 0
   },
   lastPlayed: null,
   sessionActions: 0
 };
 
+let player = { ...DEFAULT_PLAYER }; // global reference
+
 export function loadPlayer() {
   const saved = localStorage.getItem(SAVE_KEY);
-  let player = {
-    coins: 0,
-    zones: {},
-    inventory: {
-      seeds: {},           // default new structure
-      soilClumps: 0,
-      fertilizer: 0,
-      clayBalls: 0,
-      // spade: false,
-      // scissors: false,
-      // sickle: false,
-      // toolboxLevel: 1,
-      // etc.
-    }
-  };
 
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
 
-      // Merge saved data over defaults (safe deep merge for objects)
+      // Deep-safe merge: preserve defaults, override with saved values
       player = {
-        ...player,
+        ...DEFAULT_PLAYER,
         ...parsed,
         inventory: {
-          ...player.inventory,              // keep defaults
-          ...parsed.inventory               // override with saved
+          ...DEFAULT_PLAYER.inventory,   // start with full defaults
+          ...parsed.inventory            // override saved values
         },
         zones: {
-          ...player.zones,
+          ...DEFAULT_PLAYER.zones,
           ...parsed.zones
         }
       };
 
-      console.log("Player data loaded");
+      // Safety fixes for inventory (protect against old/corrupted saves)
+      const inv = player.inventory;
 
-      // Safety fix: ensure seeds is always an object (handles old saves or corruption)
-      if (!player.inventory.seeds || typeof player.inventory.seeds !== 'object') {
-        console.warn("Invalid or missing seeds object — resetting to empty");
-        player.inventory.seeds = {};
+      if (!inv.seeds || typeof inv.seeds !== 'object') {
+        console.warn("Invalid or missing seeds — resetting to {}");
+        inv.seeds = {};
       }
+
+      // Ensure all expected tool/level keys exist (boolean or number)
+      if (typeof inv.spade !== 'boolean') inv.spade = DEFAULT_PLAYER.inventory.spade;
+      if (typeof inv.sickle !== 'boolean') inv.sickle = DEFAULT_PLAYER.inventory.sickle;
+      if (typeof inv.scissors !== 'boolean') inv.scissors = DEFAULT_PLAYER.inventory.scissors;
+      if (typeof inv.wateringCanLevel !== 'number') inv.wateringCanLevel = DEFAULT_PLAYER.inventory.wateringCanLevel;
+      if (typeof inv.shovelLevel !== 'number') inv.shovelLevel = DEFAULT_PLAYER.inventory.shovelLevel;
+      if (typeof inv.toolboxLevel !== 'number') inv.toolboxLevel = DEFAULT_PLAYER.inventory.toolboxLevel;
+
+      console.log("Player data loaded successfully");
     } catch (err) {
-      console.warn("Corrupted save — starting fresh", err);
-      savePlayer(); // overwrite bad save with defaults
+      console.warn("Corrupted save data — starting fresh", err);
+      player = { ...DEFAULT_PLAYER };
+      savePlayer(); // overwrite bad save
     }
   } else {
     console.log("No save found — using defaults");
+    player = { ...DEFAULT_PLAYER };
     savePlayer();
   }
 
   return player;
 }
+
 export function savePlayer() {
   player.lastPlayed = new Date().toISOString();
   localStorage.setItem(SAVE_KEY, JSON.stringify(player));
@@ -87,36 +88,38 @@ export function savePlayer() {
 }
 
 export function updatePlayer(changes) {
+  // Deep merge for nested objects (inventory, zones)
   Object.assign(player, changes);
+
+  // If inventory changed, apply safety merge
+  if (changes.inventory) {
+    player.inventory = {
+      ...DEFAULT_PLAYER.inventory,
+      ...player.inventory,
+      ...changes.inventory
+    };
+  }
+
+  // Same for zones
+  if (changes.zones) {
+    player.zones = {
+      ...DEFAULT_PLAYER.zones,
+      ...player.zones,
+      ...changes.zones
+    };
+  }
+
   savePlayer();
 }
 
 export function resetPlayer() {
   localStorage.removeItem(SAVE_KEY);
-  player = {
-    coins: 50,
-    energy: 100,
-    maxEnergy: 100,
-    inventory: { 
-	seeds: {},
-	wateringCanLevel: 1, 
-	shovelLevel: 1,
-	spade: true,
-	scissors: false,
-	toolboxLevel: 1,
-	soilClumps: 0,
-	fertilizer: 0,
-	clayBalls: 0
-	},
-    zones: { "beach": 0, "forest": 0, "mountain": 0 },
-    lastPlayed: null,
-    sessionActions: 0
-  };
+  player = { ...DEFAULT_PLAYER };
   savePlayer();
   console.log("Player reset to defaults");
 }
 
-// Debug helper
+// Debug helper (unchanged)
 window.debugPlayer = () => {
   console.table(player);
   return player;
