@@ -656,10 +656,10 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
       }
 
-      // Invasive removal
+      // Invasive removal 
       var changes = {
         coins: currentPlayer.coins + (entity.coins || 5),
-        zones: {}
+        zones: { ...currentPlayer.zones } // ← START with FULL copy of existing zones
       };
       changes.zones[zoneId] = Math.min(100, (currentPlayer.zones[zoneId] || 0) + (entity.health || 8));
 
