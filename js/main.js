@@ -542,6 +542,7 @@ document.addEventListener("DOMContentLoaded", function() {
       if (zone && isZoneUnlocked(zone)) {
         currentView = "zone:" + zoneId;
         renderView();
+		
       } else {
         showMessage("Zone Locked", "Complete previous area first!", 5000);
       }
