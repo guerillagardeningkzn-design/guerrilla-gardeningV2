@@ -37,18 +37,18 @@ export function loadPlayer() {
       const parsed = JSON.parse(saved);
 
       // Deep-safe merge: preserve defaults, override with saved values
-      player = {
-        ...DEFAULT_PLAYER,
-        ...parsed,
-        inventory: {
-          ...DEFAULT_PLAYER.inventory,   // start with full defaults
-          ...parsed.inventory            // override saved values
-        },
-        zones: {
-          ...DEFAULT_PLAYER.zones,
-          ...parsed.zones
-        }
-      };
+     player = {
+  ...DEFAULT_PLAYER,
+  ...parsed,
+  inventory: {
+    ...DEFAULT_PLAYER.inventory,
+    ...parsed.inventory
+  },
+  zones: {
+    ...DEFAULT_PLAYER.zones,   // defaults (0)
+    ...parsed.zones            // saved values override
+  }
+};
 
       // Safety fixes for inventory (protect against old/corrupted saves)
       const inv = player.inventory;
@@ -88,24 +88,22 @@ export function savePlayer() {
 }
 
 export function updatePlayer(changes) {
-  // Deep merge for nested objects (inventory, zones)
+  // Merge top-level changes
   Object.assign(player, changes);
 
-  // If inventory changed, apply safety merge
-  if (changes.inventory) {
-    player.inventory = {
-      ...DEFAULT_PLAYER.inventory,
-      ...player.inventory,
-      ...changes.inventory
+  // Deep merge for zones (prevent overwrite)
+  if (changes.zones) {
+    player.zones = {
+      ...player.zones,
+      ...changes.zones
     };
   }
 
-  // Same for zones
-  if (changes.zones) {
-    player.zones = {
-      ...DEFAULT_PLAYER.zones,
-      ...player.zones,
-      ...changes.zones
+  // Deep merge for inventory if needed (optional, but good practice)
+  if (changes.inventory) {
+    player.inventory = {
+      ...player.inventory,
+      ...changes.inventory
     };
   }
 
