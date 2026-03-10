@@ -374,7 +374,8 @@ function showRewardPopup(targetElement, coinsDelta = 0, healthDelta = 0, bonusTe
 // ─── Toolbox & Inventory galleries ──────────────────────────────────────────────
 function showToolboxGallery() {
   const tools = [];
-  if (currentPlayer.inventory.spade) tools.push("Spade – Dig tough invasives");
+  if (currentPlayer.inventory.spade)    tools.push("Spade – Dig tough invasives");
+  if (currentPlayer.inventory.sickle)   tools.push("Sickle – Harvest delicate natives");
   if (currentPlayer.inventory.scissors) tools.push("Scissors – Cut vines");
 
   const level = currentPlayer.inventory.toolboxLevel || 1;
@@ -395,18 +396,30 @@ function showToolboxGallery() {
 
 function showInventoryGallery() {
   const items = [
-    `Seeds: ${currentPlayer.inventory.seeds || 0}`,
     `Soil Clumps: ${currentPlayer.inventory.soilClumps || 0}`,
     `Fertilizer: ${currentPlayer.inventory.fertilizer || 0}`,
     `Clay Balls: ${currentPlayer.inventory.clayBalls || 0}`
   ];
 
+  // Calculate total seeds across all types
+  let totalSeeds = 0;
+  if (currentPlayer.inventory.seeds && typeof currentPlayer.inventory.seeds === 'object') {
+    Object.values(currentPlayer.inventory.seeds).forEach(arr => {
+      if (Array.isArray(arr)) totalSeeds += arr.length;
+    });
+  }
+
+  items.unshift(`Seeds: ${totalSeeds}`); // add to top
+
   let html = '<h3>Inventory</h3>';
   html += items.map(item => `<div class="gallery-item">${item}</div>`).join('');
 
-  if (items.every(i => i.includes('0'))) {
-    html += '<p style="color: #ff9800;">Your inventory is empty. Keep clearing invasives!</p>';
+  if (totalSeeds === 0 && items.slice(1).every(i => i.includes('0'))) {
+    html += '<p style="color: #ff9800;">Your inventory is empty. Keep harvesting!</p>';
   }
+
+  // Optional: hint about seed packs
+  html += '<p style="font-size: 0.9rem; color: #81C784;">Open Seed Packs for details on harvested varieties.</p>';
 
   showMessage("Inventory", html, 0);
 }
