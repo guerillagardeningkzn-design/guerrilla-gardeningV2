@@ -763,8 +763,14 @@ updatePlayer(changes);
     if (progressFill) progressFill.style.width = changes.zones[zoneId] + "%";
 
     if (document.querySelectorAll(".invasive-item, .native-item").length === 0) {
-      showClearModal(zone.name + " cleared! 🌿");
-    }
+  const currentZoneId = currentView.split(":")[1];
+  const zone = zones.find(z => z.id === currentZoneId);
+  if (zone) {
+    showClearModal(`${zone.name} cleared! 🌿`);
+  } else {
+    showClearModal("Area cleared! 🌿");
+  }
+}
   }, 600);
 }
 
