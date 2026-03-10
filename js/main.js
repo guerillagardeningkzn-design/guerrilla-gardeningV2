@@ -28,6 +28,56 @@ async function loadEntityDefinition(entityId, category) {
   }
 }
 
+function generateSeedDNA(parentEntity) {
+  // Start with parent's defaults (or fallback to sane values)
+  var defaults = parentEntity.dnaDefaults || {
+    rarity: "common",
+    growthRate: 1.0,
+    waterNeed: "medium",
+    lightNeed: "high",
+    nutrientNeed: "low",
+    climateZones: ["beach"],
+    healthBonus: 1.0
+  };
+
+  // Roll rarity (simple percentages — adjust as you like)
+  var roll = Math.random();
+  var rarity = "common";
+  if (roll < 0.01) rarity = "legendary";
+  else if (roll < 0.05) rarity = "heirloom";
+  else if (roll < 0.20) rarity = "rare";
+
+  // Create DNA object
+  var dna = {
+    rarity: rarity,
+    growthRate: defaults.growthRate,
+    waterNeed: defaults.waterNeed,
+    lightNeed: defaults.lightNeed,
+    nutrientNeed: defaults.nutrientNeed,
+    climateZones: defaults.climateZones.slice(), // copy array
+    healthBonus: defaults.healthBonus
+  };
+
+  // Apply rarity modifiers
+  if (rarity === "rare") {
+    dna.growthRate *= 1.3;
+    dna.waterNeed = "low";
+  } else if (rarity === "heirloom") {
+    dna.healthBonus *= 1.5;
+  } else if (rarity === "legendary") {
+    dna.growthRate *= 2.0;
+    dna.nutrientNeed = "low";
+    dna.climateZones.push("forest"); // example expansion
+  }
+
+  // Optional: small random variation
+  dna.growthRate += (Math.random() * 0.2 - 0.1); // ±10%
+
+  console.log("Generated seed DNA for " + parentEntity.id + ":", dna);
+
+  return dna;
+}
+
 // ─── Global state ────────────────────────────────────────────────────────────────
 var currentPlayer;
 var currentView = "island";
