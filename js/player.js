@@ -88,10 +88,7 @@ export function savePlayer() {
 }
 
 export function updatePlayer(changes) {
-  // Shallow assign top-level
-  Object.assign(player, changes);
-
-  // Deep merge zones (critical — prevents overwrite)
+  // Always deep merge zones
   if (changes.zones && typeof changes.zones === 'object') {
     player.zones = {
       ...player.zones,
@@ -99,13 +96,16 @@ export function updatePlayer(changes) {
     };
   }
 
-  // Optional: deep merge inventory too
+  // Deep merge inventory if changed
   if (changes.inventory && typeof changes.inventory === 'object') {
     player.inventory = {
       ...player.inventory,
       ...changes.inventory
     };
   }
+
+  // Shallow assign everything else
+  Object.assign(player, changes);
 
   savePlayer();
 }
