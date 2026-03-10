@@ -36,31 +36,32 @@ export function loadPlayer() {
     try {
       const parsed = JSON.parse(saved);
 
-      // Deep-safe merge: preserve defaults, override with saved values
-     player = {
-  ...DEFAULT_PLAYER,
-  ...parsed,
-  inventory: {
-    ...DEFAULT_PLAYER.inventory,
-    ...parsed.inventory
-  },
-  zones: {
-    ...DEFAULT_PLAYER.zones,   // defaults (0)
-    ...parsed.zones            // saved values override
-  }
-  // In loadPlayer(), after merge
-console.log("Loaded zones from save:", player.zones);
-};
+      // Deep-safe merge: start with full defaults, override with saved values
+      player = {
+        ...DEFAULT_PLAYER,
+        ...parsed,
+        inventory: {
+          ...DEFAULT_PLAYER.inventory,   // full defaults first
+          ...parsed.inventory            // saved overrides
+        },
+        zones: {
+          ...DEFAULT_PLAYER.zones,       // defaults (0)
+          ...parsed.zones                // saved progress overrides
+        }
+      };
+
+      console.log("Loaded zones from save:", player.zones);
 
       // Safety fixes for inventory (protect against old/corrupted saves)
       const inv = player.inventory;
 
-      if (!inv.seeds || typeof inv.seeds !== 'object') {
-        console.warn("Invalid or missing seeds — resetting to {}");
+      // Force seeds to be object
+      if (!inv.seeds || typeof inv.seeds !== 'object' || Array.isArray(inv.seeds)) {
+        console.warn("Invalid seeds data — resetting to empty object");
         inv.seeds = {};
       }
 
-      // Ensure all expected tool/level keys exist (boolean or number)
+      // Restore missing/ invalid tool booleans and numbers
       if (typeof inv.spade !== 'boolean') inv.spade = DEFAULT_PLAYER.inventory.spade;
       if (typeof inv.sickle !== 'boolean') inv.sickle = DEFAULT_PLAYER.inventory.sickle;
       if (typeof inv.scissors !== 'boolean') inv.scissors = DEFAULT_PLAYER.inventory.scissors;
@@ -85,21 +86,22 @@ console.log("Loaded zones from save:", player.zones);
 
 export function savePlayer() {
   player.lastPlayed = new Date().toISOString();
-  localStorage.setItem(SAVE_KEY, JSON.stringify(player));
   console.log("Saving zones:", player.zones);
+  localStorage.setItem(SAVE_KEY, JSON.stringify(player));
   console.log("Player data saved");
 }
 
 export function updatePlayer(changes) {
-  // Always deep merge zones
+  // Deep merge zones (critical for progress persistence)
   if (changes.zones && typeof changes.zones === 'object') {
     player.zones = {
       ...player.zones,
       ...changes.zones
     };
+    console.log("Zones updated in memory:", player.zones);
   }
 
-  // Deep merge inventory if changed
+  // Deep merge inventory
   if (changes.inventory && typeof changes.inventory === 'object') {
     player.inventory = {
       ...player.inventory,
@@ -120,7 +122,7 @@ export function resetPlayer() {
   console.log("Player reset to defaults");
 }
 
-// Debug helper (unchanged)
+// Debug helper
 window.debugPlayer = () => {
   console.table(player);
   return player;
