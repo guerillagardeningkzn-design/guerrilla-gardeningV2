@@ -48,6 +48,8 @@ export function loadPlayer() {
     ...DEFAULT_PLAYER.zones,   // defaults (0)
     ...parsed.zones            // saved values override
   }
+  // In loadPlayer(), after merge
+console.log("Loaded zones from save:", player.zones);
 };
 
       // Safety fixes for inventory (protect against old/corrupted saves)
@@ -84,6 +86,7 @@ export function loadPlayer() {
 export function savePlayer() {
   player.lastPlayed = new Date().toISOString();
   localStorage.setItem(SAVE_KEY, JSON.stringify(player));
+  console.log("Saving zones:", player.zones);
   console.log("Player data saved");
 }
 
