@@ -549,7 +549,9 @@ document.addEventListener("DOMContentLoaded", function() {
       var zone = zones.find(function(z) { return z.id === zoneId; });
       if (zone && isZoneUnlocked(zone)) {
         console.log("Switching to zone: " + zoneId + " — current health before switch: " + (currentPlayer.zones[zoneId] || 0));
-        savePlayer(currentPlayer); // Force save
+        
+		console.log("Before renderView call — zones:", JSON.stringify(currentPlayer.zones));
+		savePlayer(currentPlayer); // Force save
         currentView = "zone:" + zoneId;
         renderView();
       } else {
