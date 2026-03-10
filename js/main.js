@@ -401,27 +401,73 @@ function showInventoryGallery() {
     `Clay Balls: ${currentPlayer.inventory.clayBalls || 0}`
   ];
 
-  // Calculate total seeds across all types
-  let totalSeeds = 0;
-  if (currentPlayer.inventory.seeds && typeof currentPlayer.inventory.seeds === 'object') {
-    Object.values(currentPlayer.inventory.seeds).forEach(arr => {
-      if (Array.isArray(arr)) totalSeeds += arr.length;
-    });
-  }
-
-  items.unshift(`Seeds: ${totalSeeds}`); // add to top
-
   let html = '<h3>Inventory</h3>';
   html += items.map(item => `<div class="gallery-item">${item}</div>`).join('');
 
-  if (totalSeeds === 0 && items.slice(1).every(i => i.includes('0'))) {
+  if (items.every(i => i.includes('0'))) {
     html += '<p style="color: #ff9800;">Your inventory is empty. Keep harvesting!</p>';
   }
 
-  // Optional: hint about seed packs
-  html += '<p style="font-size: 0.9rem; color: #81C784;">Open Seed Packs for details on harvested varieties.</p>';
+  // Trigger for Seed Packs (opens placeholder for now)
+  html += `
+    <div style="margin-top: 20px; text-align: center;">
+      <button id="open-seed-packs" style="
+        padding: 12px 28px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        cursor: pointer;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+      ">Open Seed Packs</button>
+      <p style="font-size: 0.9rem; color: #81C784; margin-top: 8px;">
+        View your harvested seed varieties here
+      </p>
+    </div>
+  `;
 
-  showMessage("Inventory", html, 0);
+  const modalContent = document.createElement("div");
+  modalContent.innerHTML = html;
+
+  showMessage("Inventory", modalContent.innerHTML, 0);
+
+  // Add click listener for seed packs button (runs after modal appears)
+  setTimeout(() => {
+    document.getElementById("open-seed-packs")?.addEventListener("click", () => {
+      showSeedPacksPlaceholder();
+    });
+  }, 100); // small delay so modal is in DOM
+}
+function showSeedPacksPlaceholder() {
+  // Calculate total seeds per type for display
+  let seedSummary = [];
+  let totalSeeds = 0;
+
+  if (currentPlayer.inventory.seeds && typeof currentPlayer.inventory.seeds === 'object') {
+    Object.keys(currentPlayer.inventory.seeds).forEach(parentId => {
+      const seedsArray = currentPlayer.inventory.seeds[parentId];
+      if (Array.isArray(seedsArray)) {
+        const count = seedsArray.length;
+        totalSeeds += count;
+        seedSummary.push(`${parentId.replace(/-/g, ' ')} Seeds: ${count}`);
+      }
+    });
+  }
+
+  let html = '<h3>Seed Packs</h3>';
+
+  if (totalSeeds === 0) {
+    html += '<p style="color: #ff9800;">No seeds harvested yet. Keep collecting from natives!</p>';
+  } else {
+    html += '<p style="margin-bottom: 16px;">Your collected seed varieties:</p>';
+    html += seedSummary.map(line => `<div class="gallery-item">${line}</div>`).join('');
+    html += `<p style="margin-top: 16px; font-weight: bold;">Total seeds: ${totalSeeds}</p>`;
+  }
+
+  html += '<p style="font-size: 0.9rem; color: #81C784; margin-top: 20px;">(Rarity & DNA details coming soon — tap to plant in future updates)</p>';
+
+  showMessage("Seed Packs", html, 0);
 }
 
 // ─── Render ──────────────────────────────────────────────────────────────────────
