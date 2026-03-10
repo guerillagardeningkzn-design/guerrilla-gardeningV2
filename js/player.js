@@ -88,19 +88,19 @@ export function savePlayer() {
 }
 
 export function updatePlayer(changes) {
-  // Merge top-level changes
+  // Shallow assign top-level
   Object.assign(player, changes);
 
-  // Deep merge for zones (prevent overwrite)
-  if (changes.zones) {
+  // Deep merge zones (critical — prevents overwrite)
+  if (changes.zones && typeof changes.zones === 'object') {
     player.zones = {
       ...player.zones,
       ...changes.zones
     };
   }
 
-  // Deep merge for inventory if needed (optional, but good practice)
-  if (changes.inventory) {
+  // Optional: deep merge inventory too
+  if (changes.inventory && typeof changes.inventory === 'object') {
     player.inventory = {
       ...player.inventory,
       ...changes.inventory
