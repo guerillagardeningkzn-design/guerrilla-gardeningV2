@@ -543,10 +543,12 @@ document.addEventListener("DOMContentLoaded", function() {
   // Zone marker
   var marker = t.closest(".map-marker, [data-zone-id]");
   if (marker) {
+	  e.preventDefault();
     var zoneId = marker.dataset.zoneId;
     var zone = zones.find(function(z) { return z.id === zoneId; });
     if (zone && isZoneUnlocked(zone)) {
       console.log("Switching to zone: " + zoneId + " — current health before switch:", currentPlayer.zones[zoneId] || 0);
+	  savePlayer(currentPlayer);
       currentView = "zone:" + zoneId;
       renderView();
     } else {
