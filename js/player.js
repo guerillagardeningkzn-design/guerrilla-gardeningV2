@@ -1,22 +1,21 @@
-// player.js
+// player.js — no global player anymore
 const SAVE_KEY = "guerrillaGardeningSave-v1";
 
-// Single source of truth for default player state
 const DEFAULT_PLAYER = {
   coins: 50,
   energy: 100,
   maxEnergy: 100,
   inventory: {
-    seeds: {},                  // object of arrays for per-seed DNA instances
+    seeds: {},
     soilClumps: 0,
     fertilizer: 0,
     clayBalls: 0,
     wateringCanLevel: 1,
     shovelLevel: 1,
-    spade: true,                // owned by default
-    sickle: true,               // owned by default (for palm harvest)
-    scissors: true,             // example
-    toolboxLevel: 1             // 1 = basic, etc.
+    spade: true,
+    sickle: true,
+    scissors: true,
+    toolboxLevel: 1
   },
   zones: {
     beach: 0,
@@ -27,16 +26,14 @@ const DEFAULT_PLAYER = {
   sessionActions: 0
 };
 
-let player = { ...DEFAULT_PLAYER }; // global reference
-
 export function loadPlayer() {
   const saved = localStorage.getItem(SAVE_KEY);
+  let loadedPlayer = { ...DEFAULT_PLAYER };
 
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-
-      player = {
+      loadedPlayer = {
         ...DEFAULT_PLAYER,
         ...parsed,
         inventory: {
@@ -44,20 +41,20 @@ export function loadPlayer() {
           ...parsed.inventory
         },
         zones: {
-          ...parsed.zones,               // ← saved progress FIRST
-          ...DEFAULT_PLAYER.zones        // ← defaults fill missing zones only
+          ...parsed.zones,               // saved first
+          ...DEFAULT_PLAYER.zones        // defaults fill missing
         }
       };
 
-      console.log("Loaded zones from save:", player.zones);
+      console.log("Loaded zones from save:", loadedPlayer.zones);
 
-      // Safety fixes...
-      const inv = player.inventory;
+      const inv = loadedPlayer.inventory;
       if (!inv.seeds || typeof inv.seeds !== 'object') {
-        console.warn("Invalid or missing seeds — resetting to {}");
+        console.warn("Invalid seeds — resetting");
         inv.seeds = {};
       }
 
+      // Tool/number safety
       if (typeof inv.spade !== 'boolean') inv.spade = DEFAULT_PLAYER.inventory.spade;
       if (typeof inv.sickle !== 'boolean') inv.sickle = DEFAULT_PLAYER.inventory.sickle;
       if (typeof inv.scissors !== 'boolean') inv.scissors = DEFAULT_PLAYER.inventory.scissors;
@@ -67,59 +64,54 @@ export function loadPlayer() {
 
       console.log("Player data loaded successfully");
     } catch (err) {
-      console.warn("Corrupted save data — starting fresh", err);
-      player = { ...DEFAULT_PLAYER };
-      savePlayer();
+      console.warn("Corrupted save — starting fresh", err);
+      savePlayer(loadedPlayer);
     }
   } else {
     console.log("No save found — using defaults");
-    player = { ...DEFAULT_PLAYER };
-    savePlayer();
+    savePlayer(loadedPlayer);
   }
 
-  return player;
+  return loadedPlayer;
 }
 
-export function savePlayer() {
-  player.lastPlayed = new Date().toISOString();
-  console.log("Saving zones:", player.zones);
-  localStorage.setItem(SAVE_KEY, JSON.stringify(player));
+export function savePlayer(currentPlayer) {
+  currentPlayer.lastPlayed = new Date().toISOString();
+  console.log("Saving zones:", currentPlayer.zones);
+  localStorage.setItem(SAVE_KEY, JSON.stringify(currentPlayer));
   console.log("Player data saved");
 }
 
-export function updatePlayer(changes) {
-  // Deep merge zones (critical for progress persistence)
+export function updatePlayer(currentPlayer, changes) {
+  // Deep merge zones
   if (changes.zones && typeof changes.zones === 'object') {
-    player.zones = {
-      ...player.zones,
+    currentPlayer.zones = {
+      ...currentPlayer.zones,
       ...changes.zones
     };
-    console.log("Zones updated in memory:", player.zones);
   }
 
   // Deep merge inventory
   if (changes.inventory && typeof changes.inventory === 'object') {
-    player.inventory = {
-      ...player.inventory,
+    currentPlayer.inventory = {
+      ...currentPlayer.inventory,
       ...changes.inventory
     };
   }
 
-  // Shallow assign everything else
-  Object.assign(player, changes);
-
-  savePlayer();
+  Object.assign(currentPlayer, changes);
+  savePlayer(currentPlayer);
 }
 
 export function resetPlayer() {
   localStorage.removeItem(SAVE_KEY);
-  player = { ...DEFAULT_PLAYER };
-  savePlayer();
+  const newPlayer = { ...DEFAULT_PLAYER };
+  savePlayer(newPlayer);
   console.log("Player reset to defaults");
+  return newPlayer;
 }
 
-// Debug helper
 window.debugPlayer = () => {
-  console.table(player);
-  return player;
+  console.table(currentPlayer);
+  return currentPlayer;
 };
