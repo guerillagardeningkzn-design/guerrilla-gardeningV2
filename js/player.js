@@ -1,12 +1,13 @@
-// player.js — no global player anymore
+// player.js
 const SAVE_KEY = "guerrillaGardeningSave-v1";
 
+// Single source of truth for default player state
 const DEFAULT_PLAYER = {
   coins: 50,
   energy: 100,
   maxEnergy: 100,
   inventory: {
-    seeds: {},
+    seeds: {},                  // object of arrays for per-seed DNA instances
     soilClumps: 0,
     fertilizer: 0,
     clayBalls: 0,
@@ -33,6 +34,7 @@ export function loadPlayer() {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
+
       loadedPlayer = {
         ...DEFAULT_PLAYER,
         ...parsed,
@@ -54,7 +56,6 @@ export function loadPlayer() {
         inv.seeds = {};
       }
 
-      // Tool/number safety
       if (typeof inv.spade !== 'boolean') inv.spade = DEFAULT_PLAYER.inventory.spade;
       if (typeof inv.sickle !== 'boolean') inv.sickle = DEFAULT_PLAYER.inventory.sickle;
       if (typeof inv.scissors !== 'boolean') inv.scissors = DEFAULT_PLAYER.inventory.scissors;
@@ -76,6 +77,10 @@ export function loadPlayer() {
 }
 
 export function savePlayer(currentPlayer) {
+  if (!currentPlayer) {
+    console.error("savePlayer called without currentPlayer!");
+    return;
+  }
   currentPlayer.lastPlayed = new Date().toISOString();
   console.log("Saving zones:", currentPlayer.zones);
   localStorage.setItem(SAVE_KEY, JSON.stringify(currentPlayer));
@@ -83,6 +88,11 @@ export function savePlayer(currentPlayer) {
 }
 
 export function updatePlayer(currentPlayer, changes) {
+  if (!currentPlayer) {
+    console.error("updatePlayer called without currentPlayer!");
+    return;
+  }
+
   // Deep merge zones
   if (changes.zones && typeof changes.zones === 'object') {
     currentPlayer.zones = {
@@ -99,7 +109,9 @@ export function updatePlayer(currentPlayer, changes) {
     };
   }
 
+  // Shallow assign everything else
   Object.assign(currentPlayer, changes);
+
   savePlayer(currentPlayer);
 }
 
@@ -111,6 +123,7 @@ export function resetPlayer() {
   return newPlayer;
 }
 
+// Debug helper (uses global currentPlayer from main.js)
 window.debugPlayer = () => {
   console.table(currentPlayer);
   return currentPlayer;
