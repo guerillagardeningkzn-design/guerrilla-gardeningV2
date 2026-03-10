@@ -425,6 +425,9 @@ async function renderView() {
     var zoneId = currentView.split(":")[1];
     var zone = zones.find(function(z) { return z.id === zoneId; });
 
+    // ← DIAGNOSTIC LOG INSERTED HERE (shows health on every zone entry)
+    console.log("Entering zone " + zoneId + " — current health: " + (currentPlayer.zones[zoneId] || 0));
+
     if (!zone || !isZoneUnlocked(zone)) {
       currentView = "island";
       renderView();
@@ -512,7 +515,7 @@ async function renderView() {
         }
       }
 
-      el.innerHTML = 
+      el.innerHTML =
         '<img src="' + imagePath + '" class="entity-image" alt="' + (entity.name || entity.id) + '">' +
         '<div class="entity-name">' + (entity.name || entity.id) + '</div>';
 
