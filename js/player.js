@@ -1,13 +1,12 @@
 // player.js
 const SAVE_KEY = "guerrillaGardeningSave-v1";
 
-// Single source of truth for default player state
 const DEFAULT_PLAYER = {
   coins: 50,
   energy: 100,
   maxEnergy: 100,
   inventory: {
-    seeds: {},                  // object of arrays for per-seed DNA instances
+    seeds: {},
     soilClumps: 0,
     fertilizer: 0,
     clayBalls: 0,
@@ -34,7 +33,6 @@ export function loadPlayer() {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-
       loadedPlayer = {
         ...DEFAULT_PLAYER,
         ...parsed,
@@ -43,8 +41,8 @@ export function loadPlayer() {
           ...parsed.inventory
         },
         zones: {
-          ...parsed.zones,               // saved first
-          ...DEFAULT_PLAYER.zones        // defaults fill missing
+          ...parsed.zones,
+          ...DEFAULT_PLAYER.zones
         }
       };
 
@@ -78,7 +76,7 @@ export function loadPlayer() {
 
 export function savePlayer(currentPlayer) {
   if (!currentPlayer) {
-    console.error("savePlayer called without currentPlayer!");
+    console.error("savePlayer: currentPlayer is undefined");
     return;
   }
   currentPlayer.lastPlayed = new Date().toISOString();
@@ -89,11 +87,10 @@ export function savePlayer(currentPlayer) {
 
 export function updatePlayer(currentPlayer, changes) {
   if (!currentPlayer) {
-    console.error("updatePlayer called without currentPlayer!");
+    console.error("updatePlayer: currentPlayer is undefined");
     return;
   }
 
-  // Deep merge zones
   if (changes.zones && typeof changes.zones === 'object') {
     currentPlayer.zones = {
       ...currentPlayer.zones,
@@ -101,7 +98,6 @@ export function updatePlayer(currentPlayer, changes) {
     };
   }
 
-  // Deep merge inventory
   if (changes.inventory && typeof changes.inventory === 'object') {
     currentPlayer.inventory = {
       ...currentPlayer.inventory,
@@ -109,9 +105,7 @@ export function updatePlayer(currentPlayer, changes) {
     };
   }
 
-  // Shallow assign everything else
   Object.assign(currentPlayer, changes);
-
   savePlayer(currentPlayer);
 }
 
@@ -123,7 +117,6 @@ export function resetPlayer() {
   return newPlayer;
 }
 
-// Debug helper (uses global currentPlayer from main.js)
 window.debugPlayer = () => {
   console.table(currentPlayer);
   return currentPlayer;

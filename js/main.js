@@ -629,7 +629,7 @@ document.addEventListener("DOMContentLoaded", function() {
           dna: newDna
         });
 
-        savePlayer();
+        savePlayer(currentPlayer);
 
         showRewardPopup(entityEl, 0, 0, "+1 " + newDna.rarity + " " + entity.name + " Seed 🌱", 1600);
 
@@ -651,7 +651,7 @@ document.addEventListener("DOMContentLoaded", function() {
       };
       changes.zones[zoneId] = Math.min(100, (currentPlayer.zones[zoneId] || 0) + (entity.health || 8));
 
-      updatePlayer(changes);
+      updatePlayer(currentPlayer, changes);
 
       var bonusText = "";
       if (entity.mutable && entity.mutable.onDestroy && entity.mutable.onDestroy.drop && Array.isArray(entity.mutable.onDestroy.drop)) {
@@ -669,7 +669,7 @@ document.addEventListener("DOMContentLoaded", function() {
           }
         });
         if (bonusParts.length > 0) bonusText = bonusParts.join("   ");
-        savePlayer();
+        savePlayer(currentPlayer);
       }
 
       entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
