@@ -537,27 +537,32 @@ document.addEventListener("DOMContentLoaded", function() {
   var t = e.target;
   console.log("Click detected on:", t.tagName, t.className, t.dataset);
 
-  // LOG ALL ZONES HEALTH ON EVERY CLICK (for debugging reset bug)
-  console.log("Current zones health on click:", JSON.stringify(currentPlayer.zones));
+  // PRE-CLICK: Log ALL zones health right when the click arrives
+  console.log("[PRE-CLICK] All zones health:", JSON.stringify(currentPlayer.zones));
 
-  // Zone marker
+  // Zone marker (entering a zone)
   var marker = t.closest(".map-marker, [data-zone-id]");
   if (marker) {
-    e.preventDefault(); // Prevent default reload
+    e.preventDefault(); // Prevent any default navigation/reload
+
     var zoneId = marker.dataset.zoneId;
     var zone = zones.find(function(z) { return z.id === zoneId; });
+
     if (zone && isZoneUnlocked(zone)) {
-      console.log("Switching to zone: " + zoneId + " — current health before switch: " + (currentPlayer.zones[zoneId] || 0));
+      console.log("Switching to zone: " + zoneId + " — health before switch: " + (currentPlayer.zones[zoneId] || 0));
       savePlayer(currentPlayer);
       currentView = "zone:" + zoneId;
       renderView();
+
+      // POST-SWITCH: Log full state after view change
+      console.log("[POST-SWITCH] All zones health after entering " + zoneId + ":", JSON.stringify(currentPlayer.zones));
     } else {
       showMessage("Zone Locked", "Complete previous area first!", 5000);
     }
     return;
   }
 
-  // Entity tap
+  // Entity tap (invasive or native)
   var entityEl = t.closest(".invasive-item, .native-item");
   if (entityEl) {
     console.log("Entity container clicked:", entityEl.className, entityEl.dataset);
@@ -599,9 +604,9 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     }
 
-    console.log("Processing " + entityType + ": " + (entity.name || entity.id));
+    console.log("Processing " + entityType + ": " + (entity.name || entityId));
 
-    // ── Tool condition check ──────────────────────────────────────────────────────
+    // Tool condition check
     var condition = entity.mutable ? entity.mutable.onDestroy ? entity.mutable.onDestroy.condition : null : null;
     if (condition) {
       var hasTool = false;
@@ -621,9 +626,9 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     }
 
-    // ── Action: harvest native or remove invasive ────────────────────────────────
+    // Action: harvest native or remove invasive
     if (entityType === "native") {
-      var newDna = generateSeedDNA(entity); // assume this function exists
+      var newDna = generateSeedDNA(entity);
 
       if (!currentPlayer.inventory.seeds[entity.id]) {
         currentPlayer.inventory.seeds[entity.id] = [];
@@ -645,6 +650,9 @@ document.addEventListener("DOMContentLoaded", function() {
       setTimeout(function() {
         entityEl.remove();
       }, 600);
+
+      // POST-ACTION log after native harvest
+      console.log("[POST-ACTION] All zones health after native harvest:", JSON.stringify(currentPlayer.zones));
 
       return;
     }
@@ -699,6 +707,9 @@ document.addEventListener("DOMContentLoaded", function() {
         var zoneName = zone ? zone.name : "Area";
         showClearModal(zoneName + " cleared! 🌿");
       }
+
+      // POST-ACTION log after removal and UI updates
+      console.log("[POST-ACTION] All zones health after invasive removal:", JSON.stringify(currentPlayer.zones));
     }, 600);
   }
 
@@ -708,16 +719,19 @@ document.addEventListener("DOMContentLoaded", function() {
     savePlayer(currentPlayer);
     currentView = "island";
     renderView();
+    console.log("[POST-SWITCH] All zones health after back to island:", JSON.stringify(currentPlayer.zones));
   }
 
   // Toolbox & Inventory
   if (t.closest(".hud-toolbox")) {
     showToolboxGallery();
+    console.log("[POST-TOOLBOX] All zones health:", JSON.stringify(currentPlayer.zones));
     return;
   }
 
   if (t.closest(".hud-inventory")) {
     showInventoryGallery();
+    console.log("[POST-INVENTORY] All zones health:", JSON.stringify(currentPlayer.zones));
     return;
   }
 });
