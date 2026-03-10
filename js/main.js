@@ -1,7 +1,7 @@
 import { loadPlayer, updatePlayer, savePlayer } from './player.js';
 import { zones } from '../data/zones.js';
 
-console.log("Guerrilla Gardening - overworld map with markers + golden UI");
+console.log("Guerrilla Gardening - overworld map with golden UI");
 
 // ───────────────────────────────────────────────────────────
 // Centralized way to load external entity definitions
@@ -362,7 +362,7 @@ function showSeedPacks() {
 
   Object.keys(seedsData).forEach(function(parentId) {
     var seedArray = seedsData[parentId];
-    if (Array.isArray(seedArray)) {
+    if (Array.isArray(seedArray) ) {
       var count = seedArray.length;
       if (count > 0) {
         totalSeeds += count;
@@ -534,114 +534,155 @@ document.addEventListener("DOMContentLoaded", function() {
   currentPlayer = loadPlayer();
 
   document.addEventListener("click", async function(e) {
-  var t = e.target;
-  console.log("Click detected on:", t.tagName, t.className, t.dataset);
+    var t = e.target;
+    console.log("Click detected on:", t.tagName, t.className, t.dataset);
 
-  // PRE-CLICK: Log ALL zones health right when the click arrives
-  console.log("[PRE-CLICK] All zones health:", JSON.stringify(currentPlayer.zones));
+    // PRE-CLICK: Log ALL zones health right when the click arrives
+    console.log("[PRE-CLICK] All zones health:", JSON.stringify(currentPlayer.zones));
 
-  // Zone marker (entering a zone)
-  var marker = t.closest(".map-marker, [data-zone-id]");
-  if (marker) {
-    e.preventDefault(); // Prevent any default navigation/reload
+    // Zone marker (entering a zone)
+    var marker = t.closest(".map-marker, [data-zone-id]");
+    if (marker) {
+      e.preventDefault(); // Prevent any default navigation/reload
 
-    var zoneId = marker.dataset.zoneId;
-    var zone = zones.find(function(z) { return z.id === zoneId; });
+      var zoneId = marker.dataset.zoneId;
+      var zone = zones.find(function(z) { return z.id === zoneId; });
 
-    if (zone && isZoneUnlocked(zone)) {
-      console.log("Switching to zone: " + zoneId + " — health before switch: " + (currentPlayer.zones[zoneId] || 0));
-      savePlayer(currentPlayer);
-      currentView = "zone:" + zoneId;
-      renderView();
+      if (zone && isZoneUnlocked(zone)) {
+        console.log("Switching to zone: " + zoneId + " — health before switch: " + (currentPlayer.zones[zoneId] || 0));
+        savePlayer(currentPlayer);
+        currentView = "zone:" + zoneId;
+        renderView();
 
-      // POST-SWITCH: Log full state after view change
-      console.log("[POST-SWITCH] All zones health after entering " + zoneId + ":", JSON.stringify(currentPlayer.zones));
-    } else {
-      showMessage("Zone Locked", "Complete previous area first!", 5000);
-    }
-    return;
-  }
-
-  // Entity tap (invasive or native)
-  var entityEl = t.closest(".invasive-item, .native-item");
-  if (entityEl) {
-    console.log("Entity container clicked:", entityEl.className, entityEl.dataset);
-
-    var zoneId = currentView.split(":")[1];
-    var entityId = entityEl.dataset.entityId;
-    var entityType = entityEl.dataset.type || "invasive";
-
-    console.log("→ entityId:", entityId, "type:", entityType);
-
-    if (!entityId) {
-      console.warn("No entityId on element — skipping tap");
-      return;
-    }
-
-    var baseEntity;
-    if (entityType === "native") {
-      baseEntity = nativesByZone[zoneId] ? nativesByZone[zoneId].find(function(i) { return i.id === entityId; }) : null;
-    } else {
-      baseEntity = invasivesByZone[zoneId] ? invasivesByZone[zoneId].find(function(i) { return i.id === entityId; }) : null;
-    }
-
-    if (!baseEntity) {
-      console.warn("No base entity found for id " + entityId + " in " + entityType + "s");
-      return;
-    }
-
-    var entity = Object.assign({}, baseEntity, { type: entityType });
-
-    if (baseEntity.isExternal) {
-      var category = entityType === "native" ? "natives" : "invasives";
-      var fullDef = await loadEntityDefinition(entityId, category);
-      if (fullDef) {
-        entity = Object.assign(entity, fullDef, { isExternal: true });
-        entity.coins  = Number(fullDef.coins)  || baseEntity.coins  || (entityType === "native" ? 2 : 5);
-        entity.health = Number(fullDef.health) || baseEntity.health || (entityType === "native" ? 3 : 8);
+        // POST-SWITCH: Log full state after view change
+        console.log("[POST-SWITCH] All zones health after entering " + zoneId + ":", JSON.stringify(currentPlayer.zones));
       } else {
-        console.warn("Failed to load full definition for " + entityId);
+        showMessage("Zone Locked", "Complete previous area first!", 5000);
       }
+      return;
     }
 
-    console.log("Processing " + entityType + ": " + (entity.name || entityId));
+    // Entity tap (invasive or native)
+    var entityEl = t.closest(".invasive-item, .native-item");
+    if (entityEl) {
+      console.log("Entity container clicked:", entityEl.className, entityEl.dataset);
 
-    // Tool condition check
-    var condition = entity.mutable ? entity.mutable.onDestroy ? entity.mutable.onDestroy.condition : null : null;
-    if (condition) {
-      var hasTool = false;
-      var toolName = "";
+      var zoneId = currentView.split(":")[1];
+      var entityId = entityEl.dataset.entityId;
+      var entityType = entityEl.dataset.type || "invasive";
 
-      if (condition === "playerHasItem:spade") {
-        hasTool = currentPlayer.inventory.spade === true;
-        toolName = "spade";
-      } else if (condition === "playerHasItem:sickle") {
-        hasTool = currentPlayer.inventory.sickle === true;
-        toolName = "sickle";
-      }
+      console.log("→ entityId:", entityId, "type:", entityType);
 
-      if (!hasTool) {
-        showMessage("Tool Required", entity.mutable.onDestroy.failMessage || "You need a " + toolName + "!", 4000);
+      if (!entityId) {
+        console.warn("No entityId on element — skipping tap");
         return;
       }
-    }
 
-    // Action: harvest native or remove invasive
-    if (entityType === "native") {
-      var newDna = generateSeedDNA(entity);
-
-      if (!currentPlayer.inventory.seeds[entity.id]) {
-        currentPlayer.inventory.seeds[entity.id] = [];
+      var baseEntity;
+      if (entityType === "native") {
+        baseEntity = nativesByZone[zoneId] ? nativesByZone[zoneId].find(function(i) { return i.id === entityId; }) : null;
+      } else {
+        baseEntity = invasivesByZone[zoneId] ? invasivesByZone[zoneId].find(function(i) { return i.id === entityId; }) : null;
       }
 
-      currentPlayer.inventory.seeds[entity.id].push({
-        parentId: entity.id,
-        dna: newDna
-      });
+      if (!baseEntity) {
+        console.warn("No base entity found for id " + entityId + " in " + entityType + "s");
+        return;
+      }
 
-      savePlayer(currentPlayer);
+      var entity = Object.assign({}, baseEntity, { type: entityType });
 
-      showRewardPopup(entityEl, 0, 0, "+1 " + newDna.rarity + " " + entity.name + " Seed 🌱", 1600);
+      if (baseEntity.isExternal) {
+        var category = entityType === "native" ? "natives" : "invasives";
+        var fullDef = await loadEntityDefinition(entityId, category);
+        if (fullDef) {
+          entity = Object.assign(entity, fullDef, { isExternal: true });
+          entity.coins  = Number(fullDef.coins)  || baseEntity.coins  || (entityType === "native" ? 2 : 5);
+          entity.health = Number(fullDef.health) || baseEntity.health || (entityType === "native" ? 3 : 8);
+        } else {
+          console.warn("Failed to load full definition for " + entityId);
+        }
+      }
+
+      console.log("Processing " + entityType + ": " + (entity.name || entity.id));
+
+      // Tool condition check
+      var condition = entity.mutable ? entity.mutable.onDestroy ? entity.mutable.onDestroy.condition : null : null;
+      if (condition) {
+        var hasTool = false;
+        var toolName = "";
+
+        if (condition === "playerHasItem:spade") {
+          hasTool = currentPlayer.inventory.spade === true;
+          toolName = "spade";
+        } else if (condition === "playerHasItem:sickle") {
+          hasTool = currentPlayer.inventory.sickle === true;
+          toolName = "sickle";
+        }
+
+        if (!hasTool) {
+          showMessage("Tool Required", entity.mutable.onDestroy.failMessage || "You need a " + toolName + "!", 4000);
+          return;
+        }
+      }
+
+      // Action: harvest native or remove invasive
+      if (entityType === "native") {
+        var newDna = generateSeedDNA(entity);
+
+        if (!currentPlayer.inventory.seeds[entity.id]) {
+          currentPlayer.inventory.seeds[entity.id] = [];
+        }
+
+        currentPlayer.inventory.seeds[entity.id].push({
+          parentId: entity.id,
+          dna: newDna
+        });
+
+        savePlayer(currentPlayer);
+
+        showRewardPopup(entityEl, 0, 0, "+1 " + newDna.rarity + " " + entity.name + " Seed 🌱", 1600);
+
+        entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+        entityEl.style.opacity = "0";
+        entityEl.style.transform = "scale(0.4) rotate(5deg)";
+
+        setTimeout(function() {
+          entityEl.remove();
+        }, 600);
+
+        console.log("[POST-ACTION] All zones health after native harvest:", JSON.stringify(currentPlayer.zones));
+
+        return;
+      }
+
+      // Invasive removal
+      var changes = {
+        coins: currentPlayer.coins + (entity.coins || 5),
+        zones: {}
+      };
+      changes.zones[zoneId] = Math.min(100, (currentPlayer.zones[zoneId] || 0) + (entity.health || 8));
+
+      updatePlayer(currentPlayer, changes);
+
+      var bonusText = "";
+      if (entity.mutable && entity.mutable.onDestroy && entity.mutable.onDestroy.drop && Array.isArray(entity.mutable.onDestroy.drop)) {
+        var bonusParts = [];
+        entity.mutable.onDestroy.drop.forEach(function(dropRule) {
+          var dropEntity = dropRule.entity;
+          var count = Number(dropRule.count) || 1;
+          var chance = Number(dropRule.chance) || 1;
+          if (Math.random() < chance) {
+            if (dropEntity === "soil-clump") {
+              currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
+              bonusParts.push("+" + count + " Soil Clump 🌱");
+              console.log("Gained " + count + " soil clump(s)");
+            }
+          }
+        });
+        if (bonusParts.length > 0) bonusText = bonusParts.join("   ");
+        savePlayer(currentPlayer);
+      }
 
       entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
       entityEl.style.opacity = "0";
@@ -649,68 +690,26 @@ document.addEventListener("DOMContentLoaded", function() {
 
       setTimeout(function() {
         entityEl.remove();
-      }, 600);
 
-      // POST-ACTION log after native harvest
-      console.log("[POST-ACTION] All zones health after native harvest:", JSON.stringify(currentPlayer.zones));
+        showRewardPopup(entityEl, entity.coins || 5, entity.health || 8, bonusText, 1600);
 
-      return;
-    }
+        updateCoinsDisplay();
+        updateHealthDisplay(changes.zones[zoneId]);
 
-    // Invasive removal
-    var changes = {
-      coins: currentPlayer.coins + (entity.coins || 5),
-      zones: {}
-    };
-    changes.zones[zoneId] = Math.min(100, (currentPlayer.zones[zoneId] || 0) + (entity.health || 8));
+        var progressFill = document.querySelector(".progress-fill");
+        if (progressFill) progressFill.style.width = changes.zones[zoneId] + "%";
 
-    updatePlayer(currentPlayer, changes);
-
-    var bonusText = "";
-    if (entity.mutable && entity.mutable.onDestroy && entity.mutable.onDestroy.drop && Array.isArray(entity.mutable.onDestroy.drop)) {
-      var bonusParts = [];
-      entity.mutable.onDestroy.drop.forEach(function(dropRule) {
-        var dropEntity = dropRule.entity;
-        var count = Number(dropRule.count) || 1;
-        var chance = Number(dropRule.chance) || 1;
-        if (Math.random() < chance) {
-          if (dropEntity === "soil-clump") {
-            currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
-            bonusParts.push("+" + count + " Soil Clump 🌱");
-            console.log("Gained " + count + " soil clump(s)");
-          }
+        var remaining = document.querySelectorAll(".invasive-item, .native-item");
+        if (remaining.length === 0) {
+          var currentZoneId = currentView.split(":")[1];
+          var zone = zones.find(function(z) { return z.id === currentZoneId; });
+          var zoneName = zone ? zone.name : "Area";
+          showClearModal(zoneName + " cleared! 🌿");
         }
-      });
-      if (bonusParts.length > 0) bonusText = bonusParts.join("   ");
-      savePlayer(currentPlayer);
-    }
 
-    entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
-    entityEl.style.opacity = "0";
-    entityEl.style.transform = "scale(0.4) rotate(5deg)";
-
-    setTimeout(function() {
-      entityEl.remove();
-
-      showRewardPopup(entityEl, entity.coins || 5, entity.health || 8, bonusText, 1600);
-
-      updateCoinsDisplay();
-      updateHealthDisplay(changes.zones[zoneId]);
-
-      var progressFill = document.querySelector(".progress-fill");
-      if (progressFill) progressFill.style.width = changes.zones[zoneId] + "%";
-
-      var remaining = document.querySelectorAll(".invasive-item, .native-item");
-      if (remaining.length === 0) {
-        var currentZoneId = currentView.split(":")[1];
-        var zone = zones.find(function(z) { return z.id === currentZoneId; });
-        var zoneName = zone ? zone.name : "Area";
-        showClearModal(zoneName + " cleared! 🌿");
-      }
-
-      // POST-ACTION log after removal and UI updates
-      console.log("[POST-ACTION] All zones health after invasive removal:", JSON.stringify(currentPlayer.zones));
-    }, 600);
+        // [POST-ACTION] All zones health after invasive removal
+        console.log("[POST-ACTION] All zones health after invasive removal:", JSON.stringify(currentPlayer.zones));
+      }, 600);
   }
 
   // Back to map
@@ -734,48 +733,4 @@ document.addEventListener("DOMContentLoaded", function() {
     console.log("[POST-INVENTORY] All zones health:", JSON.stringify(currentPlayer.zones));
     return;
   }
-});
-
-  renderView();
-  console.log("Game loaded – island map with markers");
-});
-
-// ─── Fullscreen & orientation ────────────────────────────────────────────────────
-async function enterFullscreen() {
-  var elem = document.documentElement;
-  try {
-    if (elem.requestFullscreen) await elem.requestFullscreen();
-    else if (elem.webkitRequestFullscreen) await elem.webkitRequestFullscreen();
-    else if (elem.msRequestFullscreen) await elem.msRequestFullscreen();
-    console.log("Entered fullscreen");
-
-    var btn = document.getElementById("fullscreen-btn");
-    if (btn) btn.style.display = "none";
-
-    if (screen.orientation && screen.orientation.lock) {
-      await screen.orientation.lock("landscape").catch(function() {});
-    }
-  } catch (err) {
-    console.error("Fullscreen failed:", err);
-  }
-}
-
-function checkOrientation() {
-  var warning = document.getElementById("portrait-warning");
-  if (window.innerHeight > window.innerWidth) {
-    document.body.classList.add("portrait-warning-visible");
-    if (warning) warning.style.display = "flex";
-  } else {
-    document.body.classList.remove("portrait-warning-visible");
-    if (warning) warning.style.display = "none";
-  }
-}
-
-window.addEventListener("resize", checkOrientation);
-window.addEventListener("orientationchange", checkOrientation);
-
-document.addEventListener("DOMContentLoaded", function() {
-  checkOrientation();
-  var btn = document.getElementById("fullscreen-btn");
-  if (btn) btn.addEventListener("click", enterFullscreen);
 });

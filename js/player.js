@@ -88,7 +88,7 @@ export function savePlayer(currentPlayer) {
 export function updatePlayer(currentPlayer, changes) {
   if (!currentPlayer) return;
 
-  // 1. Deep merge zones FIRST (this preserves all keys)
+  // Deep merge zones FIRST (use the full changes.zones)
   if (changes.zones && typeof changes.zones === 'object') {
     currentPlayer.zones = {
       ...currentPlayer.zones,
@@ -96,7 +96,7 @@ export function updatePlayer(currentPlayer, changes) {
     };
   }
 
-  // 2. Deep merge inventory FIRST
+  // Deep merge inventory FIRST
   if (changes.inventory && typeof changes.inventory === 'object') {
     currentPlayer.inventory = {
       ...currentPlayer.inventory,
@@ -104,7 +104,7 @@ export function updatePlayer(currentPlayer, changes) {
     };
   }
 
-  // 3. Shallow assign everything else LAST (coins, etc. — won't touch zones)
+  // Shallow assign LAST
   Object.assign(currentPlayer, changes);
 
   savePlayer(currentPlayer);
