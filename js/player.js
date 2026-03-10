@@ -36,32 +36,28 @@ export function loadPlayer() {
     try {
       const parsed = JSON.parse(saved);
 
-      // Deep-safe merge: start with full defaults, override with saved values
       player = {
         ...DEFAULT_PLAYER,
         ...parsed,
         inventory: {
-          ...DEFAULT_PLAYER.inventory,   // full defaults first
-          ...parsed.inventory            // saved overrides
+          ...DEFAULT_PLAYER.inventory,
+          ...parsed.inventory
         },
         zones: {
-          ...DEFAULT_PLAYER.zones,       // defaults (0)
-          ...parsed.zones                // saved progress overrides
+          ...parsed.zones,               // ← saved progress FIRST
+          ...DEFAULT_PLAYER.zones        // ← defaults fill missing zones only
         }
       };
 
       console.log("Loaded zones from save:", player.zones);
 
-      // Safety fixes for inventory (protect against old/corrupted saves)
+      // Safety fixes...
       const inv = player.inventory;
-
-      // Force seeds to be object
-      if (!inv.seeds || typeof inv.seeds !== 'object' || Array.isArray(inv.seeds)) {
-        console.warn("Invalid seeds data — resetting to empty object");
+      if (!inv.seeds || typeof inv.seeds !== 'object') {
+        console.warn("Invalid or missing seeds — resetting to {}");
         inv.seeds = {};
       }
 
-      // Restore missing/ invalid tool booleans and numbers
       if (typeof inv.spade !== 'boolean') inv.spade = DEFAULT_PLAYER.inventory.spade;
       if (typeof inv.sickle !== 'boolean') inv.sickle = DEFAULT_PLAYER.inventory.sickle;
       if (typeof inv.scissors !== 'boolean') inv.scissors = DEFAULT_PLAYER.inventory.scissors;
@@ -73,7 +69,7 @@ export function loadPlayer() {
     } catch (err) {
       console.warn("Corrupted save data — starting fresh", err);
       player = { ...DEFAULT_PLAYER };
-      savePlayer(); // overwrite bad save
+      savePlayer();
     }
   } else {
     console.log("No save found — using defaults");
