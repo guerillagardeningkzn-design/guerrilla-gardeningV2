@@ -690,27 +690,26 @@ document.addEventListener("DOMContentLoaded", function() {
     entityEl.style.transform = "scale(0.4) rotate(5deg)";
 
     setTimeout(function() {
-      entityEl.remove();
+  entityEl.remove();
 
-      showRewardPopup(entityEl, entity.coins || 5, entity.health || 8, bonusText, 1600);
+  showRewardPopup(entityEl, entity.coins || 5, entity.health || 8, bonusText, 1600);
 
-      updateCoinsDisplay();
-      updateHealthDisplay(changes.zones[zoneId]);
+  updateCoinsDisplay();
+  updateHealthDisplay(changes.zones[zoneId]);
 
-      var progressFill = document.querySelector(".progress-fill");
-      if (progressFill) progressFill.style.width = changes.zones[zoneId] + "%";
+  var progressFill = document.querySelector(".progress-fill");
+  if (progressFill) progressFill.style.width = changes.zones[zoneId] + "%";
 
-      var remaining = document.querySelectorAll(".invasive-item, .native-item");
-      if (remaining.length === 0) {
-        var currentZoneId = currentView.split(":")[1];
-        var zone = zones.find(function(z) { return z.id === currentZoneId; });
-        var zoneName = zone ? zone.name : "Area";
-        showClearModal(zoneName + " cleared! 🌿");
-      }
-
-      // POST-ACTION log after invasive removal
-      console.log("[POST-ACTION] All zones health after invasive removal:", JSON.stringify(currentPlayer.zones));
-    }, 600);
+  var remaining = document.querySelectorAll(".invasive-item, .native-item");
+  if (remaining.length === 0) {
+    var currentZoneId = currentView.split(":")[1];
+    var zone = zones.find(function(z) { return z.id === currentZoneId; });
+    var zoneName = zone ? zone.name : "Area";
+    showClearModal(zoneName + " cleared! 🌿");
+  }
+  // [POST-ACTION] All zones health after invasive removal
+  console.log("[POST-ACTION] All zones health after invasive removal:", JSON.stringify(currentPlayer.zones));
+}, 600);  // ← this closing ); is probably missing or misplaced in your file
   }
 
   // Back to map
