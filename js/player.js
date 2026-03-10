@@ -86,11 +86,9 @@ export function savePlayer(currentPlayer) {
 }
 
 export function updatePlayer(currentPlayer, changes) {
-  if (!currentPlayer) {
-    console.error("updatePlayer: currentPlayer is undefined");
-    return;
-  }
+  if (!currentPlayer) return;
 
+  // Deep merge zones FIRST (preserve all keys)
   if (changes.zones && typeof changes.zones === 'object') {
     currentPlayer.zones = {
       ...currentPlayer.zones,
@@ -98,6 +96,7 @@ export function updatePlayer(currentPlayer, changes) {
     };
   }
 
+  // Deep merge inventory FIRST
   if (changes.inventory && typeof changes.inventory === 'object') {
     currentPlayer.inventory = {
       ...currentPlayer.inventory,
@@ -105,7 +104,9 @@ export function updatePlayer(currentPlayer, changes) {
     };
   }
 
+  // Shallow assign everything else LAST
   Object.assign(currentPlayer, changes);
+
   savePlayer(currentPlayer);
 }
 
