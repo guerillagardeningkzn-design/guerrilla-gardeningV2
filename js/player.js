@@ -17,12 +17,12 @@ const DEFAULT_PLAYER = {
     scissors: true,
     toolboxLevel: 1
   },
-  planted: {},  // will become { "beach": [{...}], "forest": [...], ... }
-  zoneHealth: {          // ← new dedicated property
+   zoneHealth: {          // ← new dedicated property
     beach: 0,
     forest: 0,
     mountain: 0
   },
+  planted: {},
   lastPlayed: null,
   sessionActions: 0
   
