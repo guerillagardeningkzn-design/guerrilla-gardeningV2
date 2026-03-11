@@ -17,7 +17,7 @@ const DEFAULT_PLAYER = {
     scissors: true,
     toolboxLevel: 1
   },
-  zones: {
+  zoneHealth: {          // ← new dedicated property
     beach: 0,
     forest: 0,
     mountain: 0
@@ -86,21 +86,18 @@ export function savePlayer(currentPlayer) {
 }
 
 export function updatePlayer(currentPlayer, changes) {
-  if (!currentPlayer) {
-    console.error("updatePlayer called without currentPlayer");
-    return;
-  }
+  if (!currentPlayer) return;
 
-  // 1. Deep merge zones FIRST — preserve all keys
-  if (changes.zones && typeof changes.zones === 'object') {
-    currentPlayer.zones = {
-      ...currentPlayer.zones,        // old values
-      ...changes.zones               // new/updated values
+  // Deep merge zoneHealth FIRST (if present in changes)
+  if (changes.zoneHealth && typeof changes.zoneHealth === 'object') {
+    currentPlayer.zoneHealth = {
+      ...currentPlayer.zoneHealth,
+      ...changes.zoneHealth
     };
-    console.log("[UPDATE] Zones after merge:", JSON.stringify(currentPlayer.zones));
+    console.log("[UPDATE] zoneHealth after merge:", JSON.stringify(currentPlayer.zoneHealth));
   }
 
-  // 2. Deep merge inventory
+  // Deep merge inventory (if any)
   if (changes.inventory && typeof changes.inventory === 'object') {
     currentPlayer.inventory = {
       ...currentPlayer.inventory,
@@ -108,10 +105,9 @@ export function updatePlayer(currentPlayer, changes) {
     };
   }
 
-  // 3. Shallow assign other top-level fields LAST (coins, etc.)
+  // Shallow assign everything else LAST
   Object.assign(currentPlayer, changes);
 
-  // Force save
   savePlayer(currentPlayer);
 }
 

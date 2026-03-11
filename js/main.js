@@ -108,7 +108,7 @@ var zoneMarkers = [
 function isZoneUnlocked(zone) {
   if (!zone.unlockRequirement) return true;
   var req = zone.unlockRequirement;
-  var reqHealth = currentPlayer.zones[req.zone] || 0;
+  var reqHealth = currentPlayer.zoneHealth[req.zone] || 0;
   return reqHealth >= req.health;
 }
 
@@ -409,7 +409,7 @@ async function renderView() {
       return;
     }
 
-    var health = currentPlayer.zones[zoneId] || 0;
+    var health = currentPlayer.zoneHealth[zoneId] || 0;
     var bgPath = "assets/backgrounds/global/sky-overcast.jpg";
 
     if (zoneId === "beach") bgPath = "assets/backgrounds/beach/main-day.jpg";
@@ -600,12 +600,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
       // Invasive removal
       var changes = {
-        coins: currentPlayer.coins + (entity.coins || 5),
-        zones: { ...currentPlayer.zones }
-      };
-      changes.zones[zoneId] = Math.min(100, (currentPlayer.zones[zoneId] || 0) + (entity.health || 8));
-
-      updatePlayer(currentPlayer, changes);
+  coins: currentPlayer.coins + (entity.coins || 5),
+  zoneHealth: { ...currentPlayer.zoneHealth }
+};
+changes.zoneHealth[zoneId] = Math.min(100, (currentPlayer.zoneHealth[zoneId] || 0) + (entity.health || 8));
+updatePlayer(currentPlayer, changes);
 	  savePlayer(currentPlayer); // ← force save right after
 
       var bonusText = "";
@@ -634,10 +633,11 @@ document.addEventListener("DOMContentLoaded", function() {
         entityEl.remove();
         showRewardPopup(entityEl, entity.coins || 5, entity.health || 8, bonusText, 1600);
         updateCoinsDisplay();
-        updateHealthDisplay(changes.zones[zoneId]);
+        updateHealthDisplay(changes.zoneHealth[zoneId]);
+progressFill.style.width = changes.zoneHealth[zoneId] + "%";
 
         var progressFill = document.querySelector(".progress-fill");
-        if (progressFill) progressFill.style.width = changes.zones[zoneId] + "%";
+        if (progressFill) progressFill.style.width = changes.zoneHealth[zoneId] + "%";
 
         var remaining = document.querySelectorAll(".invasive-item, .native-item");
         if (remaining.length === 0) {
