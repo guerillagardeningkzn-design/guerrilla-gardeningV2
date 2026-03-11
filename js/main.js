@@ -3,20 +3,57 @@ import { zones } from '../data/zones.js';
 
 console.log("Guerrilla Gardening - overworld map with golden UI");
 
-// ───────────────────────────────────────────────────────────
-// Centralized way to load external entity definitions
-// ───────────────────────────────────────────────────────────
+// ─── Zone Configuration ─────────────────────────────────────────────────────────
+let zonesConfig = null;
+
+async function loadZonesConfig() {
+  try {
+    const response = await fetch('data/zones-config.json');
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} – zones-config.json missing?`);
+    }
+    zonesConfig = await response.json();
+    console.log("Zones config loaded:", zonesConfig);
+    
+    console.log(`Found ${zonesConfig.zones?.length || 0} zones:`,
+      zonesConfig.zones?.map(z => z.name).join(", ") || "none");
+  } catch (err) {
+    console.error("Critical: could not load zones-config.json", err);
+    zonesConfig = {
+      hub: { id: "island", name: "Overworld Island" },
+      zones: [
+        { id: "beach", name: "Sunny Beach", mutationMultiplier: 1.0 },
+        { id: "forest", name: "Misty Forest", mutationMultiplier: 1.6 },
+        { id: "mountain", name: "Rocky Mountain", mutationMultiplier: 1.2 }
+      ]
+    };
+  }
+}
+
+function getCurrentZoneData() {
+  if (currentView === "island") {
+    return zonesConfig?.hub || { id: "island", name: "Overworld Island" };
+  }
+  if (currentView.startsWith("zone:")) {
+    const zoneId = currentView.split(":")[1];
+    return zonesConfig?.zones?.find(z => z.id === zoneId) 
+      || { id: zoneId, name: zoneId, mutationMultiplier: 1.0 };
+  }
+  return null;
+}
+
+// ─── Centralized entity loading ─────────────────────────────────────────────────
 const entityCache = new Map();
 
 async function loadEntityDefinition(entityId, category) {
   if (entityCache.has(entityId)) {
     return entityCache.get(entityId);
   }
-  var path = 'data/entities/' + (category || "invasives") + '/' + entityId + '.json';
+  const path = `data/entities/${category || "invasives"}/${entityId}.json`;
   try {
-    var response = await fetch(path);
-    if (!response.ok) throw new Error('Entity ' + entityId + ' not found in ' + category);
-    var data = await response.json();
+    const response = await fetch(path);
+    if (!response.ok) throw new Error(`Entity ${entityId} not found in ${category}`);
+    const data = await response.json();
     entityCache.set(entityId, data);
     return data;
   } catch (err) {
@@ -25,48 +62,42 @@ async function loadEntityDefinition(entityId, category) {
   }
 }
 
-function generateSeedDNA(parentEntity) {
-  var defaults = parentEntity.dnaDefaults || {
-    rarity: "common",
-    growthRate: 1.0,
-    waterNeed: "medium",
-    lightNeed: "high",
-    nutrientNeed: "low",
-    climateZones: ["beach"],
-    healthBonus: 1.0
-  };
+// ─── Rarity-based seed mutation (simplified for now) ─────────────────────────────
+function generateChildRarity(parentRarity, currentZoneId, usedBoostItems = []) {
+  const rarityLevels = ["common", "uncommon", "rare", "heirloom", "legendary"];
+  const baseUpgradeChance = 0.08;
 
-  var roll = Math.random();
-  var rarity = "common";
-  if (roll < 0.01) rarity = "legendary";
-  else if (roll < 0.05) rarity = "heirloom";
-  else if (roll < 0.20) rarity = "rare";
+  const zoneData = zonesConfig?.zones?.find(z => z.id === currentZoneId);
+  const mutationMultiplier = zoneData?.mutationMultiplier || 1.0;
 
-  var dna = {
-    rarity: rarity,
-    growthRate: defaults.growthRate,
-    waterNeed: defaults.waterNeed,
-    lightNeed: defaults.lightNeed,
-    nutrientNeed: defaults.nutrientNeed,
-    climateZones: defaults.climateZones.slice(),
-    healthBonus: defaults.healthBonus
-  };
+  let itemBoost = 0;
+  if (usedBoostItems.includes("fertilizer")) itemBoost += 0.12;
+  // Add more items later
 
-  if (rarity === "rare") {
-    dna.growthRate *= 1.3;
-    dna.waterNeed = "low";
-  } else if (rarity === "heirloom") {
-    dna.healthBonus *= 1.5;
-  } else if (rarity === "legendary") {
-    dna.growthRate *= 2.0;
-    dna.nutrientNeed = "low";
-    dna.climateZones.push("forest");
+  const upgradeChance = Math.min(0.35, baseUpgradeChance * mutationMultiplier + itemBoost);
+
+  let currentIndex = rarityLevels.indexOf(parentRarity);
+  if (currentIndex === -1) currentIndex = 0;
+
+  let newIndex = currentIndex;
+  if (Math.random() < upgradeChance) {
+    newIndex = Math.min(currentIndex + 1, rarityLevels.length - 1);
   }
 
-  dna.growthRate += (Math.random() * 0.2 - 0.1);
+  const newRarity = rarityLevels[newIndex];
 
-  console.log("Generated seed DNA for " + parentEntity.id + ":", dna);
-  return dna;
+  console.log(
+    `%c[SEED] ${parentRarity} → ${newRarity}  (zone: ${currentZoneId}, mult: ×${mutationMultiplier})`,
+    "color: #4CAF50; font-weight: bold"
+  );
+
+  showMessage(
+    "New Seed!",
+    `A ${newRarity} seed was created!`,
+    2200
+  );
+
+  return newRarity;
 }
 
 // ─── Global state ────────────────────────────────────────────────────────────────
@@ -106,404 +137,335 @@ var zoneMarkers = [
 // ─── Helpers ─────────────────────────────────────────────────────────────────────
 function isZoneUnlocked(zone) {
   if (!zone.unlockRequirement) return true;
-  var req = zone.unlockRequirement;
-  var reqHealth = currentPlayer.zoneHealth[req.zone] || 0;
+  const req = zone.unlockRequirement;
+  const reqHealth = currentPlayer.zoneHealth[req.zone] || 0;
   return reqHealth >= req.health;
 }
 
 function updateCoinsDisplay() {
-  var coinsEl = document.getElementById("coins-display");
+  const coinsEl = document.getElementById("coins-display");
   if (coinsEl) {
     coinsEl.textContent = currentPlayer.coins;
-    var coinContainer = coinsEl.closest(".hud-coins");
+    const coinContainer = coinsEl.closest(".hud-coins");
     if (coinContainer) {
       coinContainer.classList.add("pulse");
-      setTimeout(function() { coinContainer.classList.remove("pulse"); }, 800);
+      setTimeout(() => coinContainer.classList.remove("pulse"), 800);
     }
   }
 }
 
 function updateHealthDisplay(health) {
-  var fill = document.querySelector(".progress-fill");
-  var text = document.querySelector(".health-text");
-  if (fill) fill.style.width = health + "%";
-  if (text) text.textContent = "Health: " + health + "%";
+  const fill = document.querySelector(".progress-fill");
+  const text = document.querySelector(".health-text");
+  if (fill) fill.style.width = `${health}%`;
+  if (text) text.textContent = `Health: ${health}%`;
 }
 
 // ─── Modals ──────────────────────────────────────────────────────────────────────
 function showClearModal(message) {
-  var modal = document.createElement("div");
-  modal.style.position = "fixed";
-  modal.style.inset = "0";
-  modal.style.background = "rgba(0, 0, 0, 0.75)";
-  modal.style.display = "flex";
-  modal.style.alignItems = "center";
-  modal.style.justifyContent = "center";
-  modal.style.zIndex = "9999";
-  modal.style.opacity = "0";
-  modal.style.transition = "opacity 0.4s ease";
-
-  var inner = document.createElement("div");
-  inner.style.background = "rgba(30, 50, 30, 0.95)";
-  inner.style.border = "3px solid #4CAF50";
-  inner.style.borderRadius = "16px";
-  inner.style.padding = "32px 48px";
-  inner.style.maxWidth = "80%";
-  inner.style.textAlign = "center";
-  inner.style.color = "white";
-  inner.style.boxShadow = "0 10px 30px rgba(0,0,0,0.7)";
-  inner.style.transform = "scale(0.9)";
-  inner.style.transition = "transform 0.4s ease";
-
-  inner.innerHTML =
-    '<h2 style="margin-bottom:16px;font-size:1.8rem;">Area Cleared!</h2>' +
-    '<p style="font-size:1.2rem;margin-bottom:24px;">' + message + '</p>' +
-    '<button id="modal-ok-btn" style="padding:12px 32px;background:#4CAF50;color:white;border:none;border-radius:12px;font-size:1.2rem;font-weight:bold;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.4);">OK</button>';
-
+  const modal = document.createElement("div");
+  modal.style.cssText = `
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex;
+    align-items: center; justify-content: center; z-index: 9999; opacity: 0;
+    transition: opacity 0.4s ease;
+  `;
+  const inner = document.createElement("div");
+  inner.style.cssText = `
+    background: rgba(30,50,30,0.95); border: 3px solid #4CAF50; border-radius: 16px;
+    padding: 32px 48px; max-width: 80%; text-align: center; color: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7); transform: scale(0.9);
+    transition: transform 0.4s ease;
+  `;
+  inner.innerHTML = `
+    <h2 style="margin-bottom:16px;font-size:1.8rem;">Area Cleared!</h2>
+    <p style="font-size:1.2rem;margin-bottom:24px;">${message}</p>
+    <button id="modal-ok-btn" style="padding:12px 32px;background:#4CAF50;color:white;border:none;border-radius:12px;font-size:1.2rem;font-weight:bold;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.4);">OK</button>
+  `;
   modal.appendChild(inner);
   document.body.appendChild(modal);
 
-  setTimeout(function() {
+  setTimeout(() => {
     modal.style.opacity = "1";
     inner.style.transform = "scale(1)";
   }, 50);
 
-  inner.querySelector("#modal-ok-btn").addEventListener("click", function() {
+  inner.querySelector("#modal-ok-btn").onclick = () => {
     modal.style.opacity = "0";
     inner.style.transform = "scale(0.9)";
-    setTimeout(function() { modal.remove(); }, 400);
-  });
+    setTimeout(() => modal.remove(), 400);
+  };
 
-  modal.addEventListener("click", function(e) {
+  modal.onclick = (e) => {
     if (e.target === modal) {
       modal.style.opacity = "0";
       inner.style.transform = "scale(0.9)";
-      setTimeout(function() { modal.remove(); }, 400);
+      setTimeout(() => modal.remove(), 400);
     }
-  });
+  };
 }
 
-function showMessage(title, message, durationMs) {
-  var modal = document.createElement("div");
-  modal.style.position = "fixed";
-  modal.style.inset = "0";
-  modal.style.background = "rgba(0, 0, 0, 0.65)";
-  modal.style.display = "flex";
-  modal.style.alignItems = "center";
-  modal.style.justifyContent = "center";
-  modal.style.zIndex = "9998";
-  modal.style.opacity = "0";
-  modal.style.transition = "opacity 0.4s ease";
-
-  var innerHTML = '<div style="background: rgba(30, 50, 30, 0.95);border:2px solid #4CAF50;border-radius:16px;padding:24px 32px;max-width:85%;width:320px;text-align:center;color:#e8f5e9;box-shadow:0 8px 24px rgba(0,0,0,0.6);transform:scale(0.92);transition:transform 0.3s ease;">';
-
-  if (title) {
-    innerHTML += '<h3 style="margin:0 0 12px;font-size:1.4rem;color:#81C784;">' + title + '</h3>';
-  }
-
-  innerHTML += '<p style="margin:0 0 20px;font-size:1.1rem;line-height:1.4;">' + message + '</p>';
-  innerHTML += '<button class="close-msg-btn" style="padding:10px 28px;background:#4CAF50;color:white;border:none;border-radius:12px;font-size:1rem;font-weight:600;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.4);">Close</button>';
-  innerHTML += '</div>';
-
+function showMessage(title, message, durationMs = 0) {
+  const modal = document.createElement("div");
+  modal.style.cssText = `
+    position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: flex;
+    align-items: center; justify-content: center; z-index: 9998; opacity: 0;
+    transition: opacity 0.4s ease;
+  `;
+  const innerHTML = `
+    <div style="background: rgba(30,50,30,0.95); border:2px solid #4CAF50; border-radius:16px;
+         padding:24px 32px; max-width:85%; width:320px; text-align:center; color:#e8f5e9;
+         box-shadow:0 8px 24px rgba(0,0,0,0.6); transform:scale(0.92); transition:transform 0.3s ease;">
+      ${title ? `<h3 style="margin:0 0 12px;font-size:1.4rem;color:#81C784;">${title}</h3>` : ''}
+      <p style="margin:0 0 20px;font-size:1.1rem;line-height:1.4;">${message}</p>
+      <button class="close-msg-btn" style="padding:10px 28px;background:#4CAF50;color:white;border:none;border-radius:12px;font-size:1rem;font-weight:600;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.4);">Close</button>
+    </div>
+  `;
   modal.innerHTML = innerHTML;
   document.body.appendChild(modal);
 
-  requestAnimationFrame(function() {
+  requestAnimationFrame(() => {
     modal.style.opacity = "1";
     modal.querySelector("div").style.transform = "scale(1)";
   });
 
-  var close = function() {
+  const close = () => {
     modal.style.opacity = "0";
     modal.querySelector("div").style.transform = "scale(0.92)";
-    setTimeout(function() { modal.remove(); }, 400);
+    setTimeout(() => modal.remove(), 400);
   };
 
-  modal.querySelector(".close-msg-btn").addEventListener("click", close);
-  modal.addEventListener("click", function(e) {
-    if (e.target === modal) close();
-  });
+  modal.querySelector(".close-msg-btn").onclick = close;
+  modal.onclick = (e) => { if (e.target === modal) close(); };
 
   if (durationMs > 0) setTimeout(close, durationMs);
 }
 
 // ─── Reward popup ────────────────────────────────────────────────────────────────
-function showRewardPopup(targetElement, coinsDelta, healthDelta, bonusText, duration) {
+function showRewardPopup(targetElement, coinsDelta, healthDelta, bonusText, duration = 1400) {
   if (!targetElement) return;
+  const safeCoins = Number(coinsDelta) || 0;
+  const safeHealth = Number(healthDelta) || 0;
 
-  var safeCoins = Number(coinsDelta) || 0;
-  var safeHealth = Number(healthDelta) || 0;
-
-  console.log("Reward popup → coins:", safeCoins, "health:", safeHealth, "bonus:", bonusText);
-
-  var popup = document.createElement("div");
-
-  var parts = [];
+  const parts = [];
   if (safeCoins !== 0) {
-    var sign = safeCoins > 0 ? "+" : "";
-    var color = safeCoins > 0 ? '#FFD700' : '#ff5252';
-    parts.push('<span style="color: ' + color + ';">' + sign + Math.abs(safeCoins) + ' 🪙</span>');
+    const sign = safeCoins > 0 ? "+" : "";
+    const color = safeCoins > 0 ? '#FFD700' : '#ff5252';
+    parts.push(`<span style="color:${color};">${sign}${Math.abs(safeCoins)} 🪙</span>`);
   }
   if (safeHealth !== 0) {
-    var sign = safeHealth > 0 ? "+" : "";
-    var color = safeHealth > 0 ? '#4CAF50' : '#ff5252';
-    parts.push('<span style="color: ' + color + ';">' + sign + Math.abs(safeHealth) + '% 🌿</span>');
+    const sign = safeHealth > 0 ? "+" : "";
+    const color = safeHealth > 0 ? '#4CAF50' : '#ff5252';
+    parts.push(`<span style="color:${color};">${sign}${Math.abs(safeHealth)}% 🌿</span>`);
   }
-  if (bonusText) {
-    parts.push('<span style="color: #8D6E63;">' + bonusText + '</span>');
-  }
+  if (bonusText) parts.push(`<span style="color:#8D6E63;">${bonusText}</span>`);
 
+  const popup = document.createElement("div");
   popup.innerHTML = parts.length > 0 ? parts.join("   ") : "[No reward]";
-
-  popup.style.cssText =
-    'position: fixed !important;' +
-    'left: 50% !important;' +
-    'top: 30% !important;' +
-    'transform: translate(-50%, -50%) !important;' +
-    'background: #ff1744 !important;' +
-    'color: white !important;' +
-    'font-size: 3rem !important;' +
-    'font-weight: bold !important;' +
-    'padding: 40px 60px !important;' +
-    'border: 6px solid yellow !important;' +
-    'border-radius: 20px !important;' +
-    'z-index: 99999 !important;' +
-    'box-shadow: 0 0 40px rgba(255,0,0,0.8) !important;' +
-    'opacity: 0;' +
-    'pointer-events: none;' +
-    'transition: all 1.5s ease;';
-
+  popup.style.cssText = `
+    position: fixed !important; left: 50% !important; top: 30% !important;
+    transform: translate(-50%, -50%) !important; background: #ff1744 !important;
+    color: white !important; font-size: 3rem !important; font-weight: bold !important;
+    padding: 40px 60px !important; border: 6px solid yellow !important;
+    border-radius: 20px !important; z-index: 99999 !important;
+    box-shadow: 0 0 40px rgba(255,0,0,0.8) !important; opacity: 0;
+    pointer-events: none; transition: all 1.5s ease;
+  `;
   document.body.appendChild(popup);
-  console.log("Popup appended – innerHTML:", popup.innerHTML);
 
-  requestAnimationFrame(function() {
-    void popup.offsetWidth;
-    popup.style.opacity = "1";
-  });
-
-  setTimeout(function() {
+  requestAnimationFrame(() => { popup.style.opacity = "1"; });
+  setTimeout(() => {
     popup.style.opacity = "0";
-    setTimeout(function() { popup.remove(); }, 500);
-  }, duration || 1400);
+    setTimeout(() => popup.remove(), 500);
+  }, duration);
 }
 
-// ─── Toolbox gallery ─────────────────────────────────────────────────────────────
+// ─── Toolbox & Inventory UIs ─────────────────────────────────────────────────────
 function showToolboxGallery() {
-  var tools = [];
+  const tools = [];
   if (currentPlayer.inventory.spade) tools.push("Spade – Dig tough invasives");
   if (currentPlayer.inventory.sickle) tools.push("Sickle – Harvest delicate natives");
   if (currentPlayer.inventory.scissors) tools.push("Scissors – Cut vines");
 
-  var level = currentPlayer.inventory.toolboxLevel || 1;
-  var capacity = level * 5;
-
-  var html = '<h3>Toolbox (Level ' + level + ' – Capacity: ' + capacity + ')</h3>';
-
+  const level = currentPlayer.inventory.toolboxLevel || 1;
+  const capacity = level * 5;
+  let html = `<h3>Toolbox (Level ${level} – Capacity: ${capacity})</h3>`;
   if (tools.length === 0) {
     html += '<p style="color: #ff9800;">No tools yet. Find or craft some!</p>';
   } else {
-    html += tools.map(function(tool) { return '<div class="gallery-item">' + tool + '</div>'; }).join('');
+    html += tools.map(tool => `<div class="gallery-item">${tool}</div>`).join('');
   }
-
   html += '<p>Upgrade your toolbox to carry more tools!</p>';
-
   showMessage("Toolbox", html, 0);
 }
 
-// ─── Inventory & Seed Packs ─────────────────────────────────────────────────────
 function showInventoryGallery() {
-  var items = [
-    'Soil Clumps: ' + (currentPlayer.inventory.soilClumps || 0),
-    'Fertilizer: ' + (currentPlayer.inventory.fertilizer || 0),
-    'Clay Balls: ' + (currentPlayer.inventory.clayBalls || 0)
+  const items = [
+    `Soil Clumps: ${currentPlayer.inventory.soilClumps || 0}`,
+    `Fertilizer: ${currentPlayer.inventory.fertilizer || 0}`,
+    `Clay Balls: ${currentPlayer.inventory.clayBalls || 0}`
   ];
-
-  var html = '<h3>Inventory</h3>';
-  html += items.map(function(item) { return '<div class="gallery-item">' + item + '</div>'; }).join('');
-
-  if (items.every(function(i) { return i.includes('0'); })) {
+  let html = '<h3>Inventory</h3>';
+  html += items.map(item => `<div class="gallery-item">${item}</div>`).join('');
+  if (items.every(i => i.includes('0'))) {
     html += '<p style="color: #ff9800;">Your inventory is empty. Keep harvesting!</p>';
   }
-
-  html +=
-    '<div style="margin-top:20px;text-align:center;">' +
-      '<button id="open-seed-packs" style="padding:12px 28px;background:#4CAF50;color:white;border:none;border-radius:12px;font-size:1rem;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.4);">Open Seed Packs</button>' +
-      '<p style="font-size:0.9rem;color:#81C784;margin-top:8px;">View your harvested seed varieties here</p>' +
-    '</div>';
-
+  html += `
+    <div style="margin-top:20px;text-align:center;">
+      <button id="open-seed-packs" style="padding:12px 28px;background:#4CAF50;color:white;border:none;border-radius:12px;font-size:1rem;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.4);">Open Seed Packs</button>
+      <p style="font-size:0.9rem;color:#81C784;margin-top:8px;">View your harvested seed varieties here</p>
+    </div>
+  `;
   showMessage("Inventory", html, 0);
 
-  setTimeout(function() {
-    var btn = document.getElementById("open-seed-packs");
-    if (btn) {
-      btn.addEventListener("click", function() {
-        showSeedPacks();
-      });
-    }
+  setTimeout(() => {
+    const btn = document.getElementById("open-seed-packs");
+    if (btn) btn.addEventListener("click", showSeedPacks);
   }, 100);
 }
 
 function showSeedPacks() {
-  var seedSummary = [];
-  var totalSeeds = 0;
-  var seedsData = currentPlayer.inventory.seeds || {};
-  Object.keys(seedsData).forEach(function(parentId) {
-    var seedArray = seedsData[parentId];
-    if (Array.isArray(seedArray)) {
-      var count = seedArray.length;
+  let seedSummary = [];
+  let totalSeeds = 0;
+  const seedsData = currentPlayer.inventory.seeds || {};
+
+  Object.keys(seedsData).forEach(parentId => {
+    const rarities = seedsData[parentId];
+    Object.keys(rarities).forEach(rarity => {
+      const count = rarities[rarity];
       if (count > 0) {
         totalSeeds += count;
-        var displayName = parentId
-          .replace(/-/g, ' ')
-          .split(' ')
-          .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
-          .join(' ');
-        seedSummary.push(displayName + ' Seeds: ' + count);
+        const displayName = parentId.replace(/-/g, ' ')
+          .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        seedSummary.push(`${displayName} (${rarity}): ${count}`);
       }
-    }
+    });
   });
 
-  var html = '<h3>Seed Packs</h3>';
-
+  let html = '<h3>Seed Packs</h3>';
   if (totalSeeds === 0) {
     html += '<p style="color: #ff9800;">No seeds harvested yet. Keep collecting from natives!</p>';
   } else {
     html += '<p style="margin-bottom:16px;">Your collected seed varieties:</p>';
-    html += seedSummary.map(function(line) { return '<div class="gallery-item">' + line + '</div>'; }).join('');
-    html += '<p style="margin-top:16px;font-weight:bold;">Total seeds: ' + totalSeeds + '</p>';
+    html += seedSummary.map(line => `<div class="gallery-item">${line}</div>`).join('');
+    html += `<p style="margin-top:16px;font-weight:bold;">Total seeds: ${totalSeeds}</p>`;
   }
-
   html += '<p style="font-size:0.9rem;color:#81C784;margin-top:20px;">(Rarity & DNA details coming soon — tap to plant in future updates)</p>';
-
   showMessage("Seed Packs", html, 0);
 }
 
 // ─── Render ──────────────────────────────────────────────────────────────────────
 async function renderView() {
-  var container = document.getElementById("game-container");
+  const container = document.getElementById("game-container");
   if (!container) return;
   container.innerHTML = "";
 
   if (currentView === "island") {
-    container.innerHTML =
-      '<img src="assets/backgrounds/island-full.jpg" class="island-bg-img" alt="Island Map">' +
-      '<div id="map-markers"></div>';
+    container.innerHTML = `
+      <img src="assets/backgrounds/island-full.jpg" class="island-bg-img" alt="Island Map">
+      <div id="map-markers"></div>
+    `;
+    const markersContainer = document.getElementById("map-markers");
+    zoneMarkers.forEach(marker => {
+      const zoneData = zonesConfig?.zones?.find(z => z.id === marker.id) || marker;
+      const displayName = zoneData.name || marker.name || marker.id;
+      const zone = zones.find(z => z.id === marker.id);
+      const unlocked = isZoneUnlocked(zone);
 
-    var markersContainer = document.getElementById("map-markers");
-
-    zoneMarkers.forEach(function(marker) {
-      var zone = zones.find(function(z) { return z.id === marker.id; });
-      var unlocked = isZoneUnlocked(zone);
-
-      var markerEl = document.createElement("div");
-      markerEl.className = "map-marker" + (unlocked ? "" : " locked");
-      markerEl.style.left = marker.left + '%';
-      markerEl.style.top = marker.top + '%';
+      const markerEl = document.createElement("div");
+      markerEl.className = `map-marker${unlocked ? "" : " locked"}`;
+      markerEl.style.left = `${marker.left}%`;
+      markerEl.style.top  = `${marker.top}%`;
       markerEl.dataset.zoneId = marker.id;
-      markerEl.innerHTML = '<span class="marker-label">' + marker.name + '</span>';
-
+      markerEl.innerHTML = `<span class="marker-label">${displayName}</span>`;
       if (!unlocked) markerEl.style.opacity = 0.5;
-
       markersContainer.appendChild(markerEl);
     });
-
     updateCoinsDisplay();
-  } else if (currentView.indexOf("zone:") === 0) {
-    var zoneId = currentView.split(":")[1];
-    var zone = zones.find(function(z) { return z.id === zoneId; });
-
-    console.log("Entering zone " + zoneId + " — current health: " + (currentPlayer.zoneHealth[zoneId] || 0));
-
+  } else if (currentView.startsWith("zone:")) {
+    const zoneId = currentView.split(":")[1];
+    const zone = zones.find(z => z.id === zoneId);
     if (!zone || !isZoneUnlocked(zone)) {
       currentView = "island";
       renderView();
       return;
     }
 
-    var health = currentPlayer.zoneHealth[zoneId] || 0;
-
-    var bgPath = "assets/backgrounds/global/sky-overcast.jpg";
+    const health = currentPlayer.zoneHealth[zoneId] || 0;
+    let bgPath = "assets/backgrounds/global/sky-overcast.jpg";
     if (zoneId === "beach") bgPath = "assets/backgrounds/beach/main-day.jpg";
     else if (zoneId === "forest") bgPath = "assets/backgrounds/forest/main-misty.jpg";
     else if (zoneId === "mountain") bgPath = "assets/backgrounds/mountain/main-rocky.jpg";
 
-    container.innerHTML =
-      '<img src="' + bgPath + '" class="zone-bg-img" alt="' + zone.name + ' background">' +
-      '<div class="zone-content">' +
-        '<h2>' + zone.name + '</h2>' +
-        '<p>' + zone.description + '</p>' +
-        '<div class="progress-bar"><div class="progress-fill" style="width: ' + health + '%"></div></div>' +
-        '<p class="health-text">Health: ' + health + '%</p>' +
-        '<h3>Tap to interact:</h3>' +
-        '<div id="entities-list"></div>' +
-        '<button id="back-to-map">Back to Map</button>' +
-      '</div>';
+    container.innerHTML = `
+      <img src="${bgPath}" class="zone-bg-img" alt="${zone.name} background">
+      <div class="zone-content">
+        <h2>${zone.name}</h2>
+        <p>${zone.description || ""}</p>
+        <div class="progress-bar"><div class="progress-fill" style="width: ${health}%"></div></div>
+        <p class="health-text">Health: ${health}%</p>
+        <h3>Tap to interact:</h3>
+        <div id="entities-list"></div>
+        <button id="back-to-map">Back to Map</button>
+      </div>
+    `;
 
-    var list = document.getElementById("entities-list");
-
-    var baseInvasives = invasivesByZone[zoneId] || [];
-    var enrichedInvasives = await Promise.all(
-      baseInvasives.map(async function(inv) {
+    const list = document.getElementById("entities-list");
+    const baseInvasives = invasivesByZone[zoneId] || [];
+    const enrichedInvasives = await Promise.all(
+      baseInvasives.map(async inv => {
         if (inv.isExternal) {
-          var fullDef = await loadEntityDefinition(inv.id, "invasives");
-          if (fullDef) {
-            return { ...inv, ...fullDef, isExternal: true, type: "invasive" };
-          }
-          return { ...inv, type: "invasive" };
+          const fullDef = await loadEntityDefinition(inv.id, "invasives");
+          return fullDef ? { ...inv, ...fullDef, isExternal: true, type: "invasive" } : { ...inv, type: "invasive" };
         }
         return { ...inv, type: "invasive" };
       })
     );
 
-    var baseNatives = nativesByZone[zoneId] || [];
-    var enrichedNatives = await Promise.all(
-      baseNatives.map(async function(nat) {
+    const baseNatives = nativesByZone[zoneId] || [];
+    const enrichedNatives = await Promise.all(
+      baseNatives.map(async nat => {
         if (nat.isExternal) {
-          var fullDef = await loadEntityDefinition(nat.id, "natives");
-          if (fullDef) {
-            return { ...nat, ...fullDef, isExternal: true, type: "native" };
-          }
-          return { ...nat, type: "native" };
+          const fullDef = await loadEntityDefinition(nat.id, "natives");
+          return fullDef ? { ...nat, ...fullDef, isExternal: true, type: "native" } : { ...nat, type: "native" };
         }
         return { ...nat, type: "native" };
       })
     );
 
-    var allEntities = enrichedInvasives.concat(enrichedNatives);
-
+    const allEntities = enrichedInvasives.concat(enrichedNatives);
     list.innerHTML = "";
-    allEntities.forEach(function(entity) {
-      var el = document.createElement("div");
+
+    allEntities.forEach(entity => {
+      const el = document.createElement("div");
       el.className = entity.type === "native" ? "native-item" : "invasive-item";
       el.dataset.entityId = entity.id;
       el.dataset.type = entity.type;
 
-      var imagePath = entity.icon || "";
+      let imagePath = entity.icon || "";
       if (!imagePath) {
-        var nameLower = (entity.name || entity.id || "").toLowerCase();
-        if (nameLower.indexOf("palm") !== -1 || nameLower.indexOf("baby-palm") !== -1) {
+        const nameLower = (entity.name || entity.id || "").toLowerCase();
+        if (nameLower.includes("palm") || nameLower.includes("baby-palm")) {
           imagePath = "assets/entities/natives/palm/palm-baby.png";
-        } else if (nameLower.indexOf("seaweed") !== -1) {
+        } else if (nameLower.includes("seaweed")) {
           imagePath = "assets/entities/invasives/seaweed/seaweed-01.png";
-        } else if (nameLower.indexOf("crabgrass") !== -1 || nameLower.indexOf("alien") !== -1) {
+        } else if (nameLower.includes("crabgrass") || nameLower.includes("alien")) {
           imagePath = "assets/entities/invasives/crabgrass/crabgrass-01.png";
-        } else if (nameLower.indexOf("vine") !== -1) {
+        } else if (nameLower.includes("vine")) {
           imagePath = "assets/entities/invasives/vine/vine-choking-01.png";
-        } else if (nameLower.indexOf("thistle") !== -1) {
+        } else if (nameLower.includes("thistle")) {
           imagePath = "assets/entities/invasives/thistle/thistle-thorny-01.png";
-        } else if (nameLower.indexOf("weed") !== -1) {
+        } else if (nameLower.includes("weed")) {
           imagePath = "assets/entities/invasives/weed-foreign/weed-foreign-01.png";
         } else {
           imagePath = "assets/entities/default.png";
         }
       }
 
-      el.innerHTML =
-        '<img src="' + imagePath + '" class="entity-image" alt="' + (entity.name || entity.id) + '">' +
-        '<div class="entity-name">' + (entity.name || entity.id) + '</div>';
-
+      el.innerHTML = `
+        <img src="${imagePath}" class="entity-image" alt="${entity.name || entity.id}">
+        <div class="entity-name">${entity.name || entity.id}</div>
+      `;
       if (entity.tooltip) el.title = entity.tooltip;
-
       list.appendChild(el);
     });
 
@@ -512,251 +474,202 @@ async function renderView() {
   }
 }
 
-// ─── Fullscreen function ────────────────────────────────────────────────────────
-async function enterFullscreen() {
-  console.log("Fullscreen button clicked — attempting fullscreen");
-
-  var elem = document.documentElement;
-
-  try {
-    console.log("Requesting fullscreen on:", elem);
-    if (elem.requestFullscreen) {
-      await elem.requestFullscreen();
-      console.log("Fullscreen SUCCESS (standard)");
-    } else if (elem.webkitRequestFullscreen) {
-      await elem.webkitRequestFullscreen();
-      console.log("Fullscreen SUCCESS (webkit)");
-    } else if (elem.msRequestFullscreen) {
-      await elem.msRequestFullscreen();
-      console.log("Fullscreen SUCCESS (ms)");
-    } else {
-      console.warn("Fullscreen API not supported in this browser");
-      return;
-    }
-
-    var btn = document.getElementById("fullscreen-btn");
-    if (btn) {
-      btn.style.display = "none";
-      console.log("Fullscreen button hidden");
-    }
-
-    if (screen.orientation && screen.orientation.lock) {
-      await screen.orientation.lock("landscape").catch(function(err) {
-        console.warn("Orientation lock failed:", err);
-      });
-    }
-  } catch (err) {
-    console.error("Fullscreen failed:", err);
-  }
-}
-
 // ─── Game start & click handler ─────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", async function() {
   currentPlayer = loadPlayer();
 
-  // Attach fullscreen listener (runs once on load)
-  var fullscreenBtn = document.getElementById("fullscreen-btn");
+  // Load zone config first
+  await loadZonesConfig();
+
+  // Fullscreen button
+  const fullscreenBtn = document.getElementById("fullscreen-btn");
   if (fullscreenBtn) {
-    console.log("Fullscreen button found and listener attached");
-    fullscreenBtn.addEventListener("click", enterFullscreen);
-  } else {
-    console.warn("Fullscreen button not found in DOM on load");
+    fullscreenBtn.addEventListener("click", async () => {
+      try {
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        }
+        fullscreenBtn.style.display = "none";
+      } catch (err) {
+        console.error("Fullscreen failed:", err);
+      }
+    });
   }
 
   document.addEventListener("click", async function(e) {
-    var t = e.target;
-    console.log("Click detected on:", t.tagName, t.className, t.dataset);
+    const t = e.target;
 
-    // PRE-CLICK: Log ALL zones health right when the click arrives
-    console.log("[PRE-CLICK] All zones health:", JSON.stringify(currentPlayer.zoneHealth));
-
-    // Zone marker (entering a zone)
-    var marker = t.closest(".map-marker, [data-zone-id]");
+    // Zone marker click
+    const marker = t.closest(".map-marker, [data-zone-id]");
     if (marker) {
       e.preventDefault();
-
-      var zoneId = marker.dataset.zoneId;
-      var zone = zones.find(function(z) { return z.id === zoneId; });
-
+      const zoneId = marker.dataset.zoneId;
+      const zone = zones.find(z => z.id === zoneId);
       if (zone && isZoneUnlocked(zone)) {
-        console.log("Switching to zone: " + zoneId + " — health before switch: " + (currentPlayer.zoneHealth[zoneId] || 0));
         savePlayer(currentPlayer);
-        currentView = "zone:" + zoneId;
+        currentView = `zone:${zoneId}`;
         renderView();
-
-        console.log("[POST-SWITCH] All zones health after entering " + zoneId + ":", JSON.stringify(currentPlayer.zoneHealth));
       } else {
         showMessage("Zone Locked", "Complete previous area first!", 5000);
       }
       return;
     }
 
-    // Entity tap (invasive or native)
-    var entityEl = t.closest(".invasive-item, .native-item");
+    // Entity interaction
+    const entityEl = t.closest(".invasive-item, .native-item");
     if (entityEl) {
-      console.log("Entity container clicked:", entityEl.className, entityEl.dataset);
+      const zoneId = currentView.split(":")[1];
+      const entityId = entityEl.dataset.entityId;
+      const entityType = entityEl.dataset.type || "invasive";
 
-      var zoneId = currentView.split(":")[1];
-      var entityId = entityEl.dataset.entityId;
-      var entityType = entityEl.dataset.type || "invasive";
+      if (!entityId) return;
 
-      console.log("→ entityId:", entityId, "type:", entityType);
-
-      if (!entityId) {
-        console.warn("No entityId on element — skipping tap");
-        return;
-      }
-
-      var baseEntity;
+      let baseEntity;
       if (entityType === "native") {
-        baseEntity = nativesByZone[zoneId] ? nativesByZone[zoneId].find(function(i) { return i.id === entityId; }) : null;
+        baseEntity = nativesByZone[zoneId]?.find(i => i.id === entityId);
       } else {
-        baseEntity = invasivesByZone[zoneId] ? invasivesByZone[zoneId].find(function(i) { return i.id === entityId; }) : null;
+        baseEntity = invasivesByZone[zoneId]?.find(i => i.id === entityId);
       }
 
-      if (!baseEntity) {
-        console.warn("No base entity found for id " + entityId + " in " + entityType + "s");
-        return;
-      }
+      if (!baseEntity) return;
 
-      var entity = Object.assign({}, baseEntity, { type: entityType });
+      let entity = { ...baseEntity, type: entityType };
 
       if (baseEntity.isExternal) {
-        var category = entityType === "native" ? "natives" : "invasives";
-        var fullDef = await loadEntityDefinition(entityId, category);
+        const category = entityType === "native" ? "natives" : "invasives";
+        const fullDef = await loadEntityDefinition(entityId, category);
         if (fullDef) {
-          entity = Object.assign(entity, fullDef, { isExternal: true });
+          entity = { ...entity, ...fullDef, isExternal: true };
           entity.coins = Number(fullDef.coins) || baseEntity.coins || (entityType === "native" ? 2 : 5);
           entity.health = Number(fullDef.health) || baseEntity.health || (entityType === "native" ? 3 : 8);
         }
       }
 
-      console.log("Processing " + entityType + ": " + (entity.name || entity.id));
-
-      // Tool condition check
-      var condition = entity.mutable ? entity.mutable.onDestroy ? entity.mutable.onDestroy.condition : null : null;
+      // Tool requirement check
+      const condition = entity.mutable?.onDestroy?.condition;
       if (condition) {
-        var hasTool = false;
-        var toolName = "";
-
+        let hasTool = false;
+        let toolName = "";
         if (condition === "playerHasItem:spade") {
-          hasTool = currentPlayer.inventory.spade === true;
+          hasTool = !!currentPlayer.inventory.spade;
           toolName = "spade";
         } else if (condition === "playerHasItem:sickle") {
-          hasTool = currentPlayer.inventory.sickle === true;
+          hasTool = !!currentPlayer.inventory.sickle;
           toolName = "sickle";
         }
-
         if (!hasTool) {
-          showMessage("Tool Required", entity.mutable.onDestroy.failMessage || "You need a " + toolName + "!", 4000);
+          showMessage("Tool Required", entity.mutable.onDestroy.failMessage || `You need a ${toolName}!`, 4000);
           return;
         }
       }
 
-      // Action: harvest native or remove invasive
+      // ────────────────────── NATIVE HARVEST ──────────────────────
       if (entityType === "native") {
-        var newDna = generateSeedDNA(entity);
+        const parentRarity = entity.dna?.templateDefaults?.rarity || "common";
+        const childRarity = generateChildRarity(parentRarity, zoneId, []);
 
         if (!currentPlayer.inventory.seeds[entity.id]) {
-          currentPlayer.inventory.seeds[entity.id] = [];
+          currentPlayer.inventory.seeds[entity.id] = {};
         }
-
-        currentPlayer.inventory.seeds[entity.id].push({
-          parentId: entity.id,
-          dna: newDna
-        });
+        if (!currentPlayer.inventory.seeds[entity.id][childRarity]) {
+          currentPlayer.inventory.seeds[entity.id][childRarity] = 0;
+        }
+        currentPlayer.inventory.seeds[entity.id][childRarity] += 1;
 
         savePlayer(currentPlayer);
 
-        showRewardPopup(entityEl, 0, 0, "+1 " + newDna.rarity + " " + entity.name + " Seed 🌱", 1600);
+        showRewardPopup(
+          entityEl,
+          0,
+          0,
+          `+1 ${childRarity} ${entity.name} Seed 🌱`,
+          1600
+        );
 
         entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
         entityEl.style.opacity = "0";
         entityEl.style.transform = "scale(0.4) rotate(5deg)";
-
-        setTimeout(function() {
-          entityEl.remove();
-        }, 600);
-
-        console.log("[POST-ACTION] All zones health after native harvest:", JSON.stringify(currentPlayer.zoneHealth));
+        setTimeout(() => entityEl.remove(), 600);
 
         return;
       }
 
-      // Invasive removal
-      var changes = {
+      // ────────────────────── INVASIVE REMOVAL + DROPS ──────────────────────
+      const changes = {
         coins: currentPlayer.coins + (entity.coins || 5),
         zoneHealth: { ...currentPlayer.zoneHealth }
       };
       changes.zoneHealth[zoneId] = Math.min(100, (currentPlayer.zoneHealth[zoneId] || 0) + (entity.health || 8));
-
       updatePlayer(currentPlayer, changes);
 
-      var bonusText = "";
-      if (entity.mutable && entity.mutable.onDestroy && entity.mutable.onDestroy.drop && Array.isArray(entity.mutable.onDestroy.drop)) {
-        var bonusParts = [];
-        entity.mutable.onDestroy.drop.forEach(function(dropRule) {
-          var dropEntity = dropRule.entity;
-          var count = Number(dropRule.count) || 1;
-          var chance = Number(dropRule.chance) || 1;
-          if (Math.random() < chance) {
-            if (dropEntity === "soil-clump") {
-              currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
-              bonusParts.push("+" + count + " Soil Clump 🌱");
-              console.log("Gained " + count + " soil clump(s)");
+      let bonusText = "";
+      if (entity.mutable?.onDestroy?.drop?.length) {
+        const bonusParts = [];
+
+        for (const dropRule of entity.mutable.onDestroy.drop) {
+          const dropEntity = dropRule.entity;
+          const count = Number(dropRule.count) || 1;
+          if (Math.random() >= (dropRule.chance ?? 1)) continue;
+
+          if (dropEntity === "seed" || dropEntity === "seedling") {
+            const parentRarity = entity.dna?.templateDefaults?.rarity || "common";
+            const childRarity = generateChildRarity(parentRarity, zoneId, []);
+
+            if (!currentPlayer.inventory.seeds[entity.id]) {
+              currentPlayer.inventory.seeds[entity.id] = {};
             }
+            currentPlayer.inventory.seeds[entity.id][childRarity] = 
+              (currentPlayer.inventory.seeds[entity.id][childRarity] || 0) + count;
+
+            bonusParts.push(`+${count} ${childRarity} ${dropEntity}`);
+          } else if (dropEntity === "soil-clump") {
+            currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
+            bonusParts.push(`+${count} Soil Clump 🌱`);
           }
-        });
+        }
+
         if (bonusParts.length > 0) bonusText = bonusParts.join("   ");
-        savePlayer(currentPlayer);
       }
 
       entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
       entityEl.style.opacity = "0";
       entityEl.style.transform = "scale(0.4) rotate(5deg)";
 
-      setTimeout(function() {
+      setTimeout(() => {
         entityEl.remove();
-
         showRewardPopup(entityEl, entity.coins || 5, entity.health || 8, bonusText, 1600);
-
         updateCoinsDisplay();
         updateHealthDisplay(changes.zoneHealth[zoneId]);
 
-        var progressFill = document.querySelector(".progress-fill");
-        if (progressFill) progressFill.style.width = changes.zoneHealth[zoneId] + "%";
+        const progressFill = document.querySelector(".progress-fill");
+        if (progressFill) progressFill.style.width = `${changes.zoneHealth[zoneId]}%`;
 
-        var remaining = document.querySelectorAll(".invasive-item, .native-item");
+        const remaining = document.querySelectorAll(".invasive-item, .native-item");
         if (remaining.length === 0) {
-          var currentZoneId = currentView.split(":")[1];
-          var zone = zones.find(function(z) { return z.id === currentZoneId; });
-          var zoneName = zone ? zone.name : "Area";
-          showClearModal(zoneName + " cleared! 🌿");
+          const zoneName = zones.find(z => z.id === zoneId)?.name || "Area";
+          showClearModal(`${zoneName} cleared! 🌿`);
         }
-
-        console.log("[POST-ACTION] All zones health after invasive removal:", JSON.stringify(currentPlayer.zoneHealth));
       }, 600);
+
+      savePlayer(currentPlayer);
+      return;
     }
 
     // Back to map
     if (t.id === "back-to-map") {
-      console.log("Switching back to island — zones before switch:", JSON.stringify(currentPlayer.zoneHealth));
       savePlayer(currentPlayer);
       currentView = "island";
       renderView();
-      console.log("[POST-SWITCH] All zones health after back to island:", JSON.stringify(currentPlayer.zoneHealth));
+      return;
     }
 
     // Toolbox & Inventory
     if (t.closest(".hud-toolbox")) {
       showToolboxGallery();
-      console.log("[POST-TOOLBOX] All zones health:", JSON.stringify(currentPlayer.zoneHealth));
       return;
     }
-
     if (t.closest(".hud-inventory")) {
       showInventoryGallery();
-      console.log("[POST-INVENTORY] All zones health:", JSON.stringify(currentPlayer.zoneHealth));
       return;
     }
   });
