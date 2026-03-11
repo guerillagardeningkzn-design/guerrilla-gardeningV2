@@ -105,6 +105,7 @@ var currentPlayer;
 var currentView = "island";
 
 // ─── Data ────────────────────────────────────────────────────────────────────────
+// ─── Data ────────────────────────────────────────────────────────────────────────
 var invasivesByZone = {
   beach: [
     { id: "seaweed1", name: "Invasive Seaweed", coins: 3, health: 5 },
@@ -124,15 +125,13 @@ var nativesByZone = {
   beach: [
     { id: "baby-palm", isExternal: true }
   ],
-  forest: [],
-  mountain: []
+  forest: [
+    { id: "baby-palm", isExternal: true }     // ← added here
+  ],
+  mountain: [
+    { id: "baby-palm", isExternal: true }     // ← added here
+  ]
 };
-
-var zoneMarkers = [
-  { id: "beach", name: "Sunny Beach", left: 20, top: 75 },
-  { id: "forest", name: "Misty Forest", left: 55, top: 40 },
-  { id: "mountain", name: "Rocky Mountain", left: 85, top: 25 }
-];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────────
 function isZoneUnlocked(zone) {
