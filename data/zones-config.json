@@ -1,0 +1,51 @@
+{
+  "hub": {
+    "id": "island",
+    "name": "Overworld Island",
+    "description": "Central hub — choose a zone to restore"
+  },
+  "zones": [
+    {
+      "id": "beach",
+      "name": "Sunny Beach",
+      "mutationMultiplier": 1.0,
+      "mutationBonusItems": [],
+      "climate": {
+        "sun": "very high",
+        "water": "medium",
+        "soil": { "sand": 80, "clay": 10, "loam": 10 },
+        "tempRange": "warm"
+      },
+      "plantingModifiers": {
+        "beach-affinity-plants": { "growthRate": 1.15, "healthBonus": 1.1 },
+        "forest-affinity-plants": { "growthRate": 0.75 }
+      }
+    },
+    {
+      "id": "forest",
+      "name": "Misty Forest",
+      "mutationMultiplier": 1.6,
+      "mutationBonusItems": ["rare-mist-crystal"],
+      "climate": {
+        "sun": "low",
+        "water": "high",
+        "soil": { "sand": 20, "clay": 30, "loam": 50 },
+        "tempRange": "cool"
+      },
+      "plantingModifiers": { /* ... */ }
+    },
+    {
+      "id": "mountain",
+      "name": "Rocky Mountain",
+      "mutationMultiplier": 1.2,
+      "mutationBonusItems": [],
+      "climate": {
+        "sun": "high",
+        "water": "low",
+        "soil": { "sand": 40, "clay": 50, "loam": 10 },
+        "tempRange": "cold"
+      },
+      "plantingModifiers": { /* ... */ }
+    }
+  ]
+}
