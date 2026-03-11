@@ -14,7 +14,6 @@ async function loadZonesConfig() {
     }
     zonesConfig = await response.json();
     console.log("Zones config loaded:", zonesConfig);
-    
     console.log(`Found ${zonesConfig.zones?.length || 0} zones:`,
       zonesConfig.zones?.map(z => z.name).join(", ") || "none");
   } catch (err) {
@@ -36,19 +35,66 @@ function getCurrentZoneData() {
   }
   if (currentView.startsWith("zone:")) {
     const zoneId = currentView.split(":")[1];
-    return zonesConfig?.zones?.find(z => z.id === zoneId) 
+    return zonesConfig?.zones?.find(z => z.id === zoneId)
       || { id: zoneId, name: zoneId, mutationMultiplier: 1.0 };
   }
   return null;
+}
+
+// ─── Growth system ──────────────────────────────────────────────────────────────
+let growthInterval = null;
+
+function advancePlantGrowth(zoneId, isRealtime = false) {
+  const now = Date.now();
+  const zonePlants = currentPlayer.planted?.[zoneId] || [];
+
+  zonePlants.forEach(plant => {
+    const elapsedMs = now - (plant.lastChecked || plant.plantedAt || now);
+    if (elapsedMs <= 0) return;
+
+    const deltaProgress = elapsedMs / plant.maturationMs;
+    plant.progress = Math.min(1, (plant.progress || 0) + deltaProgress);
+
+    if (plant.progress >= 1) {
+      console.log(`Plant ${plant.entityId} (${plant.rarity}) in ${zoneId} is now mature!`);
+      // TODO: change visual to "ready", allow harvest, etc.
+    }
+
+    plant.lastChecked = now;
+  });
+
+  if (!isRealtime) {
+    savePlayer(currentPlayer); // can be debounced later
+  }
+}
+
+function startGrowthAnimation(zoneId) {
+  if (growthInterval) clearInterval(growthInterval);
+
+  growthInterval = setInterval(() => {
+    if (currentView !== `zone:${zoneId}` || document.hidden) return;
+    advancePlantGrowth(zoneId, true);
+    updateGrowthVisuals(zoneId);
+  }, 30000); // 30 seconds — feel free to change to 10000 or 60000
+}
+
+function stopGrowthAnimation() {
+  if (growthInterval) {
+    clearInterval(growthInterval);
+    growthInterval = null;
+  }
+}
+
+function updateGrowthVisuals(zoneId) {
+  console.log(`Growth visuals updated for zone ${zoneId}`);
+  // TODO: update progress bars, stage images, etc. in the DOM
 }
 
 // ─── Centralized entity loading ─────────────────────────────────────────────────
 const entityCache = new Map();
 
 async function loadEntityDefinition(entityId, category) {
-  if (entityCache.has(entityId)) {
-    return entityCache.get(entityId);
-  }
+  if (entityCache.has(entityId)) return entityCache.get(entityId);
   const path = `data/entities/${category || "invasives"}/${entityId}.json`;
   try {
     const response = await fetch(path);
@@ -62,19 +108,18 @@ async function loadEntityDefinition(entityId, category) {
   }
 }
 
-// ─── Rarity-based seed mutation (simplified for now) ─────────────────────────────
+// ─── Rarity-based seed mutation ─────────────────────────────────────────────────
 function generateChildRarity(parentRarity, currentZoneId, usedBoostItems = []) {
   const rarityLevels = ["common", "uncommon", "rare", "heirloom", "legendary"];
-  const baseUpgradeChance = 0.90;
+  const baseUpgradeChance = 0.90; // your current test value
 
   const zoneData = zonesConfig?.zones?.find(z => z.id === currentZoneId);
   const mutationMultiplier = zoneData?.mutationMultiplier || 1.0;
 
   let itemBoost = 0;
   if (usedBoostItems.includes("fertilizer")) itemBoost += 0.12;
-  // Add more items later
 
-  const upgradeChance = Math.min(0.35, baseUpgradeChance * mutationMultiplier + itemBoost);
+  const upgradeChance = Math.min(0.99, baseUpgradeChance * mutationMultiplier + itemBoost);
 
   let currentIndex = rarityLevels.indexOf(parentRarity);
   if (currentIndex === -1) currentIndex = 0;
@@ -87,7 +132,7 @@ function generateChildRarity(parentRarity, currentZoneId, usedBoostItems = []) {
   const newRarity = rarityLevels[newIndex];
 
   console.log(
-    `%c[SEED] ${parentRarity} → ${newRarity}  (zone: ${currentZoneId}, mult: ×${mutationMultiplier})`,
+    `%c[SEED] ${parentRarity} → ${newRarity} (zone: ${currentZoneId}, mult: ×${mutationMultiplier})`,
     "color: #4CAF50; font-weight: bold"
   );
 
@@ -105,7 +150,6 @@ var currentPlayer;
 var currentView = "island";
 
 // ─── Data ────────────────────────────────────────────────────────────────────────
-// ─── Data ────────────────────────────────────────────────────────────────────────
 var invasivesByZone = {
   beach: [
     { id: "seaweed1", name: "Invasive Seaweed", coins: 3, health: 5 },
@@ -122,26 +166,20 @@ var invasivesByZone = {
 };
 
 var nativesByZone = {
-  beach: [
-    { id: "baby-palm", isExternal: true }
-  ],
-  forest: [
-    { id: "baby-palm", isExternal: true }
-  ],
-  mountain: [
-    { id: "baby-palm", isExternal: true }
-  ]
+  beach:    [{ id: "baby-palm", isExternal: true }],
+  forest:   [{ id: "baby-palm", isExternal: true }],
+  mountain: [{ id: "baby-palm", isExternal: true }]
 };
 
 var zoneMarkers = [
-  { id: "beach", name: "Sunny Beach", left: 20, top: 75 },
-  { id: "forest", name: "Misty Forest", left: 55, top: 40 },
+  { id: "beach",    name: "Sunny Beach",    left: 20, top: 75 },
+  { id: "forest",   name: "Misty Forest",   left: 55, top: 40 },
   { id: "mountain", name: "Rocky Mountain", left: 85, top: 25 }
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────────
 function isZoneUnlocked(zone) {
-  if (!zone.unlockRequirement) return true;
+  if (!zone?.unlockRequirement) return true;
   const req = zone.unlockRequirement;
   const reqHealth = currentPlayer.zoneHealth[req.zone] || 0;
   return reqHealth >= req.health;
@@ -216,7 +254,7 @@ function showMessage(title, message, durationMs = 0) {
     align-items: center; justify-content: center; z-index: 9998; opacity: 0;
     transition: opacity 0.4s ease;
   `;
-  const innerHTML = `
+  modal.innerHTML = `
     <div style="background: rgba(30,50,30,0.95); border:2px solid #4CAF50; border-radius:16px;
          padding:24px 32px; max-width:85%; width:320px; text-align:center; color:#e8f5e9;
          box-shadow:0 8px 24px rgba(0,0,0,0.6); transform:scale(0.92); transition:transform 0.3s ease;">
@@ -225,7 +263,6 @@ function showMessage(title, message, durationMs = 0) {
       <button class="close-msg-btn" style="padding:10px 28px;background:#4CAF50;color:white;border:none;border-radius:12px;font-size:1rem;font-weight:600;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.4);">Close</button>
     </div>
   `;
-  modal.innerHTML = innerHTML;
   document.body.appendChild(modal);
 
   requestAnimationFrame(() => {
@@ -250,7 +287,6 @@ function showRewardPopup(targetElement, coinsDelta, healthDelta, bonusText, dura
   if (!targetElement) return;
   const safeCoins = Number(coinsDelta) || 0;
   const safeHealth = Number(healthDelta) || 0;
-
   const parts = [];
   if (safeCoins !== 0) {
     const sign = safeCoins > 0 ? "+" : "";
@@ -335,15 +371,17 @@ function showSeedPacks() {
 
   Object.keys(seedsData).forEach(parentId => {
     const rarities = seedsData[parentId];
-    Object.keys(rarities).forEach(rarity => {
-      const count = rarities[rarity];
-      if (count > 0) {
-        totalSeeds += count;
-        const displayName = parentId.replace(/-/g, ' ')
-          .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        seedSummary.push(`${displayName} (${rarity}): ${count}`);
-      }
-    });
+    if (typeof rarities === 'object' && rarities !== null) {
+      Object.keys(rarities).forEach(rarity => {
+        const count = Number(rarities[rarity]) || 0;
+        if (count > 0) {
+          totalSeeds += count;
+          const displayName = parentId.replace(/-/g, ' ')
+            .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+          seedSummary.push(`${displayName} (${rarity}): ${count}`);
+        }
+      });
+    }
   });
 
   let html = '<h3>Seed Packs</h3>';
@@ -375,7 +413,6 @@ async function renderView() {
       const displayName = zoneData.name || marker.name || marker.id;
       const zone = zones.find(z => z.id === marker.id);
       const unlocked = isZoneUnlocked(zone);
-
       const markerEl = document.createElement("div");
       markerEl.className = `map-marker${unlocked ? "" : " locked"}`;
       markerEl.style.left = `${marker.left}%`;
@@ -394,6 +431,12 @@ async function renderView() {
       renderView();
       return;
     }
+
+    // Growth catch-up when entering zone
+    advancePlantGrowth(zoneId);
+
+    // Start real-time growth animation
+    startGrowthAnimation(zoneId);
 
     const health = currentPlayer.zoneHealth[zoneId] || 0;
     let bgPath = "assets/backgrounds/global/sky-overcast.jpg";
@@ -479,11 +522,11 @@ async function renderView() {
   }
 }
 
-// ─── Game start & click handler ─────────────────────────────────────────────────
+// ─── Game start & event listeners ────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async function() {
   currentPlayer = loadPlayer();
 
-  // Load zone config first
+  // Load zone config
   await loadZonesConfig();
 
   // Fullscreen button
@@ -501,6 +544,28 @@ document.addEventListener("DOMContentLoaded", async function() {
     });
   }
 
+  // Tab visibility & focus handling for growth
+  document.addEventListener("visibilitychange", () => {
+    if (currentView.startsWith("zone:")) {
+      const zoneId = currentView.split(":")[1];
+      if (document.hidden) {
+        stopGrowthAnimation();
+      } else {
+        advancePlantGrowth(zoneId);     // catch-up
+        startGrowthAnimation(zoneId);   // resume smooth
+      }
+    }
+  });
+
+  window.addEventListener("focus", () => {
+    if (currentView.startsWith("zone:")) {
+      const zoneId = currentView.split(":")[1];
+      advancePlantGrowth(zoneId);
+      startGrowthAnimation(zoneId);
+    }
+  });
+
+  // Main click handler
   document.addEventListener("click", async function(e) {
     const t = e.target;
 
@@ -550,7 +615,6 @@ document.addEventListener("DOMContentLoaded", async function() {
         }
       }
 
-      // Tool requirement check
       const condition = entity.mutable?.onDestroy?.condition;
       if (condition) {
         let hasTool = false;
@@ -568,7 +632,7 @@ document.addEventListener("DOMContentLoaded", async function() {
         }
       }
 
-      // ────────────────────── NATIVE HARVEST ──────────────────────
+      // Native harvest
       if (entityType === "native") {
         const parentRarity = entity.dna?.templateDefaults?.rarity || "common";
         const childRarity = generateChildRarity(parentRarity, zoneId, []);
@@ -576,10 +640,8 @@ document.addEventListener("DOMContentLoaded", async function() {
         if (!currentPlayer.inventory.seeds[entity.id]) {
           currentPlayer.inventory.seeds[entity.id] = {};
         }
-        if (!currentPlayer.inventory.seeds[entity.id][childRarity]) {
-          currentPlayer.inventory.seeds[entity.id][childRarity] = 0;
-        }
-        currentPlayer.inventory.seeds[entity.id][childRarity] += 1;
+        currentPlayer.inventory.seeds[entity.id][childRarity] =
+          (currentPlayer.inventory.seeds[entity.id][childRarity] || 0) + 1;
 
         savePlayer(currentPlayer);
 
@@ -595,11 +657,10 @@ document.addEventListener("DOMContentLoaded", async function() {
         entityEl.style.opacity = "0";
         entityEl.style.transform = "scale(0.4) rotate(5deg)";
         setTimeout(() => entityEl.remove(), 600);
-
         return;
       }
 
-      // ────────────────────── INVASIVE REMOVAL + DROPS ──────────────────────
+      // Invasive removal + drops
       const changes = {
         coins: currentPlayer.coins + (entity.coins || 5),
         zoneHealth: { ...currentPlayer.zoneHealth }
@@ -610,7 +671,6 @@ document.addEventListener("DOMContentLoaded", async function() {
       let bonusText = "";
       if (entity.mutable?.onDestroy?.drop?.length) {
         const bonusParts = [];
-
         for (const dropRule of entity.mutable.onDestroy.drop) {
           const dropEntity = dropRule.entity;
           const count = Number(dropRule.count) || 1;
@@ -619,20 +679,17 @@ document.addEventListener("DOMContentLoaded", async function() {
           if (dropEntity === "seed" || dropEntity === "seedling") {
             const parentRarity = entity.dna?.templateDefaults?.rarity || "common";
             const childRarity = generateChildRarity(parentRarity, zoneId, []);
-
             if (!currentPlayer.inventory.seeds[entity.id]) {
               currentPlayer.inventory.seeds[entity.id] = {};
             }
-            currentPlayer.inventory.seeds[entity.id][childRarity] = 
+            currentPlayer.inventory.seeds[entity.id][childRarity] =
               (currentPlayer.inventory.seeds[entity.id][childRarity] || 0) + count;
-
             bonusParts.push(`+${count} ${childRarity} ${dropEntity}`);
           } else if (dropEntity === "soil-clump") {
             currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
             bonusParts.push(`+${count} Soil Clump 🌱`);
           }
         }
-
         if (bonusParts.length > 0) bonusText = bonusParts.join("   ");
       }
 
@@ -662,6 +719,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     // Back to map
     if (t.id === "back-to-map") {
+      stopGrowthAnimation();
       savePlayer(currentPlayer);
       currentView = "island";
       renderView();
