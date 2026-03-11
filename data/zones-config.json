@@ -13,12 +13,12 @@
       "climate": {
         "sun": "very high",
         "water": "medium",
-        "soil": { "sand": 80, "clay": 10, "loam": 10 },
+        "soil": {
+          "sand": 80,
+          "clay": 10,
+          "loam": 10
+        },
         "tempRange": "warm"
-      },
-      "plantingModifiers": {
-        "beach-affinity-plants": { "growthRate": 1.15, "healthBonus": 1.1 },
-        "forest-affinity-plants": { "growthRate": 0.75 }
       }
     },
     {
@@ -29,10 +29,13 @@
       "climate": {
         "sun": "low",
         "water": "high",
-        "soil": { "sand": 20, "clay": 30, "loam": 50 },
+        "soil": {
+          "sand": 20,
+          "clay": 30,
+          "loam": 50
+        },
         "tempRange": "cool"
-      },
-      "plantingModifiers": { /* ... */ }
+      }
     },
     {
       "id": "mountain",
@@ -42,10 +45,13 @@
       "climate": {
         "sun": "high",
         "water": "low",
-        "soil": { "sand": 40, "clay": 50, "loam": 10 },
+        "soil": {
+          "sand": 40,
+          "clay": 50,
+          "loam": 10
+        },
         "tempRange": "cold"
-      },
-      "plantingModifiers": { /* ... */ }
+      }
     }
   ]
 }
