@@ -606,6 +606,7 @@ document.addEventListener("DOMContentLoaded", function() {
       changes.zones[zoneId] = Math.min(100, (currentPlayer.zones[zoneId] || 0) + (entity.health || 8));
 
       updatePlayer(currentPlayer, changes);
+	  savePlayer(currentPlayer); // ← force save right after
 
       var bonusText = "";
       if (entity.mutable && entity.mutable.onDestroy && entity.mutable.onDestroy.drop && Array.isArray(entity.mutable.onDestroy.drop)) {
