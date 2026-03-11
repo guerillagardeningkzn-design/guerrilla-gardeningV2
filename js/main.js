@@ -126,12 +126,18 @@ var nativesByZone = {
     { id: "baby-palm", isExternal: true }
   ],
   forest: [
-    { id: "baby-palm", isExternal: true }     // ← added here
+    { id: "baby-palm", isExternal: true }
   ],
   mountain: [
-    { id: "baby-palm", isExternal: true }     // ← added here
+    { id: "baby-palm", isExternal: true }
   ]
 };
+
+var zoneMarkers = [
+  { id: "beach", name: "Sunny Beach", left: 20, top: 75 },
+  { id: "forest", name: "Misty Forest", left: 55, top: 40 },
+  { id: "mountain", name: "Rocky Mountain", left: 85, top: 25 }
+];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────────
 function isZoneUnlocked(zone) {
