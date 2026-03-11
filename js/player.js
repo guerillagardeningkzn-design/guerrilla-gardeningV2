@@ -17,6 +17,7 @@ const DEFAULT_PLAYER = {
     scissors: true,
     toolboxLevel: 1
   },
+  planted: {},  // will become { "beach": [{...}], "forest": [...], ... }
   zoneHealth: {          // ← new dedicated property
     beach: 0,
     forest: 0,
@@ -24,6 +25,23 @@ const DEFAULT_PLAYER = {
   },
   lastPlayed: null,
   sessionActions: 0
+  
+  
+  // in DEFAULT_PLAYER
+planted: {},  // e.g. { "beach": [ {...}, {...} ], "forest": [...], ... }
+
+// example plant object
+{
+  id: "unique-plant-id",           // or just incremental counter
+  entityId: "baby-palm",
+  rarity: "uncommon",
+  plantedAt: 1741704000000,        // ms timestamp
+  lastChecked: 1741707600000,      // ms
+  progress: 0.42,                  // 0–1 overall (or per-stage if multi-stage)
+  currentStage: 1,                 // optional if using discrete stages
+  maturationMs: 43200000           // 12 hours in ms, adjusted by rarity/zone
+}
+  
 };
 
 export function loadPlayer() {
@@ -45,6 +63,10 @@ export function loadPlayer() {
           ...DEFAULT_PLAYER.zones
         }
       };
+	  // After the inventory deep merge block
+		if (!loadedPlayer.planted || typeof loadedPlayer.planted !== 'object') {
+			loadedPlayer.planted = {};
+		}
 
       console.log("Loaded zones from save:", loadedPlayer.zones);
 
