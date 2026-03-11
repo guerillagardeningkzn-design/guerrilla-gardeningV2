@@ -65,7 +65,7 @@ async function loadEntityDefinition(entityId, category) {
 // ─── Rarity-based seed mutation (simplified for now) ─────────────────────────────
 function generateChildRarity(parentRarity, currentZoneId, usedBoostItems = []) {
   const rarityLevels = ["common", "uncommon", "rare", "heirloom", "legendary"];
-  const baseUpgradeChance = 0.08;
+  const baseUpgradeChance = 0.90;
 
   const zoneData = zonesConfig?.zones?.find(z => z.id === currentZoneId);
   const mutationMultiplier = zoneData?.mutationMultiplier || 1.0;
