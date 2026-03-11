@@ -1,4 +1,3 @@
-// player.js
 const SAVE_KEY = "guerrillaGardeningSave-v1";
 
 const DEFAULT_PLAYER = {
@@ -22,26 +21,9 @@ const DEFAULT_PLAYER = {
     forest: 0,
     mountain: 0
   },
-  planted: {},          // ← add this line + comma on previous line if missing
+  planted: {},          // Added here — top level, with comma after zoneHealth
   lastPlayed: null,
   sessionActions: 0
-};
-  
-  // in DEFAULT_PLAYER
-planted: {},  // e.g. { "beach": [ {...}, {...} ], "forest": [...], ... }
-
-// example plant object
-{
-  id: "unique-plant-id",           // or just incremental counter
-  entityId: "baby-palm",
-  rarity: "uncommon",
-  plantedAt: 1741704000000,        // ms timestamp
-  lastChecked: 1741707600000,      // ms
-  progress: 0.42,                  // 0–1 overall (or per-stage if multi-stage)
-  currentStage: 1,                 // optional if using discrete stages
-  maturationMs: 43200000           // 12 hours in ms, adjusted by rarity/zone
-}
-  
 };
 
 export function loadPlayer() {
@@ -58,17 +40,17 @@ export function loadPlayer() {
           ...DEFAULT_PLAYER.inventory,
           ...parsed.inventory
         },
-        zones: {
-          ...parsed.zones,
-          ...DEFAULT_PLAYER.zones
+        zoneHealth: {                    // Fixed: was incorrectly named "zones"
+          ...DEFAULT_PLAYER.zoneHealth,
+          ...parsed.zoneHealth
+        },
+        planted: {                       // Safety merge for planted
+          ...DEFAULT_PLAYER.planted,
+          ...parsed.planted
         }
       };
-	  // After the inventory deep merge block
-		if (!loadedPlayer.planted || typeof loadedPlayer.planted !== 'object') {
-			loadedPlayer.planted = {};
-		}
 
-      console.log("Loaded zones from save:", loadedPlayer.zones);
+      console.log("Loaded zones from save:", loadedPlayer.zoneHealth);
 
       const inv = loadedPlayer.inventory;
       if (!inv.seeds || typeof inv.seeds !== 'object') {
@@ -82,6 +64,11 @@ export function loadPlayer() {
       if (typeof inv.wateringCanLevel !== 'number') inv.wateringCanLevel = DEFAULT_PLAYER.inventory.wateringCanLevel;
       if (typeof inv.shovelLevel !== 'number') inv.shovelLevel = DEFAULT_PLAYER.inventory.shovelLevel;
       if (typeof inv.toolboxLevel !== 'number') inv.toolboxLevel = DEFAULT_PLAYER.inventory.toolboxLevel;
+
+      // Extra safety: ensure planted is always an object
+      if (!loadedPlayer.planted || typeof loadedPlayer.planted !== 'object') {
+        loadedPlayer.planted = {};
+      }
 
       console.log("Player data loaded successfully");
     } catch (err) {
@@ -102,7 +89,7 @@ export function savePlayer(currentPlayer) {
     return;
   }
   currentPlayer.lastPlayed = new Date().toISOString();
-  console.log("Saving zones:", currentPlayer.zones);
+  console.log("Saving zones:", currentPlayer.zoneHealth);
   localStorage.setItem(SAVE_KEY, JSON.stringify(currentPlayer));
   console.log("Player data saved");
 }
@@ -124,6 +111,14 @@ export function updatePlayer(currentPlayer, changes) {
     currentPlayer.inventory = {
       ...currentPlayer.inventory,
       ...changes.inventory
+    };
+  }
+
+  // Deep merge planted (if any)
+  if (changes.planted && typeof changes.planted === 'object') {
+    currentPlayer.planted = {
+      ...currentPlayer.planted,
+      ...changes.planted
     };
   }
 
