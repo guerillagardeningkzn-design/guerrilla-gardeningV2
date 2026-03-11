@@ -17,15 +17,15 @@ const DEFAULT_PLAYER = {
     scissors: true,
     toolboxLevel: 1
   },
-   zoneHealth: {          // ← new dedicated property
+  zoneHealth: {
     beach: 0,
     forest: 0,
     mountain: 0
   },
-  planted: {},
+  planted: {},          // ← add this line + comma on previous line if missing
   lastPlayed: null,
   sessionActions: 0
-  
+};
   
   // in DEFAULT_PLAYER
 planted: {},  // e.g. { "beach": [ {...}, {...} ], "forest": [...], ... }
