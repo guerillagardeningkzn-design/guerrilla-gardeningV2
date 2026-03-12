@@ -114,18 +114,18 @@ function updateGrowthVisuals(zoneId) {
   });
 }
 
-// ─── Editor-ready growth parameters (fallback to legacy values) ────────────────
+// ─── Editor-ready growth parameters ─────────────────────────────────────────────
 async function getPlantGrowthParams(entityId, rarity) {
   const entityDef = await loadEntityDefinition(entityId, "natives");
   if (entityDef?.growth?.baseMaturationSeconds) {
     let ms = entityDef.growth.baseMaturationSeconds * 1000;
     const mod = entityDef.growth.rarityModifiers?.[rarity] || 1.0;
     ms *= mod;
-    console.log(`Using JSON growth params for ${entityId} (${rarity}): ${ms/1000}s`);
+    console.log(`Using JSON growth: ${entityId} (${rarity}) → ${ms/1000}s`);
     return ms;
   }
 
-  console.log(`Using fallback growth params for ${entityId} (${rarity})`);
+  console.log(`Fallback growth: ${entityId} (${rarity})`);
   let maturationMs = 60 * 1000;
   if (rarity === "uncommon") maturationMs *= 0.8;
   if (rarity === "rare") maturationMs *= 0.6;
@@ -134,7 +134,7 @@ async function getPlantGrowthParams(entityId, rarity) {
   return maturationMs;
 }
 
-// ─── Centralized entity loading ─────────────────────────────────────────────────
+// ─── Entity loading ─────────────────────────────────────────────────────────────
 const entityCache = new Map();
 
 async function loadEntityDefinition(entityId, category) {
@@ -142,17 +142,17 @@ async function loadEntityDefinition(entityId, category) {
   const path = `data/entities/${category || "invasives"}/${entityId}.json`;
   try {
     const response = await fetch(path);
-    if (!response.ok) throw new Error(`Entity ${entityId} not found in ${category}`);
+    if (!response.ok) throw new Error(`Entity ${entityId} not found`);
     const data = await response.json();
     entityCache.set(entityId, data);
     return data;
   } catch (err) {
-    console.error("Failed to load entity:", entityId, err);
+    console.error("Load entity failed:", entityId, err);
     return null;
   }
 }
 
-// ─── Rarity-based seed mutation ─────────────────────────────────────────────────
+// ─── Seed mutation ──────────────────────────────────────────────────────────────
 function generateChildRarity(parentRarity, currentZoneId, usedBoostItems = []) {
   const rarityLevels = ["common", "uncommon", "rare", "heirloom", "legendary"];
   const baseUpgradeChance = 0.90;
@@ -161,30 +161,21 @@ function generateChildRarity(parentRarity, currentZoneId, usedBoostItems = []) {
   let itemBoost = 0;
   if (usedBoostItems.includes("fertilizer")) itemBoost += 0.12;
   const upgradeChance = Math.min(0.99, baseUpgradeChance * mutationMultiplier + itemBoost);
-  let currentIndex = rarityLevels.indexOf(parentRarity);
-  if (currentIndex === -1) currentIndex = 0;
+  let currentIndex = rarityLevels.indexOf(parentRarity) !== -1 ? rarityLevels.indexOf(parentRarity) : 0;
   let newIndex = currentIndex;
   if (Math.random() < upgradeChance) {
     newIndex = Math.min(currentIndex + 1, rarityLevels.length - 1);
   }
   const newRarity = rarityLevels[newIndex];
-  console.log(
-    `%c[SEED] ${parentRarity} → ${newRarity} (zone: ${currentZoneId}, mult: ×${mutationMultiplier})`,
-    "color: #4CAF50; font-weight: bold"
-  );
-  showMessage(
-    "New Seed!",
-    `A ${newRarity} seed was created!`,
-    2200
-  );
+  console.log(`[SEED] ${parentRarity} → ${newRarity} (zone: ${currentZoneId}, mult: ×${mutationMultiplier})`);
+  showMessage("New Seed!", `A ${newRarity} seed was created!`, 2200);
   return newRarity;
 }
 
-// ─── Global state ────────────────────────────────────────────────────────────────
+// ─── Global state & data ────────────────────────────────────────────────────────
 var currentPlayer;
 var currentView = "island";
 
-// ─── Data ────────────────────────────────────────────────────────────────────────
 var invasivesByZone = {
   beach: [
     { id: "seaweed1", name: "Invasive Seaweed", coins: 3, health: 5 },
@@ -428,7 +419,7 @@ function showSeedPacks() {
 
   html += `
     <div style="margin-top:24px; text-align:center; padding:12px; background:rgba(255,255,255,0.08); border-radius:12px;">
-      <button id="test-plant-seed" style="padding:14px 32px; background:#2196F3; color:white; border:none; border-radius:999px; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 12px rgba(33,150,243,0.4);">
+      <button id="test-plant-seed" style="padding:14px 32px; background:#2196F3; color:white; border:none;border-radius:999px; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 12px rgba(33,150,243,0.4);">
         🌱 Plant Random Seed (debug)
       </button>
       <p style="font-size:0.85rem; color:#81C784; margin-top:8px;">
@@ -489,7 +480,9 @@ function showSeedPacks() {
 
         savePlayer(currentPlayer);
 
-        // Refresh seed packs UI to show updated counts
+        // Close current modal and refresh seed packs UI
+        const currentModal = document.querySelector('div[style*="position: fixed; inset: 0"]');
+        if (currentModal) currentModal.remove();
         showSeedPacks();
 
         showMessage(
@@ -622,9 +615,8 @@ async function renderView() {
       list.appendChild(el);
     });
 
-    // Render planted growing plants (now tappable when mature)
     const plantedInZone = currentPlayer.planted?.[zoneId] || [];
-    plantedInZone.forEach((plant) => {
+    plantedInZone.forEach(plant => {
       const uniqueId = `planted-${zoneId}-${plant.id}`;
       const el = document.createElement("div");
       el.id = uniqueId;
