@@ -82,14 +82,9 @@ function updateGrowthVisuals(zoneId) {
   const now = Date.now();
   const zonePlants = currentPlayer.planted?.[zoneId] || [];
 
-  console.log(`[LIVE] Zone ${zoneId} - ${zonePlants.length} plants`);
-
   zonePlants.forEach(plant => {
     const plantEl = document.getElementById(`planted-${zoneId}-${plant.id}`);
-    if (!plantEl) {
-      console.log(`[LIVE] Plant ${plant.id} element missing`);
-      return;
-    }
+    if (!plantEl) return;
 
     const elapsedMs = now - plant.lastChecked;
     if (elapsedMs <= 0) return;
@@ -97,30 +92,23 @@ function updateGrowthVisuals(zoneId) {
     const deltaProgress = elapsedMs / plant.maturationMs;
     const currentProgress = Math.min(1, plant.progress + deltaProgress);
 
-    // Save
     plant.progress = currentProgress;
     plant.lastChecked = now;
 
-    // Progress bar - aggressive repaint
     const progressFill = plantEl.querySelector(".planted-progress-fill");
     if (progressFill) {
-      progressFill.style.transition = 'none';               // disable animation
-      progressFill.style.width = `${currentProgress * 100}%`; // set width
-      progressFill.offsetHeight;                            // reflow 1
-      progressFill.style.transition = 'width 1.8s ease-out'; // restore animation
-      progressFill.style.width = `${currentProgress * 100}%`; // set again to trigger transition
-      progressFill.offsetHeight;                            // reflow 2
-      console.log(`[LIVE] Bar set to ${(currentProgress * 100).toFixed(0)}% for ${plant.id}`);
+      progressFill.style.width = `${currentProgress * 100}%`;
+      // Single minimal reflow — enough for most browsers
+      progressFill.offsetHeight;
     }
 
-    // Emoji & text - use textContent for reliability
     const emojiEl = plantEl.querySelector(".stage-emoji");
     if (emojiEl) {
       let stageEmoji = "🌱";
       if (currentProgress >= 0.25) stageEmoji = "🌿";
       if (currentProgress >= 0.60) stageEmoji = "🌴";
       if (currentProgress >= 1.00) stageEmoji = "🌴✨";
-      emojiEl.textContent = stageEmoji;  // use textContent instead of innerHTML
+      emojiEl.innerHTML = stageEmoji;
     }
 
     const textEl = plantEl.querySelector(".progress-text");
