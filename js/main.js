@@ -80,8 +80,60 @@ function stopGrowthAnimation() {
 }
 
 function updateGrowthVisuals(zoneId) {
-  console.log(`Growth visuals updated for zone ${zoneId}`);
-  // TODO: update progress bars, stage images, etc. in the DOM
+  const now = Date.now();
+  const zonePlants = currentPlayer.planted?.[zoneId] || [];
+
+  zonePlants.forEach((plant, index) => {
+    const plantEl = document.getElementById(`planted-${zoneId}-${index}`);
+    if (!plantEl) return;
+
+    const elapsedMs = now - (plant.lastChecked || plant.plantedAt || now);
+    const deltaProgress = elapsedMs / plant.maturationMs;
+    const currentProgress = Math.min(1, (plant.progress || 0) + deltaProgress);
+
+    // Update progress bar
+    const progressFill = plantEl.querySelector(".planted-progress-fill");
+    if (progressFill) {
+      progressFill.style.width = `${currentProgress * 100}%`;
+    }
+
+    // Update text and emoji
+    const emojiEl = plantEl.querySelector(".stage-emoji");
+    const textEl = plantEl.querySelector(".progress-text");
+
+    let stageEmoji = "🌱";
+    let stageName = "Seed";
+    let stageColor = "#81C784";
+
+    if (currentProgress >= 0.25) {
+      stageEmoji = "🌿";
+      stageName = "Sprout";
+    }
+    if (currentProgress >= 0.60) {
+      stageEmoji = "🌴";
+      stageName = "Young";
+    }
+    if (currentProgress >= 1.00) {
+      stageEmoji = "🌴✨";
+      stageName = "Mature";
+      stageColor = "#FFD700";
+    }
+
+    if (emojiEl) emojiEl.innerHTML = stageEmoji;
+    if (textEl) {
+      textEl.innerHTML = currentProgress >= 1 
+        ? 'Ready to Harvest!' 
+        : `${stageName} – ${(currentProgress * 100).toFixed(0)}%`;
+      textEl.style.color = stageColor;
+    }
+
+    // Update saved progress (so catch-up works correctly)
+    plant.progress = currentProgress;
+    plant.lastChecked = now;
+  });
+
+  // Optional: only save every few updates to reduce writes
+  // savePlayer(currentPlayer); // ← uncomment later if needed
 }
 
 // ─── Editor-ready growth parameters (fallback to legacy values) ────────────────
@@ -602,37 +654,37 @@ async function renderView() {
       list.appendChild(el);
     });
 
-    // ────────────── Render planted growing plants (editor-ready stages) ──────────────
+    // ────────────── Render planted growing plants (now with live-update IDs) ──────────────
 const plantedInZone = currentPlayer.planted?.[zoneId] || [];
 plantedInZone.forEach((plant, index) => {
+  const uniqueId = `planted-${zoneId}-${index}`; // unique ID for live updates
+
   const el = document.createElement("div");
+  el.id = uniqueId;                             // ← important: add ID
   el.className = "native-item planted-item";
   el.dataset.plantIndex = index;
 
-  // ─── Stage logic (will come from JSON later) ───
-  let stageEmoji = "🌱"; // seed
+  // Initial stage (will be updated live later)
+  let stageEmoji = "🌱";
   let stageName = "Seed";
-  let stageColor = "#81C784"; // green
+  let stageColor = "#81C784";
 
   if (plant.progress >= 0.25) {
-    stageEmoji = "🌿"; // sprout
+    stageEmoji = "🌿";
     stageName = "Sprout";
   }
   if (plant.progress >= 0.60) {
-    stageEmoji = "🌴"; // young palm
+    stageEmoji = "🌴";
     stageName = "Young";
   }
   if (plant.progress >= 1.00) {
-    stageEmoji = "🌴✨"; // mature
+    stageEmoji = "🌴✨";
     stageName = "Mature";
-    stageColor = "#FFD700"; // gold
+    stageColor = "#FFD700";
   }
 
-  // Future editor format: load from entity JSON
-  // For now we use emoji – later replace with <img src="...">
-
   el.innerHTML = `
-    <div style="font-size:3.2rem; margin-bottom:8px;">
+    <div style="font-size:3.2rem; margin-bottom:8px;" class="stage-emoji">
       ${stageEmoji}
     </div>
     <div class="entity-name" style="font-weight:600;">
@@ -641,7 +693,7 @@ plantedInZone.forEach((plant, index) => {
     <div class="planted-progress">
       <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
     </div>
-    <div style="font-size:0.95rem; color: ${stageColor}; margin-top:8px;">
+    <div style="font-size:0.95rem; color: ${stageColor}; margin-top:8px;" class="progress-text">
       ${plant.progress >= 1 ? 'Ready to Harvest!' : stageName + ' – ' + (plant.progress * 100).toFixed(0) + '%'}
     </div>
   `;
