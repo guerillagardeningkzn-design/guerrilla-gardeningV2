@@ -435,7 +435,13 @@ function showSeedPacks() {
         if (availableRarities.length === 0) return;
 
         const chosenRarity = availableRarities[Math.floor(Math.random() * availableRarities.length)];
+		et maturationMs = 60 * 1000; // 60 seconds base – change to 30*1000 or 120*1000 as needed
 
+		// Rarity bonus (optional) – makes better seeds grow faster
+		if (chosenRarity === "uncommon") maturationMs *= 0.8;
+		if (chosenRarity === "rare")     maturationMs *= 0.6;
+		if (chosenRarity === "heirloom") maturationMs *= 0.45;
+		if (chosenRarity === "legendary") maturationMs *= 0.3;
         // Consume one seed
         currentPlayer.inventory.seeds[chosenType][chosenRarity] -= 1;
         if (currentPlayer.inventory.seeds[chosenType][chosenRarity] <= 0) {
@@ -604,14 +610,19 @@ plantedInZone.forEach((plant, index) => {
 
   // Simple placeholder visual + progress
   el.innerHTML = `
-    <div style="font-size:3rem; margin-bottom:4px;">🌱</div>
-    <div class="entity-name" style="font-weight:bold;">
-      ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
-    </div>
-    <div style="font-size:0.9rem; color:#81C784; margin-top:6px;">
-      Growth: ${(plant.progress * 100).toFixed(0)}%
-    </div>
-  `;
+  <div style="font-size:2.8rem; margin-bottom:6px;">
+    ${plant.progress >= 1 ? '🌴✨' : '🌱'}
+  </div>
+  <div class="entity-name" style="font-weight:600;">
+    ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
+  </div>
+  <div class="planted-progress">
+    <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
+  </div>
+  <div style="font-size:0.9rem; color: ${plant.progress >= 1 ? '#FFD700' : '#81C784'}; margin-top:6px;">
+    ${plant.progress >= 1 ? 'Ready to Harvest!' : (plant.progress * 100).toFixed(0) + '% grown'}
+  </div>
+`;
 
   // Random-ish position so they don't all stack
   el.style.position = "absolute";
