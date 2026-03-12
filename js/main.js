@@ -602,35 +602,57 @@ async function renderView() {
       list.appendChild(el);
     });
 
-    // ────────────── Render planted growing plants ──────────────
-    const plantedInZone = currentPlayer.planted?.[zoneId] || [];
-    plantedInZone.forEach((plant, index) => {
-      const el = document.createElement("div");
-      el.className = "native-item planted-item";
-      el.dataset.plantIndex = index;
+    // ────────────── Render planted growing plants (editor-ready stages) ──────────────
+const plantedInZone = currentPlayer.planted?.[zoneId] || [];
+plantedInZone.forEach((plant, index) => {
+  const el = document.createElement("div");
+  el.className = "native-item planted-item";
+  el.dataset.plantIndex = index;
 
-      el.innerHTML = `
-        <div style="font-size:2.8rem; margin-bottom:6px;">
-          ${plant.progress >= 1 ? '🌴✨' : '🌱'}
-        </div>
-        <div class="entity-name" style="font-weight:600;">
-          ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
-        </div>
-        <div class="planted-progress">
-          <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
-        </div>
-        <div style="font-size:0.9rem; color: ${plant.progress >= 1 ? '#FFD700' : '#81C784'}; margin-top:6px;">
-          ${plant.progress >= 1 ? 'Ready to Harvest!' : (plant.progress * 100).toFixed(0) + '% grown'}
-        </div>
-      `;
+  // ─── Stage logic (will come from JSON later) ───
+  let stageEmoji = "🌱"; // seed
+  let stageName = "Seed";
+  let stageColor = "#81C784"; // green
 
-      el.style.position = "absolute";
-      el.style.left = `${15 + Math.random() * 70}%`;
-      el.style.top  = `${15 + Math.random() * 60}%`;
-      el.style.zIndex = "5";
+  if (plant.progress >= 0.25) {
+    stageEmoji = "🌿"; // sprout
+    stageName = "Sprout";
+  }
+  if (plant.progress >= 0.60) {
+    stageEmoji = "🌴"; // young palm
+    stageName = "Young";
+  }
+  if (plant.progress >= 1.00) {
+    stageEmoji = "🌴✨"; // mature
+    stageName = "Mature";
+    stageColor = "#FFD700"; // gold
+  }
 
-      list.appendChild(el);
-    });
+  // Future editor format: load from entity JSON
+  // For now we use emoji – later replace with <img src="...">
+
+  el.innerHTML = `
+    <div style="font-size:3.2rem; margin-bottom:8px;">
+      ${stageEmoji}
+    </div>
+    <div class="entity-name" style="font-weight:600;">
+      ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
+    </div>
+    <div class="planted-progress">
+      <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
+    </div>
+    <div style="font-size:0.95rem; color: ${stageColor}; margin-top:8px;">
+      ${plant.progress >= 1 ? 'Ready to Harvest!' : stageName + ' – ' + (plant.progress * 100).toFixed(0) + '%'}
+    </div>
+  `;
+
+  el.style.position = "absolute";
+  el.style.left = `${15 + (index * 22) % 70}%`;
+  el.style.top  = `${20 + (index * 18) % 55}%`;
+  el.style.zIndex = "6";
+
+  list.appendChild(el);
+});
 
     updateCoinsDisplay();
     updateHealthDisplay(health);
