@@ -781,12 +781,73 @@ document.addEventListener("DOMContentLoaded", async function() {
       return;
     }
 
-    // Entity interaction
-    const entityEl = t.closest(".invasive-item, .native-item");
+    // ────────────── Entity or planted plant tap ──────────────
+    const entityEl = t.closest(".invasive-item, .native-item, .planted-item");
     if (entityEl) {
       const zoneId = currentView.split(":")[1];
       const entityId = entityEl.dataset.entityId;
       const entityType = entityEl.dataset.type || "invasive";
+	  
+	  if (entityEl) {
+  const zoneId = currentView.split(":")[1];
+
+  // Check if it's a planted plant
+  if (entityEl.classList.contains("planted-item")) {
+    const plantIndex = Number(entityEl.dataset.plantIndex);
+    const plant = currentPlayer.planted?.[zoneId]?.[plantIndex];
+
+    if (!plant || plant.progress < 1) {
+      showMessage("Not Ready", "This plant is not mature yet.", 3000);
+      return;
+    }
+
+    // Prevent double-tap
+    if (entityEl.dataset.harvesting) return;
+    entityEl.dataset.harvesting = "true";
+
+    // Rewards (simple for now – will move to JSON later)
+    const coinsReward = 8 + (plant.rarity === "uncommon" ? 4 : 0) + (plant.rarity === "rare" ? 8 : 0);
+    const healthReward = 12;
+    const seedChance = 0.35 + (plant.rarity === "uncommon" ? 0.1 : 0) + (plant.rarity === "rare" ? 0.2 : 0);
+
+    currentPlayer.coins += coinsReward;
+    currentPlayer.zoneHealth[zoneId] = Math.min(100, (currentPlayer.zoneHealth[zoneId] || 0) + healthReward);
+
+    let bonusText = `+${coinsReward} 🪙 +${healthReward}% 🌿`;
+
+    if (Math.random() < seedChance) {
+      const parentRarity = plant.rarity;
+      const childRarity = generateChildRarity(parentRarity, zoneId, []);
+      if (!currentPlayer.inventory.seeds[plant.entityId]) {
+        currentPlayer.inventory.seeds[plant.entityId] = {};
+      }
+      currentPlayer.inventory.seeds[plant.entityId][childRarity] =
+        (currentPlayer.inventory.seeds[plant.entityId][childRarity] || 0) + 1;
+      bonusText += ` +1 ${childRarity} seed 🌱`;
+    }
+
+    // Show reward popup
+    showRewardPopup(entityEl, coinsReward, healthReward, bonusText, 1800);
+
+    // Remove plant from data
+    currentPlayer.planted[zoneId].splice(plantIndex, 1);
+    if (currentPlayer.planted[zoneId].length === 0) {
+      delete currentPlayer.planted[zoneId];
+    }
+
+    savePlayer(currentPlayer);
+
+    // Visual fade-out
+    entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+    entityEl.style.opacity = "0";
+    entityEl.style.transform = "scale(0.5) rotate(10deg)";
+    setTimeout(() => entityEl.remove(), 600);
+
+    // Update zone health display
+    updateHealthDisplay(currentPlayer.zoneHealth[zoneId]);
+
+    return;
+  }
 
       if (!entityId) return;
 
