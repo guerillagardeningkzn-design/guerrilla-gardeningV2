@@ -66,11 +66,65 @@ function startGrowthAnimation(zoneId) {
   if (growthInterval) clearInterval(growthInterval);
   growthInterval = setInterval(() => {
     if (currentView !== `zone:${zoneId}` || document.hidden) return;
-    advancePlantGrowth(zoneId, true);
-    updateGrowthVisuals(zoneId);
-  }, 2000); // 2 seconds
-}
 
+    // Update data model
+    advancePlantGrowth(zoneId, true);
+
+    // Re-render ONLY the planted plants section (fast & reliable)
+    const list = document.getElementById("entities-list");
+    if (list) {
+      // Clear only planted items (keep invasives/natives)
+      document.querySelectorAll('.planted-item').forEach(el => el.remove());
+
+      // Re-add all planted plants from current data
+      const plantedInZone = currentPlayer.planted?.[zoneId] || [];
+      plantedInZone.forEach(plant => {
+        const uniqueId = `planted-${zoneId}-${plant.id}`;
+        const el = document.createElement("div");
+        el.id = uniqueId;
+        el.className = "native-item planted-item";
+
+        if (plant.progress >= 1) {
+          el.style.cursor = "pointer";
+          el.style.borderColor = "#FFD700";
+          el.style.boxShadow = "0 0 15px #FFD700";
+          el.title = "Tap to harvest!";
+        }
+
+        let stageEmoji = "🌱";
+        let stageName = "Seed";
+        let stageColor = "#81C784";
+        if (plant.progress >= 0.25) { stageEmoji = "🌿"; stageName = "Sprout"; }
+        if (plant.progress >= 0.60) { stageEmoji = "🌴"; stageName = "Young"; }
+        if (plant.progress >= 1.00) { stageEmoji = "🌴✨"; stageName = "Mature"; stageColor = "#FFD700"; }
+
+        el.innerHTML = `
+          <div class="stage-emoji" style="font-size:3.2rem; margin-bottom:8px;">
+            ${stageEmoji}
+          </div>
+          <div class="entity-name" style="font-weight:600;">
+            ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
+          </div>
+          <div class="planted-progress">
+            <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
+          </div>
+          <div class="progress-text" style="font-size:0.95rem; color: ${stageColor}; margin-top:8px;">
+            ${plant.progress >= 1 ? 'Ready to Harvest!' : stageName}
+          </div>
+        `;
+
+        el.style.position = "absolute";
+        el.style.left = `${Math.random() * 80 + 10}%`;
+        el.style.top = `${Math.random() * 60 + 20}%`;
+        el.style.zIndex = "6";
+
+        list.appendChild(el);
+      });
+
+      console.log(`[LIVE RENDER] Re-rendered ${plantedInZone.length} planted plants in ${zoneId}`);
+    }
+  }, 2000);
+}
 function stopGrowthAnimation() {
   if (growthInterval) {
     clearInterval(growthInterval);
