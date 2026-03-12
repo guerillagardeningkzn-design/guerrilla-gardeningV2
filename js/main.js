@@ -82,14 +82,11 @@ function updateGrowthVisuals(zoneId) {
   const now = Date.now();
   const zonePlants = currentPlayer.planted?.[zoneId] || [];
 
-  console.log(`[LIVE UPDATE] Zone ${zoneId} - ${zonePlants.length} plants active`);
+  console.log(`[LIVE] Zone ${zoneId} - ${zonePlants.length} plants`);
 
   zonePlants.forEach(plant => {
     const plantEl = document.getElementById(`planted-${zoneId}-${plant.id}`);
-    if (!plantEl) {
-      console.log(`[LIVE UPDATE] Plant ${plant.id} element missing`);
-      return;
-    }
+    if (!plantEl) return;
 
     const elapsedMs = now - plant.lastChecked;
     if (elapsedMs <= 0) return;
@@ -97,26 +94,23 @@ function updateGrowthVisuals(zoneId) {
     const deltaProgress = elapsedMs / plant.maturationMs;
     const currentProgress = Math.min(1, plant.progress + deltaProgress);
 
-    // Save progress
     plant.progress = currentProgress;
     plant.lastChecked = now;
 
-    // Progress bar update
     const progressFill = plantEl.querySelector(".planted-progress-fill");
     if (progressFill) {
-      // Force full repaint sequence
-      progressFill.style.transition = 'none';           // disable animation momentarily
-      progressFill.style.width = '0%';                  // reset
-      progressFill.offsetHeight;                        // force reflow
-      progressFill.style.transition = 'width 1.9s ease-out'; // restore animation
-      progressFill.style.width = `${currentProgress * 100}%`; // set new width
-      progressFill.offsetHeight;                        // force reflow again
-      console.log(`[LIVE UPDATE] Forced bar to ${(currentProgress * 100).toFixed(0)}% for ${plant.id}`);
-    } else {
-      console.log(`[LIVE UPDATE] .planted-progress-fill MISSING in ${plant.id}`);
+      // Remove transition to force instant change
+      progressFill.style.transition = 'none';
+      // Reset and set new width
+      progressFill.style.width = '0%';
+      progressFill.offsetHeight; // reflow 1
+      progressFill.style.width = `${currentProgress * 100}%`;
+      progressFill.offsetHeight; // reflow 2
+      // Restore smooth transition for next updates
+      progressFill.style.transition = 'width 1.9s ease-out';
+      console.log(`[LIVE] Bar forced to ${(currentProgress * 100).toFixed(0)}%`);
     }
 
-    // Emoji update
     const emojiEl = plantEl.querySelector(".stage-emoji");
     if (emojiEl) {
       let stageEmoji = "🌱";
@@ -126,7 +120,6 @@ function updateGrowthVisuals(zoneId) {
       emojiEl.innerHTML = stageEmoji;
     }
 
-    // Text update
     const textEl = plantEl.querySelector(".progress-text");
     if (textEl) {
       let stageName = "Seed";

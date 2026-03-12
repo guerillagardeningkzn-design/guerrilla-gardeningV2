@@ -375,5 +375,5 @@ html {
   width: 0%;
   background: linear-gradient(to right, #4CAF50, #8BC34A);
   transition: width 1.9s ease-out;
-  will-change: width;
+  min-width: 1px; /* prevents disappearing at very low % */
 }
