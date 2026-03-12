@@ -78,21 +78,7 @@ function stopGrowthAnimation() {
   }
 }
 
-planted-progress {
-  width: 100%;
-  height: 12px;               /* taller so it's easy to see */
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 6px;
-  overflow: hidden;
-  margin: 8px 0;
-}
 
-.planted-progress-fill {
-  height: 100%;
-  width: 0%;                  /* starts at 0 */
-  background: linear-gradient(to right, #4CAF50, #8BC34A);
-  transition: width 1.8s ease-out;  /* smooth animation */
-}
 
 // ─── Editor-ready growth parameters ─────────────────────────────────────────────
 async function getPlantGrowthParams(entityId, rarity) {
