@@ -134,7 +134,7 @@ async function getPlantGrowthParams(entityId, rarity) {
   return maturationMs;
 }
 
-// ─── Entity loading ─────────────────────────────────────────────────────────────
+// ─── Centralized entity loading ─────────────────────────────────────────────────
 const entityCache = new Map();
 
 async function loadEntityDefinition(entityId, category) {
@@ -142,17 +142,17 @@ async function loadEntityDefinition(entityId, category) {
   const path = `data/entities/${category || "invasives"}/${entityId}.json`;
   try {
     const response = await fetch(path);
-    if (!response.ok) throw new Error(`Entity ${entityId} not found`);
+    if (!response.ok) throw new Error(`Entity ${entityId} not found in ${category}`);
     const data = await response.json();
     entityCache.set(entityId, data);
     return data;
   } catch (err) {
-    console.error("Load entity failed:", entityId, err);
+    console.error("Failed to load entity:", entityId, err);
     return null;
   }
 }
 
-// ─── Seed mutation ──────────────────────────────────────────────────────────────
+// ─── Rarity-based seed mutation ─────────────────────────────────────────────────
 function generateChildRarity(parentRarity, currentZoneId, usedBoostItems = []) {
   const rarityLevels = ["common", "uncommon", "rare", "heirloom", "legendary"];
   const baseUpgradeChance = 0.90;
@@ -161,21 +161,30 @@ function generateChildRarity(parentRarity, currentZoneId, usedBoostItems = []) {
   let itemBoost = 0;
   if (usedBoostItems.includes("fertilizer")) itemBoost += 0.12;
   const upgradeChance = Math.min(0.99, baseUpgradeChance * mutationMultiplier + itemBoost);
-  let currentIndex = rarityLevels.indexOf(parentRarity) !== -1 ? rarityLevels.indexOf(parentRarity) : 0;
+  let currentIndex = rarityLevels.indexOf(parentRarity);
+  if (currentIndex === -1) currentIndex = 0;
   let newIndex = currentIndex;
   if (Math.random() < upgradeChance) {
     newIndex = Math.min(currentIndex + 1, rarityLevels.length - 1);
   }
   const newRarity = rarityLevels[newIndex];
-  console.log(`[SEED] ${parentRarity} → ${newRarity} (zone: ${currentZoneId}, mult: ×${mutationMultiplier})`);
-  showMessage("New Seed!", `A ${newRarity} seed was created!`, 2200);
+  console.log(
+    `%c[SEED] ${parentRarity} → ${newRarity} (zone: ${currentZoneId}, mult: ×${mutationMultiplier})`,
+    "color: #4CAF50; font-weight: bold"
+  );
+  showMessage(
+    "New Seed!",
+    `A ${newRarity} seed was created!`,
+    2200
+  );
   return newRarity;
 }
 
-// ─── Global state & data ────────────────────────────────────────────────────────
+// ─── Global state ────────────────────────────────────────────────────────────────
 var currentPlayer;
 var currentView = "island";
 
+// ─── Data ────────────────────────────────────────────────────────────────────────
 var invasivesByZone = {
   beach: [
     { id: "seaweed1", name: "Invasive Seaweed", coins: 3, health: 5 },
@@ -480,15 +489,15 @@ function showSeedPacks() {
 
         savePlayer(currentPlayer);
 
-        // Close current modal and refresh seed packs UI
+        // Close current Seed Packs modal
         const currentModal = document.querySelector('div[style*="position: fixed; inset: 0"]');
         if (currentModal) currentModal.remove();
-        showSeedPacks();
 
+        // Show success message (no re-open of Seed Packs)
         showMessage(
           "Seed Planted!",
-          `Planted 1× <b>${chosenRarity}</b> ${chosenType.replace(/-/g, ' ')} in ${zoneId}!`,
-          3500
+          `Planted 1× <b>${chosenRarity}</b> ${chosenType.replace(/-/g, ' ')} in ${zoneId}!<br><br>Re-open Seed Packs to plant more.`,
+          4000
         );
 
         renderView();
