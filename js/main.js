@@ -69,7 +69,7 @@ function startGrowthAnimation(zoneId) {
     if (currentView !== `zone:${zoneId}` || document.hidden) return;
     advancePlantGrowth(zoneId, true);
     updateGrowthVisuals(zoneId);
-  }, 30000); // 30 seconds — feel free to change to 10000 or 60000
+  }, 1000); // 30 seconds — feel free to change to 10000 or 60000
 }
 
 function stopGrowthAnimation() {
