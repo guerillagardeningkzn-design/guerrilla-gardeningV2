@@ -47,22 +47,17 @@ let growthInterval = null;
 function advancePlantGrowth(zoneId, isRealtime = false) {
   const now = Date.now();
   const zonePlants = currentPlayer.planted?.[zoneId] || [];
-
   zonePlants.forEach(plant => {
     const elapsedMs = now - (plant.lastChecked || plant.plantedAt || now);
     if (elapsedMs <= 0) return;
-
     const deltaProgress = elapsedMs / plant.maturationMs;
     plant.progress = Math.min(1, (plant.progress || 0) + deltaProgress);
-
     if (plant.progress >= 1) {
       console.log(`Plant ${plant.entityId} (${plant.rarity}) in ${zoneId} is now mature!`);
       // TODO: change visual to "ready", allow harvest, etc.
     }
-
     plant.lastChecked = now;
   });
-
   if (!isRealtime) {
     savePlayer(currentPlayer); // can be debounced later
   }
@@ -70,7 +65,6 @@ function advancePlantGrowth(zoneId, isRealtime = false) {
 
 function startGrowthAnimation(zoneId) {
   if (growthInterval) clearInterval(growthInterval);
-
   growthInterval = setInterval(() => {
     if (currentView !== `zone:${zoneId}` || document.hidden) return;
     advancePlantGrowth(zoneId, true);
@@ -88,6 +82,28 @@ function stopGrowthAnimation() {
 function updateGrowthVisuals(zoneId) {
   console.log(`Growth visuals updated for zone ${zoneId}`);
   // TODO: update progress bars, stage images, etc. in the DOM
+}
+
+// ─── Editor-ready growth parameters (fallback to legacy values) ────────────────
+async function getPlantGrowthParams(entityId, rarity) {
+  // Try to load from JSON (future editor format)
+  const entityDef = await loadEntityDefinition(entityId, "natives");
+  if (entityDef?.growth?.baseMaturationSeconds) {
+    let ms = entityDef.growth.baseMaturationSeconds * 1000;
+    const mod = entityDef.growth.rarityModifiers?.[rarity] || 1.0;
+    ms *= mod;
+    console.log(`Using JSON growth params for ${entityId} (${rarity}): ${ms/1000}s`);
+    return ms;
+  }
+
+  // Fallback to legacy / testing values
+  console.log(`Using fallback growth params for ${entityId} (${rarity})`);
+  let maturationMs = 60 * 1000; // 60 seconds base – change to 30*1000 or 120*1000 as needed
+  if (rarity === "uncommon") maturationMs *= 0.8;
+  if (rarity === "rare")     maturationMs *= 0.6;
+  if (rarity === "heirloom") maturationMs *= 0.45;
+  if (rarity === "legendary") maturationMs *= 0.3;
+  return maturationMs;
 }
 
 // ─── Centralized entity loading ─────────────────────────────────────────────────
@@ -112,36 +128,27 @@ async function loadEntityDefinition(entityId, category) {
 function generateChildRarity(parentRarity, currentZoneId, usedBoostItems = []) {
   const rarityLevels = ["common", "uncommon", "rare", "heirloom", "legendary"];
   const baseUpgradeChance = 0.90; // your current test value
-
   const zoneData = zonesConfig?.zones?.find(z => z.id === currentZoneId);
   const mutationMultiplier = zoneData?.mutationMultiplier || 1.0;
-
   let itemBoost = 0;
   if (usedBoostItems.includes("fertilizer")) itemBoost += 0.12;
-
   const upgradeChance = Math.min(0.99, baseUpgradeChance * mutationMultiplier + itemBoost);
-
   let currentIndex = rarityLevels.indexOf(parentRarity);
   if (currentIndex === -1) currentIndex = 0;
-
   let newIndex = currentIndex;
   if (Math.random() < upgradeChance) {
     newIndex = Math.min(currentIndex + 1, rarityLevels.length - 1);
   }
-
   const newRarity = rarityLevels[newIndex];
-
   console.log(
     `%c[SEED] ${parentRarity} → ${newRarity} (zone: ${currentZoneId}, mult: ×${mutationMultiplier})`,
     "color: #4CAF50; font-weight: bold"
   );
-
   showMessage(
     "New Seed!",
     `A ${newRarity} seed was created!`,
     2200
   );
-
   return newRarity;
 }
 
@@ -172,8 +179,8 @@ var nativesByZone = {
 };
 
 var zoneMarkers = [
-  { id: "beach",    name: "Sunny Beach",    left: 20, top: 75 },
-  { id: "forest",   name: "Misty Forest",   left: 55, top: 40 },
+  { id: "beach", name: "Sunny Beach", left: 20, top: 75 },
+  { id: "forest", name: "Misty Forest", left: 55, top: 40 },
   { id: "mountain", name: "Rocky Mountain", left: 85, top: 25 }
 ];
 
@@ -299,7 +306,6 @@ function showRewardPopup(targetElement, coinsDelta, healthDelta, bonusText, dura
     parts.push(`<span style="color:${color};">${sign}${Math.abs(safeHealth)}% 🌿</span>`);
   }
   if (bonusText) parts.push(`<span style="color:#8D6E63;">${bonusText}</span>`);
-
   const popup = document.createElement("div");
   popup.innerHTML = parts.length > 0 ? parts.join("   ") : "[No reward]";
   popup.style.cssText = `
@@ -326,7 +332,6 @@ function showToolboxGallery() {
   if (currentPlayer.inventory.spade) tools.push("Spade – Dig tough invasives");
   if (currentPlayer.inventory.sickle) tools.push("Sickle – Harvest delicate natives");
   if (currentPlayer.inventory.scissors) tools.push("Scissors – Cut vines");
-
   const level = currentPlayer.inventory.toolboxLevel || 1;
   const capacity = level * 5;
   let html = `<h3>Toolbox (Level ${level} – Capacity: ${capacity})</h3>`;
@@ -393,7 +398,7 @@ function showSeedPacks() {
     html += `<p style="margin-top:16px;font-weight:bold;">Total seeds: ${totalSeeds}</p>`;
   }
 
-  // ────────────── NEW PLANTING BUTTON ──────────────
+  // ────────────── PLANTING BUTTON (legacy + editor-ready) ──────────────
   html += `
     <div style="margin-top:24px; text-align:center; padding:12px; background:rgba(255,255,255,0.08); border-radius:12px;">
       <button id="test-plant-seed" style="padding:14px 32px; background:#2196F3; color:white; border:none; border-radius:999px; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 12px rgba(33,150,243,0.4);">
@@ -413,7 +418,7 @@ function showSeedPacks() {
   setTimeout(() => {
     const btn = document.getElementById("test-plant-seed");
     if (btn) {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         if (!currentView.startsWith("zone:")) {
           showMessage("Cannot Plant", "You must be inside a zone to plant seeds!", 4000);
           return;
@@ -435,21 +440,17 @@ function showSeedPacks() {
         if (availableRarities.length === 0) return;
 
         const chosenRarity = availableRarities[Math.floor(Math.random() * availableRarities.length)];
-		et maturationMs = 60 * 1000; // 60 seconds base – change to 30*1000 or 120*1000 as needed
 
-		// Rarity bonus (optional) – makes better seeds grow faster
-		if (chosenRarity === "uncommon") maturationMs *= 0.8;
-		if (chosenRarity === "rare")     maturationMs *= 0.6;
-		if (chosenRarity === "heirloom") maturationMs *= 0.45;
-		if (chosenRarity === "legendary") maturationMs *= 0.3;
+        // ────────────── EDITOR-READY GROWTH PARAMS ──────────────
+        let maturationMs = await getPlantGrowthParams(chosenType, chosenRarity);
+
         // Consume one seed
         currentPlayer.inventory.seeds[chosenType][chosenRarity] -= 1;
         if (currentPlayer.inventory.seeds[chosenType][chosenRarity] <= 0) {
           delete currentPlayer.inventory.seeds[chosenType][chosenRarity];
         }
 
-        // Create basic plant object
-        const maturationMs = 12 * 60 * 60 * 1000; // 12 hours — will be adjusted by rarity/zone later
+        // Create plant object
         const plant = {
           entityId: chosenType,
           rarity: chosenRarity,
@@ -473,7 +474,7 @@ function showSeedPacks() {
           3500
         );
 
-        // Re-render the zone so the new plant appears (once rendering is added)
+        // Re-render zone
         renderView();
       });
     }
@@ -500,7 +501,7 @@ async function renderView() {
       const markerEl = document.createElement("div");
       markerEl.className = `map-marker${unlocked ? "" : " locked"}`;
       markerEl.style.left = `${marker.left}%`;
-      markerEl.style.top  = `${marker.top}%`;
+      markerEl.style.top = `${marker.top}%`;
       markerEl.dataset.zoneId = marker.id;
       markerEl.innerHTML = `<span class="marker-label">${displayName}</span>`;
       if (!unlocked) markerEl.style.opacity = 0.5;
@@ -600,38 +601,36 @@ async function renderView() {
       if (entity.tooltip) el.title = entity.tooltip;
       list.appendChild(el);
     });
-	
-	// ────────────── NEW: Render planted growing plants ──────────────
-const plantedInZone = currentPlayer.planted?.[zoneId] || [];
-plantedInZone.forEach((plant, index) => {
-  const el = document.createElement("div");
-  el.className = "native-item planted-item"; // reuse style + custom class
-  el.dataset.plantIndex = index;
 
-  // Simple placeholder visual + progress
-  el.innerHTML = `
-  <div style="font-size:2.8rem; margin-bottom:6px;">
-    ${plant.progress >= 1 ? '🌴✨' : '🌱'}
-  </div>
-  <div class="entity-name" style="font-weight:600;">
-    ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
-  </div>
-  <div class="planted-progress">
-    <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
-  </div>
-  <div style="font-size:0.9rem; color: ${plant.progress >= 1 ? '#FFD700' : '#81C784'}; margin-top:6px;">
-    ${plant.progress >= 1 ? 'Ready to Harvest!' : (plant.progress * 100).toFixed(0) + '% grown'}
-  </div>
-`;
+    // ────────────── Render planted growing plants ──────────────
+    const plantedInZone = currentPlayer.planted?.[zoneId] || [];
+    plantedInZone.forEach((plant, index) => {
+      const el = document.createElement("div");
+      el.className = "native-item planted-item";
+      el.dataset.plantIndex = index;
 
-  // Random-ish position so they don't all stack
-  el.style.position = "absolute";
-  el.style.left = `${15 + Math.random() * 70}%`;
-  el.style.top = `${15 + Math.random() * 60}%`;
-  el.style.zIndex = "5";
+      el.innerHTML = `
+        <div style="font-size:2.8rem; margin-bottom:6px;">
+          ${plant.progress >= 1 ? '🌴✨' : '🌱'}
+        </div>
+        <div class="entity-name" style="font-weight:600;">
+          ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
+        </div>
+        <div class="planted-progress">
+          <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
+        </div>
+        <div style="font-size:0.9rem; color: ${plant.progress >= 1 ? '#FFD700' : '#81C784'}; margin-top:6px;">
+          ${plant.progress >= 1 ? 'Ready to Harvest!' : (plant.progress * 100).toFixed(0) + '% grown'}
+        </div>
+      `;
 
-  list.appendChild(el);
-});
+      el.style.position = "absolute";
+      el.style.left = `${15 + Math.random() * 70}%`;
+      el.style.top  = `${15 + Math.random() * 60}%`;
+      el.style.zIndex = "5";
+
+      list.appendChild(el);
+    });
 
     updateCoinsDisplay();
     updateHealthDisplay(health);
