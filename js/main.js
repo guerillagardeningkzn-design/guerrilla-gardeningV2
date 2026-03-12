@@ -68,7 +68,7 @@ function startGrowthAnimation(zoneId) {
     if (currentView !== `zone:${zoneId}` || document.hidden) return;
     advancePlantGrowth(zoneId, true);
     updateGrowthVisuals(zoneId);
-  }, 2000); // 2 seconds live updates
+  }, 2000); // 2 seconds
 }
 
 function stopGrowthAnimation() {
