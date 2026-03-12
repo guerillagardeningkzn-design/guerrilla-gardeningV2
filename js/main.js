@@ -654,17 +654,24 @@ async function renderView() {
       list.appendChild(el);
     });
 
-    // ────────────── Render planted growing plants (now with live-update IDs) ──────────────
+    // ────────────── Render planted growing plants (now tappable when mature) ──────────────
 const plantedInZone = currentPlayer.planted?.[zoneId] || [];
 plantedInZone.forEach((plant, index) => {
-  const uniqueId = `planted-${zoneId}-${index}`; // unique ID for live updates
+  const uniqueId = `planted-${zoneId}-${index}`;
 
   const el = document.createElement("div");
-  el.id = uniqueId;                             // ← important: add ID
+  el.id = uniqueId;
   el.className = "native-item planted-item";
   el.dataset.plantIndex = index;
 
-  // Initial stage (will be updated live later)
+  // Make mature plants look clickable
+  if (plant.progress >= 1) {
+    el.style.cursor = "pointer";
+    el.style.borderColor = "#FFD700";
+    el.style.boxShadow = "0 0 15px #FFD700";
+    el.title = "Tap to harvest!";
+  }
+
   let stageEmoji = "🌱";
   let stageName = "Seed";
   let stageColor = "#81C784";
@@ -694,7 +701,7 @@ plantedInZone.forEach((plant, index) => {
       <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
     </div>
     <div style="font-size:0.95rem; color: ${stageColor}; margin-top:8px;" class="progress-text">
-      ${plant.progress >= 1 ? 'Ready to Harvest!' : stageName + ' – ' + (plant.progress * 100).toFixed(0) + '%'}
+      ${plant.progress >= 1 ? 'Ready to Harvest! (tap)' : stageName + ' – ' + (plant.progress * 100).toFixed(0) + '%'}
     </div>
   `;
 
@@ -904,7 +911,71 @@ document.addEventListener("DOMContentLoaded", async function() {
 
       savePlayer(currentPlayer);
       return;
+    
+	
+	
+	}
+	
+	// ────────────── NEW: Tap to harvest mature planted plant ──────────────
+const plantedEl = t.closest(".planted-item");
+if (plantedEl) {
+  const zoneId = currentView.split(":")[1];
+  const plantIndex = Number(plantedEl.dataset.plantIndex);
+  const plant = currentPlayer.planted?.[zoneId]?.[plantIndex];
+
+  if (!plant || plant.progress < 1) return; // not mature yet
+
+  // Prevent double-tap
+  if (plantedEl.dataset.harvesting) return;
+  plantedEl.dataset.harvesting = "true";
+
+  // Calculate reward (simple for now – will come from JSON later)
+  const baseCoins = 8;
+  const baseHealth = 12;
+  const seedChance = 0.35;
+
+  const coinsReward = baseCoins;
+  const healthReward = baseHealth;
+
+  // Apply to player
+  currentPlayer.coins += coinsReward;
+  currentPlayer.zoneHealth[zoneId] = Math.min(100, (currentPlayer.zoneHealth[zoneId] || 0) + healthReward);
+
+  // Possible seed back (with mutation)
+  let bonusText = `+${coinsReward} 🪙 +${healthReward}% 🌿`;
+  if (Math.random() < seedChance) {
+    const parentRarity = plant.rarity;
+    const childRarity = generateChildRarity(parentRarity, zoneId, []);
+    if (!currentPlayer.inventory.seeds[plant.entityId]) {
+      currentPlayer.inventory.seeds[plant.entityId] = {};
     }
+    currentPlayer.inventory.seeds[plant.entityId][childRarity] =
+      (currentPlayer.inventory.seeds[plant.entityId][childRarity] || 0) + 1;
+    bonusText += ` +1 ${childRarity} seed 🌱`;
+  }
+
+  // Show reward
+  showRewardPopup(plantedEl, coinsReward, healthReward, bonusText, 1800);
+
+  // Remove the plant
+  currentPlayer.planted[zoneId].splice(plantIndex, 1);
+  if (currentPlayer.planted[zoneId].length === 0) {
+    delete currentPlayer.planted[zoneId];
+  }
+
+  savePlayer(currentPlayer);
+
+  // Visual feedback
+  plantedEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+  plantedEl.style.opacity = "0";
+  plantedEl.style.transform = "scale(0.5) rotate(10deg)";
+  setTimeout(() => plantedEl.remove(), 600);
+
+  // Update zone health display
+  updateHealthDisplay(currentPlayer.zoneHealth[zoneId]);
+
+  return;
+}
 
     // Back to map
     if (t.id === "back-to-map") {
