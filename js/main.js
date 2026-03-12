@@ -83,55 +83,41 @@ function updateGrowthVisuals(zoneId) {
   const now = Date.now();
   const zonePlants = currentPlayer.planted?.[zoneId] || [];
 
-  zonePlants.forEach((plant, index) => {
-    const plantEl = document.getElementById(`planted-${zoneId}-${index}`);
-    if (!plantEl) return;
+  zonePlants.forEach(plant => {
+    const plantEl = document.getElementById(`planted-${zoneId}-${plant.id}`);
+    if (!plantEl) return; // plant was harvested/removed
 
-    const elapsedMs = now - (plant.lastChecked || plant.plantedAt || now);
+    const elapsedMs = now - plant.lastChecked;
+    if (elapsedMs <= 0) return;
+
     const deltaProgress = elapsedMs / plant.maturationMs;
-    const currentProgress = Math.min(1, (plant.progress || 0) + deltaProgress);
+    const currentProgress = Math.min(1, plant.progress + deltaProgress);
 
     // Update progress bar
     const progressFill = plantEl.querySelector(".planted-progress-fill");
-    if (progressFill) {
-      progressFill.style.width = `${currentProgress * 100}%`;
-    }
+    if (progressFill) progressFill.style.width = `${currentProgress * 100}%`;
 
-    // Update text and emoji
+    // Update emoji & text
     const emojiEl = plantEl.querySelector(".stage-emoji");
     const textEl = plantEl.querySelector(".progress-text");
 
-    let stageEmoji = "🌱";
-    let stageName = "Seed";
-    let stageColor = "#81C784";
-
-    if (currentProgress >= 0.25) {
-      stageEmoji = "🌿";
-      stageName = "Sprout";
-    }
-    if (currentProgress >= 0.60) {
-      stageEmoji = "🌴";
-      stageName = "Young";
-    }
-    if (currentProgress >= 1.00) {
-      stageEmoji = "🌴✨";
-      stageName = "Mature";
-      stageColor = "#FFD700";
-    }
+    let stageEmoji = "🌱", stageName = "Seed", stageColor = "#81C784";
+    if (currentProgress >= 0.25) { stageEmoji = "🌿"; stageName = "Sprout"; }
+    if (currentProgress >= 0.60) { stageEmoji = "🌴"; stageName = "Young"; }
+    if (currentProgress >= 1.00) { stageEmoji = "🌴✨"; stageName = "Mature"; stageColor = "#FFD700"; }
 
     if (emojiEl) emojiEl.innerHTML = stageEmoji;
     if (textEl) {
-      textEl.innerHTML = currentProgress >= 1 
-        ? 'Ready to Harvest!' 
+      textEl.innerHTML = currentProgress >= 1
+        ? 'Ready to Harvest!'
         : `${stageName} – ${(currentProgress * 100).toFixed(0)}%`;
       textEl.style.color = stageColor;
     }
 
-    // Update saved progress (so catch-up works correctly)
+    // Sync saved data
     plant.progress = currentProgress;
     plant.lastChecked = now;
   });
-
   // Optional: only save every few updates to reduce writes
   // savePlayer(currentPlayer); // ← uncomment later if needed
 }
@@ -504,21 +490,27 @@ function showSeedPacks() {
 
         // Create plant object
         const plant = {
-          entityId: chosenType,
-          rarity: chosenRarity,
-          plantedAt: Date.now(),
-          lastChecked: Date.now(),
-          progress: 0,
-          maturationMs: maturationMs
-        };
+			id: Date.now() + '-' + Math.random().toString(36).substr(2, 9), // unique stable ID
+			entityId: chosenType,
+			rarity: chosenRarity,
+			plantedAt: Date.now(),
+			lastChecked: Date.now(),
+			progress: 0,
+			maturationMs: maturationMs
+		};
+        // Remove from data FIRST
+currentPlayer.planted[zoneId].splice(plantIndex, 1);
+if (currentPlayer.planted[zoneId].length === 0) {
+  delete currentPlayer.planted[zoneId];
+}
+savePlayer(currentPlayer);
 
-        // Save to player's planted zones
-        if (!currentPlayer.planted[zoneId]) {
-          currentPlayer.planted[zoneId] = [];
-        }
-        currentPlayer.planted[zoneId].push(plant);
-
-        savePlayer(currentPlayer);
+// Then visual
+entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+entityEl.style.opacity = "0";
+entityEl.style.transform = "scale(0.5) rotate(10deg)";
+setTimeout(() => entityEl.remove(), 600);
+		showSeedPacks();
 
         showMessage(
           "Seed Planted!",
@@ -701,7 +693,7 @@ plantedInZone.forEach((plant, index) => {
       <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
     </div>
     <div style="font-size:0.95rem; color: ${stageColor}; margin-top:8px;" class="progress-text">
-      ${plant.progress >= 1 ? 'Ready to Harvest! (tap)' : stageName + ' – ' + (plant.progress * 100).toFixed(0) + '%'}
+      ${plant.progress >= 1 ? 'Ready to Harvest!' : stageName}
     </div>
   `;
 
