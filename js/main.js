@@ -79,6 +79,7 @@ function stopGrowthAnimation() {
 }
 
 function updateGrowthVisuals(zoneId) {
+	console.log("updateGrowthVisuals called for zone", zoneId);
   const now = Date.now();
   const zonePlants = currentPlayer.planted?.[zoneId] || [];
 
@@ -635,60 +636,61 @@ async function renderView() {
       list.appendChild(el);
     });
 
-    const plantedInZone = currentPlayer.planted?.[zoneId] || [];
-    plantedInZone.forEach(plant => {
-      const uniqueId = `planted-${zoneId}-${plant.id}`;
-      const el = document.createElement("div");
-      el.id = uniqueId;
-      el.className = "native-item planted-item";
+    // Render planted growing plants
+const plantedInZone = currentPlayer.planted?.[zoneId] || [];
+plantedInZone.forEach(plant => {
+  const uniqueId = `planted-${zoneId}-${plant.id}`;
+  const el = document.createElement("div");
+  el.id = uniqueId;
+  el.className = "native-item planted-item";
 
-      if (plant.progress >= 1) {
-        el.style.cursor = "pointer";
-        el.style.borderColor = "#FFD700";
-        el.style.boxShadow = "0 0 15px #FFD700";
-        el.title = "Tap to harvest!";
-      }
+  if (plant.progress >= 1) {
+    el.style.cursor = "pointer";
+    el.style.borderColor = "#FFD700";
+    el.style.boxShadow = "0 0 15px #FFD700";
+    el.title = "Tap to harvest!";
+  }
 
-      let stageEmoji = "🌱";
-      let stageName = "Seed";
-      let stageColor = "#81C784";
+  let stageEmoji = "🌱";
+  let stageName = "Seed";
+  let stageColor = "#81C784";
 
-      if (plant.progress >= 0.25) {
-        stageEmoji = "🌿";
-        stageName = "Sprout";
-      }
-      if (plant.progress >= 0.60) {
-        stageEmoji = "🌴";
-        stageName = "Young";
-      }
-      if (plant.progress >= 1.00) {
-        stageEmoji = "🌴✨";
-        stageName = "Mature";
-        stageColor = "#FFD700";
-      }
+  if (plant.progress >= 0.25) {
+    stageEmoji = "🌿";
+    stageName = "Sprout";
+  }
+  if (plant.progress >= 0.60) {
+    stageEmoji = "🌴";
+    stageName = "Young";
+  }
+  if (plant.progress >= 1.00) {
+    stageEmoji = "🌴✨";
+    stageName = "Mature";
+    stageColor = "#FFD700";
+  }
 
-      el.innerHTML = `
-        <div style="font-size:3.2rem; margin-bottom:8px;" class="stage-emoji">
-          ${stageEmoji}
-        </div>
-        <div class="entity-name" style="font-weight:600;">
-          ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
-        </div>
-        <div class="planted-progress">
-          <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
-        </div>
-        <div style="font-size:0.95rem; color: ${stageColor}; margin-top:8px;" class="progress-text">
-          ${plant.progress >= 1 ? 'Ready to Harvest!' : stageName}
-        </div>
-      `;
+  el.innerHTML = `
+    <div class="stage-emoji" style="font-size:3.2rem; margin-bottom:8px;">
+      ${stageEmoji}
+    </div>
+    <div class="entity-name" style="font-weight:600;">
+      ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
+    </div>
+    <div class="planted-progress">
+      <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
+    </div>
+    <div class="progress-text" style="font-size:0.95rem; color: ${stageColor}; margin-top:8px;">
+      ${plant.progress >= 1 ? 'Ready to Harvest!' : stageName}
+    </div>
+  `;
 
-      el.style.position = "absolute";
-      el.style.left = `${Math.random() * 80 + 10}%`;
-      el.style.top = `${Math.random() * 60 + 20}%`;
-      el.style.zIndex = "6";
+  el.style.position = "absolute";
+  el.style.left = `${Math.random() * 80 + 10}%`;
+  el.style.top = `${Math.random() * 60 + 20}%`;
+  el.style.zIndex = "6";
 
-      list.appendChild(el);
-    });
+  list.appendChild(el);
+});
 
     updateCoinsDisplay();
     updateHealthDisplay(health);
