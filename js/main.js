@@ -78,44 +78,20 @@ function stopGrowthAnimation() {
   }
 }
 
-function updateGrowthVisuals(zoneId) {
-  const now = Date.now();
-  const zonePlants = currentPlayer.planted?.[zoneId] || [];
+planted-progress {
+  width: 100%;
+  height: 12px;               /* taller so it's easy to see */
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 8px 0;
+}
 
-  zonePlants.forEach(plant => {
-    const plantEl = document.getElementById(`planted-${zoneId}-${plant.id}`);
-    if (!plantEl) return;
-
-    const elapsedMs = now - plant.lastChecked;
-    if (elapsedMs <= 0) return;
-
-    const deltaProgress = elapsedMs / plant.maturationMs;
-    const currentProgress = Math.min(1, plant.progress + deltaProgress);
-
-    // Save the new progress FIRST
-    plant.progress = currentProgress;
-    plant.lastChecked = now;
-
-    // Now update DOM with the freshly saved value
-    const progressFill = plantEl.querySelector(".planted-progress-fill");
-    if (progressFill) {
-      progressFill.style.width = `${currentProgress * 100}%`;
-    }
-
-    const emojiEl = plantEl.querySelector(".stage-emoji");
-    const textEl = plantEl.querySelector(".progress-text");
-
-    let stageEmoji = "🌱", stageName = "Seed", stageColor = "#81C784";
-    if (currentProgress >= 0.25) { stageEmoji = "🌿"; stageName = "Sprout"; }
-    if (currentProgress >= 0.60) { stageEmoji = "🌴"; stageName = "Young"; }
-    if (currentProgress >= 1.00) { stageEmoji = "🌴✨"; stageName = "Mature"; stageColor = "#FFD700"; }
-
-    if (emojiEl) emojiEl.innerHTML = stageEmoji;
-    if (textEl) {
-      textEl.innerHTML = currentProgress >= 1 ? 'Ready to Harvest!' : stageName;
-      textEl.style.color = stageColor;
-    }
-  });
+.planted-progress-fill {
+  height: 100%;
+  width: 0%;                  /* starts at 0 */
+  background: linear-gradient(to right, #4CAF50, #8BC34A);
+  transition: width 1.8s ease-out;  /* smooth animation */
 }
 
 // ─── Editor-ready growth parameters ─────────────────────────────────────────────
