@@ -66,28 +66,38 @@ function startGrowthAnimation(zoneId) {
   if (growthInterval) clearInterval(growthInterval);
   growthInterval = setInterval(() => {
     if (currentView !== `zone:${zoneId}` || document.hidden) return;
+
     // Update data model
     advancePlantGrowth(zoneId, true);
+
+    // Get the entities list container (this was missing!)
+    const list = document.getElementById("entities-list");
+    if (!list) return; // safety if zone not fully loaded
+
     // Re-render ONLY planted plants
     document.querySelectorAll('.planted-item').forEach(el => el.remove());
+
     const plantedInZone = currentPlayer.planted?.[zoneId] || [];
     plantedInZone.forEach(plant => {
       const uniqueId = `planted-${zoneId}-${plant.id}`;
       const el = document.createElement("div");
       el.id = uniqueId;
       el.className = "native-item planted-item";
+
       if (plant.progress >= 1) {
         el.style.cursor = "pointer";
         el.style.borderColor = "#FFD700";
         el.style.boxShadow = "0 0 15px #FFD700";
         el.title = "Tap to harvest!";
       }
+
       let stageEmoji = "🌱";
       let stageName = "Seed";
       let stageColor = "#81C784";
       if (plant.progress >= 0.25) { stageEmoji = "🌿"; stageName = "Sprout"; }
       if (plant.progress >= 0.60) { stageEmoji = "🌴"; stageName = "Young"; }
       if (plant.progress >= 1.00) { stageEmoji = "🌴✨"; stageName = "Mature"; stageColor = "#FFD700"; }
+
       el.innerHTML = `
         <div class="stage-emoji" style="font-size:3.2rem; margin-bottom:8px;">
           ${stageEmoji}
@@ -102,12 +112,15 @@ function startGrowthAnimation(zoneId) {
           ${plant.progress >= 1 ? 'Ready to Harvest!' : stageName}
         </div>
       `;
+
       el.style.position = "absolute";
-      el.style.left = plant.left || `${Math.random() * 80 + 10}%`;   // ← fixed: added closing `
-      el.style.top  = plant.top  || `${Math.random() * 60 + 20}%`;   // ← fixed: added closing `
+      el.style.left = plant.left || `${Math.random() * 80 + 10}%`;
+      el.style.top  = plant.top  || `${Math.random() * 60 + 20}%`;
       el.style.zIndex = "6";
-      list.appendChild(el);
+
+      list.appendChild(el); // ← now list is defined
     });
+
     console.log(`[LIVE RENDER] Updated ${plantedInZone.length} plants in ${zoneId}`);
   }, 2000);
 }
