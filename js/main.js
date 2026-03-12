@@ -82,12 +82,12 @@ function updateGrowthVisuals(zoneId) {
   const now = Date.now();
   const zonePlants = currentPlayer.planted?.[zoneId] || [];
 
-  console.log(`[LIVE UPDATE] Zone ${zoneId} - Checking ${zonePlants.length} plants`);
+  console.log(`[LIVE UPDATE] Zone ${zoneId} - ${zonePlants.length} plants active`);
 
   zonePlants.forEach(plant => {
     const plantEl = document.getElementById(`planted-${zoneId}-${plant.id}`);
     if (!plantEl) {
-      console.log(`[LIVE UPDATE] Element MISSING for plant ID ${plant.id} in zone ${zoneId}`);
+      console.log(`[LIVE UPDATE] Plant ID ${plant.id} element not found in DOM`);
       return;
     }
 
@@ -97,7 +97,7 @@ function updateGrowthVisuals(zoneId) {
     const deltaProgress = elapsedMs / plant.maturationMs;
     const currentProgress = Math.min(1, plant.progress + deltaProgress);
 
-    // Save the new progress
+    // Update saved data
     plant.progress = currentProgress;
     plant.lastChecked = now;
 
@@ -105,11 +105,13 @@ function updateGrowthVisuals(zoneId) {
     const progressFill = plantEl.querySelector(".planted-progress-fill");
     if (progressFill) {
       progressFill.style.width = `${currentProgress * 100}%`;
-      // Force browser to apply the style immediately
-      progressFill.offsetWidth;
-      console.log(`[LIVE UPDATE] Set width to ${(currentProgress * 100).toFixed(0)}% for plant ${plant.id}`);
+      // Force browser repaint (fixes many "style not applying" issues)
+      progressFill.style.display = 'none';
+      progressFill.offsetHeight; // trigger reflow
+      progressFill.style.display = '';
+      console.log(`[LIVE UPDATE] Bar width forced to ${(currentProgress * 100).toFixed(0)}% for ${plant.id}`);
     } else {
-      console.log(`[LIVE UPDATE] Progress fill element NOT FOUND in plant ${plant.id}`);
+      console.log(`[LIVE UPDATE] .planted-progress-fill MISSING inside plant ${plant.id}`);
     }
 
     // Update emoji
@@ -127,12 +129,11 @@ function updateGrowthVisuals(zoneId) {
     if (textEl) {
       let stageName = "Seed";
       let stageColor = "#81C784";
-      if (currentProgress >= 0.25) { stageName = "Sprout"; }
-      if (currentProgress >= 0.60) { stageName = "Young"; }
+      if (currentProgress >= 0.25) stageName = "Sprout";
+      if (currentProgress >= 0.60) stageName = "Young";
       if (currentProgress >= 1.00) { stageName = "Mature"; stageColor = "#FFD700"; }
-      textEl.innerHTML = currentProgress >= 1 ? 'Ready to Harvest!' : stageName;
+      textEl.textContent = currentProgress >= 1 ? 'Ready to Harvest!' : stageName;
       textEl.style.color = stageColor;
-      console.log(`[LIVE UPDATE] Text updated to "${stageName}" for plant ${plant.id}`);
     }
   });
 }
