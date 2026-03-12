@@ -82,9 +82,14 @@ function updateGrowthVisuals(zoneId) {
   const now = Date.now();
   const zonePlants = currentPlayer.planted?.[zoneId] || [];
 
+  console.log(`[LIVE UPDATE] Zone ${zoneId} - Checking ${zonePlants.length} plants`);
+
   zonePlants.forEach(plant => {
     const plantEl = document.getElementById(`planted-${zoneId}-${plant.id}`);
-    if (!plantEl) return;
+    if (!plantEl) {
+      console.log(`[LIVE UPDATE] Element MISSING for plant ID ${plant.id} in zone ${zoneId}`);
+      return;
+    }
 
     const elapsedMs = now - plant.lastChecked;
     if (elapsedMs <= 0) return;
@@ -92,33 +97,45 @@ function updateGrowthVisuals(zoneId) {
     const deltaProgress = elapsedMs / plant.maturationMs;
     const currentProgress = Math.min(1, plant.progress + deltaProgress);
 
+    // Save the new progress
+    plant.progress = currentProgress;
+    plant.lastChecked = now;
+
     // Update progress bar
     const progressFill = plantEl.querySelector(".planted-progress-fill");
     if (progressFill) {
       progressFill.style.width = `${currentProgress * 100}%`;
+      // Force browser to apply the style immediately
+      progressFill.offsetWidth;
+      console.log(`[LIVE UPDATE] Set width to ${(currentProgress * 100).toFixed(0)}% for plant ${plant.id}`);
+    } else {
+      console.log(`[LIVE UPDATE] Progress fill element NOT FOUND in plant ${plant.id}`);
     }
 
-    // Update stage emoji & text
+    // Update emoji
     const emojiEl = plantEl.querySelector(".stage-emoji");
+    if (emojiEl) {
+      let stageEmoji = "🌱";
+      if (currentProgress >= 0.25) stageEmoji = "🌿";
+      if (currentProgress >= 0.60) stageEmoji = "🌴";
+      if (currentProgress >= 1.00) stageEmoji = "🌴✨";
+      emojiEl.innerHTML = stageEmoji;
+    }
+
+    // Update text
     const textEl = plantEl.querySelector(".progress-text");
-
-    let stageEmoji = "🌱", stageName = "Seed", stageColor = "#81C784";
-    if (currentProgress >= 0.25) { stageEmoji = "🌿"; stageName = "Sprout"; }
-    if (currentProgress >= 0.60) { stageEmoji = "🌴"; stageName = "Young"; }
-    if (currentProgress >= 1.00) { stageEmoji = "🌴✨"; stageName = "Mature"; stageColor = "#FFD700"; }
-
-    if (emojiEl) emojiEl.innerHTML = stageEmoji;
     if (textEl) {
+      let stageName = "Seed";
+      let stageColor = "#81C784";
+      if (currentProgress >= 0.25) { stageName = "Sprout"; }
+      if (currentProgress >= 0.60) { stageName = "Young"; }
+      if (currentProgress >= 1.00) { stageName = "Mature"; stageColor = "#FFD700"; }
       textEl.innerHTML = currentProgress >= 1 ? 'Ready to Harvest!' : stageName;
       textEl.style.color = stageColor;
+      console.log(`[LIVE UPDATE] Text updated to "${stageName}" for plant ${plant.id}`);
     }
-
-    // Sync saved data
-    plant.progress = currentProgress;
-    plant.lastChecked = now;
   });
 }
-
 
 
 // ─── Editor-ready growth parameters ─────────────────────────────────────────────
