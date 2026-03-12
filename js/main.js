@@ -78,6 +78,47 @@ function stopGrowthAnimation() {
   }
 }
 
+function updateGrowthVisuals(zoneId) {
+  const now = Date.now();
+  const zonePlants = currentPlayer.planted?.[zoneId] || [];
+
+  zonePlants.forEach(plant => {
+    const plantEl = document.getElementById(`planted-${zoneId}-${plant.id}`);
+    if (!plantEl) return;
+
+    const elapsedMs = now - plant.lastChecked;
+    if (elapsedMs <= 0) return;
+
+    const deltaProgress = elapsedMs / plant.maturationMs;
+    const currentProgress = Math.min(1, plant.progress + deltaProgress);
+
+    // Update progress bar
+    const progressFill = plantEl.querySelector(".planted-progress-fill");
+    if (progressFill) {
+      progressFill.style.width = `${currentProgress * 100}%`;
+    }
+
+    // Update stage emoji & text
+    const emojiEl = plantEl.querySelector(".stage-emoji");
+    const textEl = plantEl.querySelector(".progress-text");
+
+    let stageEmoji = "🌱", stageName = "Seed", stageColor = "#81C784";
+    if (currentProgress >= 0.25) { stageEmoji = "🌿"; stageName = "Sprout"; }
+    if (currentProgress >= 0.60) { stageEmoji = "🌴"; stageName = "Young"; }
+    if (currentProgress >= 1.00) { stageEmoji = "🌴✨"; stageName = "Mature"; stageColor = "#FFD700"; }
+
+    if (emojiEl) emojiEl.innerHTML = stageEmoji;
+    if (textEl) {
+      textEl.innerHTML = currentProgress >= 1 ? 'Ready to Harvest!' : stageName;
+      textEl.style.color = stageColor;
+    }
+
+    // Sync saved data
+    plant.progress = currentProgress;
+    plant.lastChecked = now;
+  });
+}
+
 
 
 // ─── Editor-ready growth parameters ─────────────────────────────────────────────
