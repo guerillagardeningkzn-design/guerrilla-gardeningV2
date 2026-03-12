@@ -646,7 +646,7 @@ async function renderView() {
       list.appendChild(el);
     });
 
-    // ────────────── Render planted growing plants (now tappable when mature) ──────────────
+    // ────────────── Render planted growing plants (now tappable when mature)  ──────────────
 const plantedInZone = currentPlayer.planted?.[zoneId] || [];
 plantedInZone.forEach((plant, index) => {
   const uniqueId = `planted-${zoneId}-${index}`;
