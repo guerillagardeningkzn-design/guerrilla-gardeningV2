@@ -347,9 +347,17 @@ html {
   backdrop-filter: blur(6px);
 }
 
-.planted-item:hover {
-  transform: scale(1.12);
-  box-shadow: 0 10px 24px rgba(129, 199, 132, 0.5);
+.planted-item {
+  width: 120px;
+  text-align: center;
+  background: rgba(76, 175, 80, 0.22);
+  border: 2px solid #81C784;
+  border-radius: 16px;
+  padding: 12px 8px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+  transition: all 0.35s ease;
+  backdrop-filter: blur(6px);
+  position: relative; /* important for positioning children */
 }
 
 .planted-progress {
@@ -359,13 +367,13 @@ html {
   border-radius: 6px;
   overflow: hidden;
   margin: 8px 0;
-  border: 1px solid rgba(255,255,255,0.3); /* optional: make it stand out */
+  border: 1px solid rgba(255,255,255,0.3);
 }
 
 .planted-progress-fill {
   height: 100%;
   width: 0%;
   background: linear-gradient(to right, #4CAF50, #8BC34A);
-  transition: width 1.9s ease-out; /* smooth fill matching 2s interval */
-  will-change: width; /* hint to browser to animate smoothly */
+  transition: width 1.9s ease-out;
+  will-change: width;
 }

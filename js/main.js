@@ -87,7 +87,7 @@ function updateGrowthVisuals(zoneId) {
   zonePlants.forEach(plant => {
     const plantEl = document.getElementById(`planted-${zoneId}-${plant.id}`);
     if (!plantEl) {
-      console.log(`[LIVE UPDATE] Plant ID ${plant.id} element not found in DOM`);
+      console.log(`[LIVE UPDATE] Plant ${plant.id} element missing`);
       return;
     }
 
@@ -97,24 +97,26 @@ function updateGrowthVisuals(zoneId) {
     const deltaProgress = elapsedMs / plant.maturationMs;
     const currentProgress = Math.min(1, plant.progress + deltaProgress);
 
-    // Update saved data
+    // Save progress
     plant.progress = currentProgress;
     plant.lastChecked = now;
 
-    // Update progress bar
+    // Progress bar update
     const progressFill = plantEl.querySelector(".planted-progress-fill");
     if (progressFill) {
-      progressFill.style.width = `${currentProgress * 100}%`;
-      // Force browser repaint (fixes many "style not applying" issues)
-      progressFill.style.display = 'none';
-      progressFill.offsetHeight; // trigger reflow
-      progressFill.style.display = '';
-      console.log(`[LIVE UPDATE] Bar width forced to ${(currentProgress * 100).toFixed(0)}% for ${plant.id}`);
+      // Force full repaint sequence
+      progressFill.style.transition = 'none';           // disable animation momentarily
+      progressFill.style.width = '0%';                  // reset
+      progressFill.offsetHeight;                        // force reflow
+      progressFill.style.transition = 'width 1.9s ease-out'; // restore animation
+      progressFill.style.width = `${currentProgress * 100}%`; // set new width
+      progressFill.offsetHeight;                        // force reflow again
+      console.log(`[LIVE UPDATE] Forced bar to ${(currentProgress * 100).toFixed(0)}% for ${plant.id}`);
     } else {
-      console.log(`[LIVE UPDATE] .planted-progress-fill MISSING inside plant ${plant.id}`);
+      console.log(`[LIVE UPDATE] .planted-progress-fill MISSING in ${plant.id}`);
     }
 
-    // Update emoji
+    // Emoji update
     const emojiEl = plantEl.querySelector(".stage-emoji");
     if (emojiEl) {
       let stageEmoji = "🌱";
@@ -124,7 +126,7 @@ function updateGrowthVisuals(zoneId) {
       emojiEl.innerHTML = stageEmoji;
     }
 
-    // Update text
+    // Text update
     const textEl = plantEl.querySelector(".progress-text");
     if (textEl) {
       let stageName = "Seed";
