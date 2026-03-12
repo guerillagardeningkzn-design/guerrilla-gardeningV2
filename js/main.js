@@ -110,8 +110,8 @@ plantedInZone.forEach(plant => {
   `;
 
   el.style.position = "absolute";
-  el.style.left = plant.left || `${Math.random() * 80 + 10}%`;  // fallback if old save
-  el.style.top  = plant.top  || `${Math.random() * 60 + 20}%`;
+  el.style.left = plant.left || `${Math.random() * 80 + 10}%`; // ← add closing ` here
+  el.style.top = plant.top || `${Math.random() * 60 + 20}%`;
   el.style.zIndex = "6";
 
   list.appendChild(el);
