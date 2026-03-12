@@ -364,5 +364,5 @@ html {
 .planted-progress-fill {
   height: 100%;
   background: linear-gradient(to right, #4CAF50, #8BC34A);
-  transition: width 1.2s ease-in-out;
+  transition: width 1.8s ease-out;  /* smooth fill over ~2 seconds */
 }

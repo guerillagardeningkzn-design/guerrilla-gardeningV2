@@ -79,20 +79,12 @@ function stopGrowthAnimation() {
 }
 
 function updateGrowthVisuals(zoneId) {
-	console.log("updateGrowthVisuals called for zone", zoneId);
   const now = Date.now();
   const zonePlants = currentPlayer.planted?.[zoneId] || [];
 
-  console.log(`[Growth Update] Zone: ${zoneId} - ${zonePlants.length} plants found`);
-
   zonePlants.forEach(plant => {
     const plantEl = document.getElementById(`planted-${zoneId}-${plant.id}`);
-    if (!plantEl) {
-      console.log(`[Growth Update] Plant ${plant.id} element NOT found in DOM`);
-      return;
-    }
-
-    console.log(`[Growth Update] Updating plant ${plant.id} - current progress: ${(plant.progress * 100).toFixed(0)}%`);
+    if (!plantEl) return;
 
     const elapsedMs = now - plant.lastChecked;
     if (elapsedMs <= 0) return;
@@ -100,10 +92,14 @@ function updateGrowthVisuals(zoneId) {
     const deltaProgress = elapsedMs / plant.maturationMs;
     const currentProgress = Math.min(1, plant.progress + deltaProgress);
 
+    // Save the new progress FIRST
+    plant.progress = currentProgress;
+    plant.lastChecked = now;
+
+    // Now update DOM with the freshly saved value
     const progressFill = plantEl.querySelector(".planted-progress-fill");
     if (progressFill) {
       progressFill.style.width = `${currentProgress * 100}%`;
-      console.log(`[Growth Update] Progress bar set to ${(currentProgress * 100).toFixed(0)}%`);
     }
 
     const emojiEl = plantEl.querySelector(".stage-emoji");
@@ -118,11 +114,7 @@ function updateGrowthVisuals(zoneId) {
     if (textEl) {
       textEl.innerHTML = currentProgress >= 1 ? 'Ready to Harvest!' : stageName;
       textEl.style.color = stageColor;
-      console.log(`[Growth Update] Text/emoji updated to: ${stageName}`);
     }
-
-    plant.progress = currentProgress;
-    plant.lastChecked = now;
   });
 }
 
