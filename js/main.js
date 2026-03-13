@@ -733,260 +733,265 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
   });
 
+
+
+
   // Main interaction handler (markers, entities, buttons)
   document.addEventListener("click", async function(e) {
-    const t = e.target;
+  const t = e.target;
 
-    // Prevent planting logic when clicking UI elements / modals
-    if (e.target.closest('.gallery-item, button, .hud-right-stack, #back-to-map, .close-msg-btn, [role="dialog"]')) {
+  // ── Only ignore UI clicks when in planting mode ──
+  if (plantingMode && e.target.closest('.gallery-item, button, .hud-right-stack, #back-to-map, .close-msg-btn, [role="dialog"]')) {
+    return; // During planting: ignore UI/modals so we don't accidentally plant
+  }
+
+  // ── Normal handling when NOT planting ──
+  if (!plantingMode) {
+    // Zone markers
+    const marker = t.closest(".map-marker, [data-zone-id]");
+    if (marker) {
+      e.preventDefault();
+      const zoneId = marker.dataset.zoneId;
+      const zone = zones.find(z => z.id === zoneId);
+      if (zone && isZoneUnlocked(zone)) {
+        savePlayer(currentPlayer);
+        currentView = `zone:${zoneId}`;
+        renderView();
+      } else {
+        showMessage("Zone Locked", "Complete previous area first!", 5000);
+      }
       return;
     }
 
-    if (!plantingMode) {
-      // Normal game clicks
-      const marker = t.closest(".map-marker, [data-zone-id]");
-      if (marker) {
-        e.preventDefault();
-        const zoneId = marker.dataset.zoneId;
-        const zone = zones.find(z => z.id === zoneId);
-        if (zone && isZoneUnlocked(zone)) {
-          savePlayer(currentPlayer);
-          currentView = `zone:${zoneId}`;
-          renderView();
-        } else {
-          showMessage("Zone Locked", "Complete previous area first!", 5000);
+    // Entity clicks (invasives, natives, planted)
+    const entityEl = t.closest(".invasive-item, .native-item, .planted-item");
+    if (entityEl) {
+      const zoneId = currentView.split(":")[1];
+      if (entityEl.classList.contains("planted-item")) {
+        const plantId = entityEl.id.split('-').slice(2).join('-');
+        const plant = (currentPlayer.planted?.[zoneId] || []).find(p => p.id === plantId);
+        if (!plant || plant.progress < 1) {
+          showMessage("Not Ready", "This plant is not mature yet.", 3000);
+          return;
         }
+        if (entityEl.dataset.harvesting) return;
+        entityEl.dataset.harvesting = "true";
+        const coinsReward = 8 + (plant.rarity === "uncommon" ? 4 : 0) + (plant.rarity === "rare" ? 8 : 0);
+        const healthReward = 12;
+        const seedChance = 0.35;
+        currentPlayer.coins += coinsReward;
+        currentPlayer.zoneHealth[zoneId] = Math.min(100, (currentPlayer.zoneHealth[zoneId] || 0) + healthReward);
+        let bonusText = `+${coinsReward} 🪙 +${healthReward}% 🌿`;
+        if (Math.random() < seedChance) {
+          const childRarity = generateChildRarity(plant.rarity, zoneId, []);
+          if (!currentPlayer.inventory.seeds[plant.entityId]) currentPlayer.inventory.seeds[plant.entityId] = {};
+          currentPlayer.inventory.seeds[plant.entityId][childRarity] = (currentPlayer.inventory.seeds[plant.entityId][childRarity] || 0) + 1;
+          bonusText += ` +1 ${childRarity} seed 🌱`;
+        }
+        showRewardPopup(entityEl, coinsReward, healthReward, bonusText, 1800);
+        currentPlayer.planted[zoneId] = currentPlayer.planted[zoneId].filter(p => p.id !== plant.id);
+        if (currentPlayer.planted[zoneId]?.length === 0) delete currentPlayer.planted[zoneId];
+        savePlayer(currentPlayer);
+        entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+        entityEl.style.opacity = "0";
+        entityEl.style.transform = "scale(0.5) rotate(10deg)";
+        setTimeout(() => entityEl.remove(), 600);
+        updateHealthDisplay(currentPlayer.zoneHealth[zoneId]);
         return;
       }
-
-      const entityEl = t.closest(".invasive-item, .native-item, .planted-item");
-      if (entityEl) {
-        const zoneId = currentView.split(":")[1];
-        if (entityEl.classList.contains("planted-item")) {
-          const plantId = entityEl.id.split('-').slice(2).join('-');
-          const plant = (currentPlayer.planted?.[zoneId] || []).find(p => p.id === plantId);
-          if (!plant || plant.progress < 1) {
-            showMessage("Not Ready", "This plant is not mature yet.", 3000);
-            return;
-          }
-          if (entityEl.dataset.harvesting) return;
-          entityEl.dataset.harvesting = "true";
-          const coinsReward = 8 + (plant.rarity === "uncommon" ? 4 : 0) + (plant.rarity === "rare" ? 8 : 0);
-          const healthReward = 12;
-          const seedChance = 0.35;
-          currentPlayer.coins += coinsReward;
-          currentPlayer.zoneHealth[zoneId] = Math.min(100, (currentPlayer.zoneHealth[zoneId] || 0) + healthReward);
-          let bonusText = `+${coinsReward} 🪙 +${healthReward}% 🌿`;
-          if (Math.random() < seedChance) {
-            const childRarity = generateChildRarity(plant.rarity, zoneId, []);
-            if (!currentPlayer.inventory.seeds[plant.entityId]) currentPlayer.inventory.seeds[plant.entityId] = {};
-            currentPlayer.inventory.seeds[plant.entityId][childRarity] = (currentPlayer.inventory.seeds[plant.entityId][childRarity] || 0) + 1;
-            bonusText += ` +1 ${childRarity} seed 🌱`;
-          }
-          showRewardPopup(entityEl, coinsReward, healthReward, bonusText, 1800);
-          currentPlayer.planted[zoneId] = currentPlayer.planted[zoneId].filter(p => p.id !== plant.id);
-          if (currentPlayer.planted[zoneId]?.length === 0) delete currentPlayer.planted[zoneId];
-          savePlayer(currentPlayer);
-          entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
-          entityEl.style.opacity = "0";
-          entityEl.style.transform = "scale(0.5) rotate(10deg)";
-          setTimeout(() => entityEl.remove(), 600);
-          updateHealthDisplay(currentPlayer.zoneHealth[zoneId]);
+      const entityId = entityEl.dataset.entityId;
+      const entityType = entityEl.dataset.type || "invasive";
+      if (!entityId) return;
+      let baseEntity;
+      if (entityType === "native") {
+        baseEntity = nativesByZone[zoneId]?.find(i => i.id === entityId);
+      } else {
+        baseEntity = invasivesByZone[zoneId]?.find(i => i.id === entityId);
+      }
+      if (!baseEntity) return;
+      let entity = { ...baseEntity, type: entityType };
+      if (baseEntity.isExternal) {
+        const category = entityType === "native" ? "natives" : "invasives";
+        const fullDef = await loadEntityDefinition(entityId, category);
+        if (fullDef) {
+          entity = { ...entity, ...fullDef, isExternal: true };
+          entity.coins = Number(fullDef.coins) || baseEntity.coins || (entityType === "native" ? 2 : 5);
+          entity.health = Number(fullDef.health) || baseEntity.health || (entityType === "native" ? 3 : 8);
+        }
+      }
+      const condition = entity.mutable?.onDestroy?.condition;
+      if (condition) {
+        let hasTool = false;
+        let toolName = "";
+        if (condition === "playerHasItem:spade") {
+          hasTool = !!currentPlayer.inventory.spade;
+          toolName = "spade";
+        } else if (condition === "playerHasItem:sickle") {
+          hasTool = !!currentPlayer.inventory.sickle;
+          toolName = "sickle";
+        }
+        if (!hasTool) {
+          showMessage("Tool Required", entity.mutable.onDestroy.failMessage || `You need a ${toolName}!`, 4000);
           return;
         }
-        const entityId = entityEl.dataset.entityId;
-        const entityType = entityEl.dataset.type || "invasive";
-        if (!entityId) return;
-        let baseEntity;
-        if (entityType === "native") {
-          baseEntity = nativesByZone[zoneId]?.find(i => i.id === entityId);
-        } else {
-          baseEntity = invasivesByZone[zoneId]?.find(i => i.id === entityId);
+      }
+      if (entityType === "native") {
+        const parentRarity = entity.dna?.templateDefaults?.rarity || "common";
+        const childRarity = generateChildRarity(parentRarity, zoneId, []);
+        if (!currentPlayer.inventory.seeds[entity.id]) {
+          currentPlayer.inventory.seeds[entity.id] = {};
         }
-        if (!baseEntity) return;
-        let entity = { ...baseEntity, type: entityType };
-        if (baseEntity.isExternal) {
-          const category = entityType === "native" ? "natives" : "invasives";
-          const fullDef = await loadEntityDefinition(entityId, category);
-          if (fullDef) {
-            entity = { ...entity, ...fullDef, isExternal: true };
-            entity.coins = Number(fullDef.coins) || baseEntity.coins || (entityType === "native" ? 2 : 5);
-            entity.health = Number(fullDef.health) || baseEntity.health || (entityType === "native" ? 3 : 8);
-          }
-        }
-        const condition = entity.mutable?.onDestroy?.condition;
-        if (condition) {
-          let hasTool = false;
-          let toolName = "";
-          if (condition === "playerHasItem:spade") {
-            hasTool = !!currentPlayer.inventory.spade;
-            toolName = "spade";
-          } else if (condition === "playerHasItem:sickle") {
-            hasTool = !!currentPlayer.inventory.sickle;
-            toolName = "sickle";
-          }
-          if (!hasTool) {
-            showMessage("Tool Required", entity.mutable.onDestroy.failMessage || `You need a ${toolName}!`, 4000);
-            return;
-          }
-        }
-        if (entityType === "native") {
-          const parentRarity = entity.dna?.templateDefaults?.rarity || "common";
-          const childRarity = generateChildRarity(parentRarity, zoneId, []);
-          if (!currentPlayer.inventory.seeds[entity.id]) {
-            currentPlayer.inventory.seeds[entity.id] = {};
-          }
-          currentPlayer.inventory.seeds[entity.id][childRarity] =
-            (currentPlayer.inventory.seeds[entity.id][childRarity] || 0) + 1;
-          savePlayer(currentPlayer);
-          showRewardPopup(
-            entityEl,
-            0,
-            0,
-            `+1 ${childRarity} ${entity.name} Seed 🌱`,
-            1600
-          );
-          entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
-          entityEl.style.opacity = "0";
-          entityEl.style.transform = "scale(0.4) rotate(5deg)";
-          setTimeout(() => entityEl.remove(), 600);
-          return;
-        }
-        const changes = {
-          coins: currentPlayer.coins + (entity.coins || 5),
-          zoneHealth: { ...currentPlayer.zoneHealth }
-        };
-        changes.zoneHealth[zoneId] = Math.min(100, (currentPlayer.zoneHealth[zoneId] || 0) + (entity.health || 8));
-        updatePlayer(currentPlayer, changes);
-        let bonusText = "";
-        if (entity.mutable?.onDestroy?.drop?.length) {
-          const bonusParts = [];
-          for (const dropRule of entity.mutable.onDestroy.drop) {
-            const dropEntity = dropRule.entity;
-            const count = Number(dropRule.count) || 1;
-            if (Math.random() >= (dropRule.chance ?? 1)) continue;
-            if (dropEntity === "seed" || dropEntity === "seedling") {
-              const parentRarity = entity.dna?.templateDefaults?.rarity || "common";
-              const childRarity = generateChildRarity(parentRarity, zoneId, []);
-              if (!currentPlayer.inventory.seeds[entity.id]) {
-                currentPlayer.inventory.seeds[entity.id] = {};
-              }
-              currentPlayer.inventory.seeds[entity.id][childRarity] =
-                (currentPlayer.inventory.seeds[entity.id][childRarity] || 0) + count;
-              bonusParts.push(`+${count} ${childRarity} ${dropEntity}`);
-            } else if (dropEntity === "soil-clump") {
-              currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
-              bonusParts.push(`+${count} Soil Clump 🌱`);
-            }
-          }
-          if (bonusParts.length > 0) bonusText = bonusParts.join("   ");
-        }
+        currentPlayer.inventory.seeds[entity.id][childRarity] =
+          (currentPlayer.inventory.seeds[entity.id][childRarity] || 0) + 1;
+        savePlayer(currentPlayer);
+        showRewardPopup(
+          entityEl,
+          0,
+          0,
+          `+1 ${childRarity} ${entity.name} Seed 🌱`,
+          1600
+        );
         entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
         entityEl.style.opacity = "0";
         entityEl.style.transform = "scale(0.4) rotate(5deg)";
-        setTimeout(() => {
-          entityEl.remove();
-          showRewardPopup(entityEl, entity.coins || 5, entity.health || 8, bonusText, 1600);
-          updateCoinsDisplay();
-          updateHealthDisplay(changes.zoneHealth[zoneId]);
-          const progressFill = document.querySelector(".progress-fill");
-          if (progressFill) progressFill.style.width = `${changes.zoneHealth[zoneId]}%`;
-          const remaining = document.querySelectorAll(".invasive-item, .native-item");
-          if (remaining.length === 0) {
-            const zoneName = zones.find(z => z.id === zoneId)?.name || "Area";
-            showClearModal(`${zoneName} cleared! 🌿`);
+        setTimeout(() => entityEl.remove(), 600);
+        return;
+      }
+      const changes = {
+        coins: currentPlayer.coins + (entity.coins || 5),
+        zoneHealth: { ...currentPlayer.zoneHealth }
+      };
+      changes.zoneHealth[zoneId] = Math.min(100, (currentPlayer.zoneHealth[zoneId] || 0) + (entity.health || 8));
+      updatePlayer(currentPlayer, changes);
+      let bonusText = "";
+      if (entity.mutable?.onDestroy?.drop?.length) {
+        const bonusParts = [];
+        for (const dropRule of entity.mutable.onDestroy.drop) {
+          const dropEntity = dropRule.entity;
+          const count = Number(dropRule.count) || 1;
+          if (Math.random() >= (dropRule.chance ?? 1)) continue;
+          if (dropEntity === "seed" || dropEntity === "seedling") {
+            const parentRarity = entity.dna?.templateDefaults?.rarity || "common";
+            const childRarity = generateChildRarity(parentRarity, zoneId, []);
+            if (!currentPlayer.inventory.seeds[entity.id]) {
+              currentPlayer.inventory.seeds[entity.id] = {};
+            }
+            currentPlayer.inventory.seeds[entity.id][childRarity] =
+              (currentPlayer.inventory.seeds[entity.id][childRarity] || 0) + count;
+            bonusParts.push(`+${count} ${childRarity} ${dropEntity}`);
+          } else if (dropEntity === "soil-clump") {
+            currentPlayer.inventory.soilClumps = (currentPlayer.inventory.soilClumps || 0) + count;
+            bonusParts.push(`+${count} Soil Clump 🌱`);
           }
-        }, 600);
-        savePlayer(currentPlayer);
-        return;
+        }
+        if (bonusParts.length > 0) bonusText = bonusParts.join("   ");
       }
-
-      if (t.id === "back-to-map") {
-        stopGrowthAnimation();
-        savePlayer(currentPlayer);
-        currentView = "island";
-        renderView();
-        return;
-      }
-
-      if (t.closest(".hud-toolbox")) {
-        showToolboxGallery();
-        return;
-      }
-      if (t.closest(".hud-inventory")) {
-        showInventoryGallery();
-        return;
-      }
+      entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+      entityEl.style.opacity = "0";
+      entityEl.style.transform = "scale(0.4) rotate(5deg)";
+      setTimeout(() => {
+        entityEl.remove();
+        showRewardPopup(entityEl, entity.coins || 5, entity.health || 8, bonusText, 1600);
+        updateCoinsDisplay();
+        updateHealthDisplay(changes.zoneHealth[zoneId]);
+        const progressFill = document.querySelector(".progress-fill");
+        if (progressFill) progressFill.style.width = `${changes.zoneHealth[zoneId]}%`;
+        const remaining = document.querySelectorAll(".invasive-item, .native-item");
+        if (remaining.length === 0) {
+          const zoneName = zones.find(z => z.id === zoneId)?.name || "Area";
+          showClearModal(`${zoneName} cleared! 🌿`);
+        }
+      }, 600);
+      savePlayer(currentPlayer);
       return;
     }
 
-    // ── Planting mode active: place on canvas ──
-    if (!currentView.startsWith("zone:")) {
-      showMessage("Wrong Area", "You must be in a zone to plant.", 3000);
-      exitPlantingMode();
+    if (t.id === "back-to-map") {
+      stopGrowthAnimation();
+      savePlayer(currentPlayer);
+      currentView = "island";
+      renderView();
       return;
     }
 
-    const zoneId = currentView.split(":")[1];
-    const list = document.getElementById("entities-list");
-    if (!list) return;
-
-    const rect = list.getBoundingClientRect();
-    if (
-      e.clientX < rect.left ||
-      e.clientX > rect.right ||
-      e.clientY < rect.top ||
-      e.clientY > rect.bottom
-    ) {
-      return; // Clicked outside zone area — ignore
-    }
-
-    const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
-    const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
-
-    const left = Math.max(5, Math.min(95, xPercent)) + "%";
-    const top = Math.max(10, Math.min(90, yPercent)) + "%";
-
-    const { type, rarity } = selectedSeed;
-
-    if (!currentPlayer.inventory.seeds?.[type]?.[rarity]) {
-      showMessage("Error", "Seed no longer available.", 3000);
-      exitPlantingMode();
+    if (t.closest(".hud-toolbox")) {
+      showToolboxGallery();
       return;
     }
-
-    currentPlayer.inventory.seeds[type][rarity] -= 1;
-    if (currentPlayer.inventory.seeds[type][rarity] <= 0) {
-      delete currentPlayer.inventory.seeds[type][rarity];
-      if (Object.keys(currentPlayer.inventory.seeds[type]).length === 0) {
-        delete currentPlayer.inventory.seeds[type];
-      }
+    if (t.closest(".hud-inventory")) {
+      showInventoryGallery();
+      return;
     }
+    return;
+  }
 
-    const maturationMs = await getPlantGrowthParams(type, rarity);
-
-    const plant = {
-      id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-      entityId: type,
-      rarity,
-      plantedAt: Date.now(),
-      lastChecked: Date.now(),
-      progress: 0,
-      maturationMs,
-      left,
-      top
-    };
-
-    if (!currentPlayer.planted[zoneId]) currentPlayer.planted[zoneId] = [];
-    currentPlayer.planted[zoneId].push(plant);
-
-    savePlayer(currentPlayer);
-
-    showMessage("Planted!", `Placed ${rarity} ${type.replace(/-/g, ' ')}`, 2500);
-
+  // ── Planting mode active: place on canvas ──
+  if (!currentView.startsWith("zone:")) {
+    showMessage("Wrong Area", "You must be in a zone to plant.", 3000);
     exitPlantingMode();
-    renderView();
-  });
+    return;
+  }
+
+  const zoneId = currentView.split(":")[1];
+  const list = document.getElementById("entities-list");
+  if (!list) return;
+
+  const rect = list.getBoundingClientRect();
+  if (
+    e.clientX < rect.left ||
+    e.clientX > rect.right ||
+    e.clientY < rect.top ||
+    e.clientY > rect.bottom
+  ) {
+    return; // Clicked outside zone area — ignore (keeps mode active)
+  }
+
+  const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
+  const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
+
+  const left = Math.max(5, Math.min(95, xPercent)) + "%";
+  const top = Math.max(10, Math.min(90, yPercent)) + "%";
+
+  const { type, rarity } = selectedSeed;
+
+  if (!currentPlayer.inventory.seeds?.[type]?.[rarity]) {
+    showMessage("Error", "Seed no longer available.", 3000);
+    exitPlantingMode();
+    return;
+  }
+
+  currentPlayer.inventory.seeds[type][rarity] -= 1;
+  if (currentPlayer.inventory.seeds[type][rarity] <= 0) {
+    delete currentPlayer.inventory.seeds[type][rarity];
+    if (Object.keys(currentPlayer.inventory.seeds[type]).length === 0) {
+      delete currentPlayer.inventory.seeds[type];
+    }
+  }
+
+  const maturationMs = await getPlantGrowthParams(type, rarity);
+
+  const plant = {
+    id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+    entityId: type,
+    rarity,
+    plantedAt: Date.now(),
+    lastChecked: Date.now(),
+    progress: 0,
+    maturationMs,
+    left,
+    top
+  };
+
+  if (!currentPlayer.planted[zoneId]) currentPlayer.planted[zoneId] = [];
+  currentPlayer.planted[zoneId].push(plant);
+
+  savePlayer(currentPlayer);
+
+  showMessage("Planted!", `Placed ${rarity} ${type.replace(/-/g, ' ')}`, 2500);
+
+  exitPlantingMode();
+  renderView();
+});
 
   // Touch support for planting
   document.addEventListener("touchend", function(e) {
