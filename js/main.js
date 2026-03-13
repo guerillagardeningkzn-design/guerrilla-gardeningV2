@@ -99,19 +99,19 @@ function startGrowthAnimation(zoneId) {
       if (plant.progress >= 1.00) { stageEmoji = "🌴✨"; stageName = "Mature"; stageColor = "#FFD700"; }
 
       el.innerHTML = `
-        <div class="stage-emoji" style="font-size:3.2rem; margin-bottom:8px;">
-          ${stageEmoji}
-        </div>
-        <div class="entity-name" style="font-weight:600;">
-          ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
-        </div>
-        <div class="planted-progress">
-          <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
-        </div>
-        <div class="progress-text" style="font-size:0.95rem; color: ${stageColor}; margin-top:8px;">
-          ${plant.progress >= 1 ? 'Ready to Harvest!' : stageName}
-        </div>
-      `;
+  <div class="stage-emoji" style="margin-bottom:8px;">
+    ${stageEmoji}
+  </div>
+  <div class="entity-name" style="font-weight:600;">
+    ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
+  </div>
+  <div class="planted-progress">
+    <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
+  </div>
+  <div class="progress-text" style="color: ${stageColor}; margin-top:8px;">
+    ${plant.progress >= 1 ? 'Ready to Harvest!' : stageName}
+  </div>
+`;
 
       el.style.position = "absolute";
       el.style.left = plant.left || `${Math.random() * 80 + 10}%`;
@@ -716,19 +716,19 @@ async function renderView() {
       }
 
       el.innerHTML = `
-        <div class="stage-emoji" style="font-size:3.2rem; margin-bottom:8px;">
-          ${stageEmoji}
-        </div>
-        <div class="entity-name" style="font-weight:600;">
-          ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
-        </div>
-        <div class="planted-progress">
-          <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
-        </div>
-        <div class="progress-text" style="font-size:0.95rem; color: ${stageColor}; margin-top:8px;">
-          ${plant.progress >= 1 ? 'Ready to Harvest!' : stageName}
-        </div>
-      `;
+  <div class="stage-emoji" style="margin-bottom:8px;">
+    ${stageEmoji}
+  </div>
+  <div class="entity-name" style="font-weight:600;">
+    ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
+  </div>
+  <div class="planted-progress">
+    <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
+  </div>
+  <div class="progress-text" style="color: ${stageColor}; margin-top:8px;">
+    ${plant.progress >= 1 ? 'Ready to Harvest!' : stageName}
+  </div>
+`;
 
       el.style.position = "absolute";
       el.style.left = `${Math.random() * 80 + 10}%`;
