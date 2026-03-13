@@ -17,9 +17,11 @@ html, body {
 html {
   font-size: 16px; /* desktop default */
 }
+
 @media (max-width: 768px) {
   html { font-size: 14px; }
 }
+
 @media (max-width: 480px) {
   html { font-size: 12px; }
 }
@@ -41,6 +43,7 @@ html {
   box-shadow: 0 8px 20px rgba(0,0,0,0.5);
   transition: all 0.3s ease;
 }
+
 #fullscreen-btn:hover {
   transform: scale(1.08);
   box-shadow: 0 12px 30px rgba(76,175,80,0.6);
@@ -59,6 +62,7 @@ html {
   padding: 20px;
   z-index: 9998;
 }
+
 .portrait-warning-visible #portrait-warning {
   display: flex;
 }
@@ -69,6 +73,7 @@ html {
   inset: 0;
   background: #000;
 }
+
 #map-container {
   width: 100%;
   height: 100%;
@@ -94,10 +99,11 @@ html {
   inset: 0;
   z-index: 10;
 }
+
 .map-marker {
   position: absolute;
-  width: 64px;
-  height: 64px;
+  width: clamp(48px, 8vw, 72px);
+  height: clamp(48px, 8vw, 72px);
   background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
   border-radius: 50%;
   border: 4px solid #FFD700;
@@ -105,28 +111,32 @@ html {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: clamp(0.7rem, 2vw, 0.9rem);
   font-weight: bold;
   color: #1a1a1a;
   box-shadow: 0 6px 16px rgba(255,215,0,0.6), inset 0 2px 4px rgba(255,255,255,0.8);
   transform: translate(-50%, -50%);
   transition: all 0.25s ease;
 }
+
 .map-marker:hover {
   transform: translate(-50%, -50%) scale(1.18);
   box-shadow: 0 12px 30px rgba(255,215,0,0.9), 0 0 20px rgba(255,215,0,0.7);
   background: rgba(255,255,255,1);
 }
+
 .map-marker.locked {
   background: rgba(150,150,150,0.6) !important;
   border-color: #757575;
   cursor: not-allowed;
   opacity: 0.65;
 }
+
 .map-marker.locked:hover {
   transform: translate(-50%, -50%) scale(1.05);
   box-shadow: 0 8px 20px rgba(150,150,150,0.8);
 }
+
 .marker-label {
   text-align: center;
   line-height: 1.1;
@@ -212,13 +222,14 @@ html {
   z-index: 200;
   white-space: nowrap;
 }
+
 #back-to-map:hover {
   background: rgba(76, 175, 80, 1);
   transform: translateX(-50%) scale(1.08);
   box-shadow: 0 1em 2.4em rgba(76,175,80,0.5);
 }
 
-/* ─── Zone content & invasives ────────────────────────────────────────────────── */
+/* ─── Zone content ─────────────────────────────────────────────────────────────── */
 .zone-content {
   position: relative;
   z-index: 3;
@@ -226,25 +237,36 @@ html {
   color: white;
   text-shadow: 1px 1px 4px black;
 }
-.invasive-item {
-  position: absolute;
-  cursor: pointer;
-  width: 120px;
-  height: 120px;
-  z-index: 15;
-  transition: transform 0.3s ease;
-}
-.invasive-item:hover {
-  transform: scale(1.15);
-}
-.invasive-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+
+.zone-content h2 {
+  font-size: clamp(1.4rem, 5vw, 1.8rem);
+  margin-bottom: 0.5em;
+  background: rgba(0,0,0,0.4);
+  padding: 0.5em 1em;
+  border-radius: 12px;
+  display: inline-block;
+  backdrop-filter: blur(4px);
 }
 
-/* ─── Progress bar ─────────────────────────────────────────────────────────────── */
+.zone-content p {
+  font-size: clamp(0.95rem, 3.5vw, 1.1rem);
+  margin-bottom: 1em;
+  background: rgba(0,0,0,0.3);
+  padding: 0.4em 0.8em;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+.zone-content h3 {
+  font-size: clamp(1rem, 3.8vw, 1.1rem);
+  margin: 1.2em 0 0.8em;
+  background: rgba(0,0,0,0.4);
+  padding: 0.4em 0.8em;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+/* ─── Progress bar (zone health) ───────────────────────────────────────────────── */
 .progress-bar {
   height: clamp(8px, 1.2vh, 12px);
   background: rgba(255,255,255,0.18);
@@ -255,118 +277,72 @@ html {
   width: 100%;
   max-width: clamp(280px, 60vw, 450px);
 }
+
 .progress-fill {
   height: 100%;
   background: linear-gradient(to right, #4CAF50, #8BC34A);
   transition: width 0.6s ease;
 }
 
-/* ─── Zone title, description & instructions ───────────────────────────────────── */
-.zone-content h2 {
-  font-size: clamp(1.4rem, 5vw, 1.8rem);
-  margin-bottom: 0.5em;
-  background: rgba(0,0,0,0.4);
-  padding: 0.5em 1em;
-  border-radius: 12px;
-  display: inline-block;
-  backdrop-filter: blur(4px);
-}
-.zone-content p {
-  font-size: clamp(0.95rem, 3.5vw, 1.1rem);
-  margin-bottom: 1em;
-  background: rgba(0,0,0,0.3);
-  padding: 0.4em 0.8em;
-  border-radius: 10px;
-  display: inline-block;
-}
-.zone-content h3 {
-  font-size: clamp(1rem, 3.8vw, 1.1rem);
-  margin: 1.2em 0 0.8em;
-  background: rgba(0,0,0,0.4);
-  padding: 0.4em 0.8em;
-  border-radius: 10px;
-  display: inline-block;
-}
-
-/* ─── Natives vs invasives ─────────────────────────────────────────────────────── */
-.native-item {
+/* ─── Entities (invasives, natives, planted) ───────────────────────────────────── */
+.native-item,
+.invasive-item,
+.planted-item {
+  position: absolute;
+  width: clamp(60px, 14vmin, 160px);          /* scales nicely, vmin prevents extreme sizes on portrait */
+  height: auto;
+  z-index: 6;
+  pointer-events: auto;
   cursor: pointer;
   transition: transform 0.3s ease;
 }
 
-.native-item:hover {
+.native-item:hover,
+.invasive-item:hover,
+.planted-item:hover {
   transform: scale(1.12);
 }
 
-.native-image {
-  filter: drop-shadow(0 4px 8px rgba(0,100,0,0.5)); /* green tint */
-  opacity: 0.92;
-}
-
-.entity-name {
-  text-align: center;
-  font-size: 0.9rem;
-  color: #e8f5e9;
-  text-shadow: 1px 1px 3px black;
-}
-
+/* Images inside entities */
+.native-item img,
 .invasive-item img,
-.native-item img {
+.planted-item img {
   width: 100%;
   height: auto;
-  max-height: 120px;          /* or whatever size matches your weeds */
-  object-fit: contain;
+  max-height: 100%;
+  object-fit: contain;                        /* preserves aspect ratio, no squish */
   display: block;
   margin: 0 auto;
 }
 
-.planted-item {
-  width: 100px;
+/* Entity name styling */
+.entity-name {
   text-align: center;
-  background: rgba(76,175,80,0.15);
-  border-radius: 12px;
-  padding: 8px;
-  border: 1px solid #81C784;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  transition: transform 0.3s ease;
+  font-size: clamp(0.7rem, 2.5vw, 1rem);
+  color: #e8f5e9;
+  text-shadow: 1px 1px 3px black;
+  margin-top: 4px;
 }
 
-.planted-item:hover {
-  transform: scale(1.08);
-}
-
+/* ─── Planted-item specific ────────────────────────────────────────────────────── */
 .planted-item {
-  width: 120px;
   text-align: center;
   background: rgba(76, 175, 80, 0.22);
   border: 2px solid #81C784;
   border-radius: 16px;
   padding: 12px 8px;
   box-shadow: 0 6px 16px rgba(0,0,0,0.4);
-  transition: all 0.35s ease;
   backdrop-filter: blur(6px);
 }
 
-.planted-item {
-  width: 120px;
-  text-align: center;
-  background: rgba(76, 175, 80, 0.22);
-  border: 2px solid #81C784;
-  border-radius: 16px;
-  padding: 12px 8px;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
-  transition: all 0.35s ease;
-  backdrop-filter: blur(6px);
-  position: relative; /* important for positioning children */
-}
-
+/* Progress bar inside planted items */
 .planted-progress {
-  width: 100%;
-  height: 12px;
+  width: 90%;
+  height: clamp(6px, 1.2vw, 12px);
   background: rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   overflow: hidden;
-  margin: 8px 0;
+  margin: 8px auto 0;
   border: 1px solid rgba(255,255,255,0.3);
 }
 
@@ -378,43 +354,13 @@ html {
   min-width: 1px; /* prevents disappearing at very low % */
 }
 
-/* Base entity size — scales with viewport width */
-.native-item,
-.invasive-item,
-.planted-item {
-  position: absolute;
-  width: clamp(60px, 12vw, 140px);          /* min 60px, preferred ~12% of viewport width, max 140px */
-  height: auto;                             /* let height follow aspect ratio */
-  aspect-ratio: 1 / 1;                      /* force square (or change to 3/4, 4/3 etc. if needed) */
-  transform: translate(-50%, -50%);         /* center on the position */
-  z-index: 6;
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-/* Image inside entity fills container while keeping aspect ratio */
-.native-item img,
-.invasive-item img,
-.planted-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;                      /* keeps aspect ratio, no cropping */
-  display: block;
-}
-
-/* Optional: make planted progress bar scale too */
-.planted-progress {
-  width: 90%;                               /* slightly smaller than parent */
-  height: clamp(6px, 1.2vw, 12px);          /* scales height with screen */
-  margin: 8px auto 0;
-}
-
-/* Optional: scale emoji/text a bit */
+/* Emoji & text scaling inside planted items */
 .stage-emoji {
   font-size: clamp(2rem, 8vw, 3.5rem);
+  margin-bottom: 8px;
 }
 
-.progress-text,
-.entity-name {
+.progress-text {
   font-size: clamp(0.7rem, 2.5vw, 1rem);
+  margin-top: 8px;
 }
