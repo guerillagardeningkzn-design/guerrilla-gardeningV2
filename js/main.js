@@ -924,81 +924,98 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
 
     // ── Planting mode active: place on canvas ──
-    if (!currentView.startsWith("zone:")) {
-      showMessage("Wrong Area", "You must be in a zone to plant.", 3000);
-      exitPlantingMode();
-      return;
-    }
+if (!currentView.startsWith("zone:")) {
+  showMessage("Wrong Area", "You must be in a zone to plant.", 3000);
+  exitPlantingMode();
+  return;
+}
 
-    const zoneId = currentView.split(":")[1];
-    const list = document.getElementById("entities-list");
-    if (!list) return;
+const zoneId = currentView.split(":")[1];
 
-    console.log("Planting click detected - mode active, checking bounds");
+// Use game-container for reliable bounding box
+const container = document.getElementById("game-container");
+if (!container) {
+  console.log("No game-container found - cannot plant");
+  return;
+}
 
-    const rect = list.getBoundingClientRect();
-    console.log(
-      "Click:", e.clientX, e.clientY,
-      "Zone rect:", rect.left, rect.top, rect.right, rect.bottom
-    );
+console.log("Planting click detected - mode active, checking bounds");
 
-    if (
-      e.clientX < rect.left ||
-      e.clientX > rect.right ||
-      e.clientY < rect.top ||
-      e.clientY > rect.bottom
-    ) {
-      console.log("Click outside zone area - ignored");
-      return; // Clicked outside zone area — ignore (keeps mode active)
-    }
+const rect = container.getBoundingClientRect();
+console.log(
+  "Click:", e.clientX, e.clientY,
+  "Container rect:", rect.left, rect.top, rect.right, rect.bottom
+);
 
-    console.log("Click INSIDE zone - proceeding to plant");
+if (
+  e.clientX < rect.left ||
+  e.clientX > rect.right ||
+  e.clientY < rect.top ||
+  e.clientY > rect.bottom
+) {
+  console.log("Click outside game container - ignored");
+  return;
+}
 
-    const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
-    const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
+console.log("Click INSIDE container - proceeding to plant");
 
-    const left = Math.max(5, Math.min(95, xPercent)) + "%";
-    const top = Math.max(10, Math.min(90, yPercent)) + "%";
+// Optional: still use entities-list for position calculation if you want plants relative to it
+const list = document.getElementById("entities-list");
+let leftPercent, topPercent;
 
-    const { type, rarity } = selectedSeed;
+if (list) {
+  const listRect = list.getBoundingClientRect();
+  const xPercent = ((e.clientX - listRect.left) / listRect.width) * 100;
+  const yPercent = ((e.clientY - listRect.top) / listRect.height) * 100;
+  leftPercent = Math.max(5, Math.min(95, xPercent)) + "%";
+  topPercent = Math.max(10, Math.min(90, yPercent)) + "%";
+} else {
+  // Fallback to container-relative if list missing
+  const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
+  const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
+  leftPercent = Math.max(5, Math.min(95, xPercent)) + "%";
+  topPercent = Math.max(10, Math.min(90, yPercent)) + "%";
+}
 
-    if (!currentPlayer.inventory.seeds?.[type]?.[rarity]) {
-      showMessage("Error", "Seed no longer available.", 3000);
-      exitPlantingMode();
-      return;
-    }
+const { type, rarity } = selectedSeed;
 
-    currentPlayer.inventory.seeds[type][rarity] -= 1;
-    if (currentPlayer.inventory.seeds[type][rarity] <= 0) {
-      delete currentPlayer.inventory.seeds[type][rarity];
-      if (Object.keys(currentPlayer.inventory.seeds[type]).length === 0) {
-        delete currentPlayer.inventory.seeds[type];
-      }
-    }
+if (!currentPlayer.inventory.seeds?.[type]?.[rarity]) {
+  showMessage("Error", "Seed no longer available.", 3000);
+  exitPlantingMode();
+  return;
+}
 
-    const maturationMs = await getPlantGrowthParams(type, rarity);
+currentPlayer.inventory.seeds[type][rarity] -= 1;
+if (currentPlayer.inventory.seeds[type][rarity] <= 0) {
+  delete currentPlayer.inventory.seeds[type][rarity];
+  if (Object.keys(currentPlayer.inventory.seeds[type]).length === 0) {
+    delete currentPlayer.inventory.seeds[type];
+  }
+}
 
-    const plant = {
-      id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-      entityId: type,
-      rarity,
-      plantedAt: Date.now(),
-      lastChecked: Date.now(),
-      progress: 0,
-      maturationMs,
-      left,
-      top
-    };
+const maturationMs = await getPlantGrowthParams(type, rarity);
 
-    if (!currentPlayer.planted[zoneId]) currentPlayer.planted[zoneId] = [];
-    currentPlayer.planted[zoneId].push(plant);
+const plant = {
+  id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+  entityId: type,
+  rarity,
+  plantedAt: Date.now(),
+  lastChecked: Date.now(),
+  progress: 0,
+  maturationMs,
+  left: leftPercent,
+  top: topPercent
+};
 
-    savePlayer(currentPlayer);
+if (!currentPlayer.planted[zoneId]) currentPlayer.planted[zoneId] = [];
+currentPlayer.planted[zoneId].push(plant);
 
-    showMessage("Planted!", `Placed ${rarity} ${type.replace(/-/g, ' ')}`, 2500);
+savePlayer(currentPlayer);
 
-    exitPlantingMode();
-    renderView();
+showMessage("Planted!", `Placed ${rarity} ${type.replace(/-/g, ' ')}`, 2500);
+
+exitPlantingMode();
+renderView();
   });
 
   // Touch support for planting
