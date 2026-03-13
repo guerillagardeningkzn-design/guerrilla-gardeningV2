@@ -87,10 +87,12 @@ html {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center;
+  object-fit: contain;                    /* full image visible, aspect ratio preserved */
+  object-position: center;                /* centered when letterboxed */
+  background-color: #0a2a1a;              /* dark green / foresty fallback – change per zone if desired */
   pointer-events: none;
   z-index: 1;
+  image-rendering: crisp-edges;           /* optional: sharper on high-dpi screens */
 }
 
 /* ─── Markers on island map ───────────────────────────────────────────────────── */
@@ -356,8 +358,9 @@ html {
 
 /* Emoji & text scaling inside planted items */
 .stage-emoji {
-  font-size: clamp(2rem, 8vw, 3.5rem);
-  margin-bottom: 8px;
+  font-size: clamp(1.8rem, 10vmin, 4rem);  /* bigger range, feels more natural */
+  line-height: 1;
+  margin-bottom: 0.5em;
 }
 
 .progress-text {
