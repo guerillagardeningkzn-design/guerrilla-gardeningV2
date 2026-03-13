@@ -928,73 +928,80 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   // ── Planting mode active: place on canvas ──
   if (!currentView.startsWith("zone:")) {
-    showMessage("Wrong Area", "You must be in a zone to plant.", 3000);
-    exitPlantingMode();
-    return;
-  }
-
-  const zoneId = currentView.split(":")[1];
-  const list = document.getElementById("entities-list");
-  if (!list) return;
-console.log("Planting click detected - mode active, checking bounds");
-  const rect = list.getBoundingClientRect();
-  console.log("Click:", e.clientX, e.clientY, "Zone rect:", rect.left, rect.top, rect.right, rect.bottom);
-  if (
-    e.clientX < rect.left ||
-    e.clientX > rect.right ||
-    e.clientY < rect.top ||
-    e.clientY > rect.bottom
-  ) {
-	  console.log("Click outside zone area - ignored");
-    return; // Clicked outside zone area — ignore (keeps mode active)
-  }
-
-  const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
-  const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
-
-  const left = Math.max(5, Math.min(95, xPercent)) + "%";
-  const top = Math.max(10, Math.min(90, yPercent)) + "%";
-
-  const { type, rarity } = selectedSeed;
-
-  if (!currentPlayer.inventory.seeds?.[type]?.[rarity]) {
-    showMessage("Error", "Seed no longer available.", 3000);
-    exitPlantingMode();
-    return;
-  }
-
-  currentPlayer.inventory.seeds[type][rarity] -= 1;
-  if (currentPlayer.inventory.seeds[type][rarity] <= 0) {
-    delete currentPlayer.inventory.seeds[type][rarity];
-    if (Object.keys(currentPlayer.inventory.seeds[type]).length === 0) {
-      delete currentPlayer.inventory.seeds[type];
-    }
-  }
-
-  const maturationMs = await getPlantGrowthParams(type, rarity);
-
-  const plant = {
-    id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-    entityId: type,
-    rarity,
-    plantedAt: Date.now(),
-    lastChecked: Date.now(),
-    progress: 0,
-    maturationMs,
-    left,
-    top
-  };
-
-  if (!currentPlayer.planted[zoneId]) currentPlayer.planted[zoneId] = [];
-  currentPlayer.planted[zoneId].push(plant);
-
-  savePlayer(currentPlayer);
-
-  showMessage("Planted!", `Placed ${rarity} ${type.replace(/-/g, ' ')}`, 2500);
-
+  showMessage("Wrong Area", "You must be in a zone to plant.", 3000);
   exitPlantingMode();
-  renderView();
-});
+  return;
+}
+
+const zoneId = currentView.split(":")[1];
+const list = document.getElementById("entities-list");
+if (!list) return;
+
+console.log("Planting click detected - mode active, checking bounds");
+
+const rect = list.getBoundingClientRect();
+console.log(
+  "Click:", e.clientX, e.clientY,
+  "Zone rect:", rect.left, rect.top, rect.right, rect.bottom
+);
+
+if (
+  e.clientX < rect.left ||
+  e.clientX > rect.right ||
+  e.clientY < rect.top ||
+  e.clientY > rect.bottom
+) {
+  console.log("Click outside zone area - ignored");
+  return; // Clicked outside zone area — ignore (keeps mode active)
+}
+
+console.log("Click INSIDE zone - proceeding to plant");
+
+const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
+const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
+
+const left = Math.max(5, Math.min(95, xPercent)) + "%";
+const top = Math.max(10, Math.min(90, yPercent)) + "%";
+
+const { type, rarity } = selectedSeed;
+
+if (!currentPlayer.inventory.seeds?.[type]?.[rarity]) {
+  showMessage("Error", "Seed no longer available.", 3000);
+  exitPlantingMode();
+  return;
+}
+
+currentPlayer.inventory.seeds[type][rarity] -= 1;
+if (currentPlayer.inventory.seeds[type][rarity] <= 0) {
+  delete currentPlayer.inventory.seeds[type][rarity];
+  if (Object.keys(currentPlayer.inventory.seeds[type]).length === 0) {
+    delete currentPlayer.inventory.seeds[type];
+  }
+}
+
+const maturationMs = await getPlantGrowthParams(type, rarity);
+
+const plant = {
+  id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+  entityId: type,
+  rarity,
+  plantedAt: Date.now(),
+  lastChecked: Date.now(),
+  progress: 0,
+  maturationMs,
+  left,
+  top
+};
+
+if (!currentPlayer.planted[zoneId]) currentPlayer.planted[zoneId] = [];
+currentPlayer.planted[zoneId].push(plant);
+
+savePlayer(currentPlayer);
+
+showMessage("Planted!", `Placed ${rarity} ${type.replace(/-/g, ' ')}`, 2500);
+
+exitPlantingMode();
+renderView();
 
   // Touch support for planting
   document.addEventListener("touchend", function(e) {
