@@ -73,7 +73,7 @@ function startGrowthAnimation(zoneId) {
     advancePlantGrowth(zoneId, true);
     const list = document.getElementById("entities-list");
     if (!list) return;
-    document.querySelectorAll('.planted-item').forEach(el => el.remove());
+    document.querySelectorAll('.planted-item:not(#placement-preview)').forEach(el => el.remove());
     const plantedInZone = currentPlayer.planted?.[zoneId] || [];
     plantedInZone.forEach(plant => {
       const uniqueId = `planted-${zoneId}-${plant.id}`;
@@ -167,9 +167,9 @@ function exitPlantingMode() {
   selectedSeed = null;
   document.body.style.cursor = "default";
   if (placementPreview) {
-    placementPreview.remove();
-    placementPreview = null;
-  }
+  placementPreview.remove();
+  placementPreview = null;
+}
 }
 
 // ─── Editor-ready growth parameters ─────────────────────────────────────────────
@@ -516,16 +516,17 @@ function showSeedPacks() {
 
         if (placementPreview) placementPreview.remove();
         placementPreview = document.createElement("div");
-        placementPreview.className = "native-item planted-item";
-        placementPreview.style.opacity = "0.5";
-        placementPreview.style.pointerEvents = "none";
-        placementPreview.style.position = "absolute";
-        placementPreview.style.zIndex = "1000";
-        placementPreview.innerHTML = `
-          <div class="stage-emoji" style="margin-bottom:8px;">🌱</div>
-          <div class="entity-name" style="font-weight:600;">${rarity} ${type.replace(/-/g, ' ')}</div>
-        `;
-        document.body.appendChild(placementPreview);
+placementPreview.id = "placement-preview";  // ← Add this ID
+placementPreview.className = "native-item planted-item";
+placementPreview.style.opacity = "0.5";
+placementPreview.style.pointerEvents = "none";
+placementPreview.style.position = "absolute";
+placementPreview.style.zIndex = "1000";
+placementPreview.innerHTML = `
+  <div class="stage-emoji" style="margin-bottom:8px;">🌱</div>
+  <div class="entity-name" style="font-weight:600;">${rarity} ${type.replace(/-/g, ' ')}</div>
+`;
+document.body.appendChild(placementPreview);
 
         console.log(`Entered planting mode for ${rarity} ${type}`);
       });
@@ -935,14 +936,16 @@ document.addEventListener("DOMContentLoaded", async function() {
   const zoneId = currentView.split(":")[1];
   const list = document.getElementById("entities-list");
   if (!list) return;
-
+console.log("Planting click detected - mode active, checking bounds");
   const rect = list.getBoundingClientRect();
+  console.log("Click:", e.clientX, e.clientY, "Zone rect:", rect.left, rect.top, rect.right, re
   if (
     e.clientX < rect.left ||
     e.clientX > rect.right ||
     e.clientY < rect.top ||
     e.clientY > rect.bottom
   ) {
+	  console.log("Click outside zone area - ignored");
     return; // Clicked outside zone area — ignore (keeps mode active)
   }
 
@@ -1015,30 +1018,30 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   // Preview movement (mouse)
   document.addEventListener("mousemove", (e) => {
-    if (!plantingMode || !placementPreview) return;
-    const list = document.getElementById("entities-list");
-    if (!list) return;
-    const rect = list.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    placementPreview.style.left = `${x}px`;
-    placementPreview.style.top = `${y}px`;
-    placementPreview.style.transform = "translate(-50%, -50%)";
-  });
+  if (!plantingMode || !placementPreview) return;
+  const list = document.getElementById("entities-list");
+  if (!list) return;
+  const rect = list.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  placementPreview.style.left = `${x}px`;
+  placementPreview.style.top = `${y}px`;
+  placementPreview.style.transform = "translate(-50%, -100%)";  // Better anchor: bottom-center under cursor
+});
 
   // Preview movement (touch)
   document.addEventListener("touchmove", (e) => {
-    if (e.touches.length !== 1 || !plantingMode || !placementPreview) return;
-    const touch = e.touches[0];
-    const list = document.getElementById("entities-list");
-    if (!list) return;
-    const rect = list.getBoundingClientRect();
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
-    placementPreview.style.left = `${x}px`;
-    placementPreview.style.top = `${y}px`;
-    placementPreview.style.transform = "translate(-50%, -50%)";
-  }, { passive: true });
+  if (e.touches.length !== 1 || !plantingMode || !placementPreview) return;
+  const touch = e.touches[0];
+  const list = document.getElementById("entities-list");
+  if (!list) return;
+  const rect = list.getBoundingClientRect();
+  const x = touch.clientX - rect.left;
+  const y = touch.clientY - rect.top;
+  placementPreview.style.left = `${x}px`;
+  placementPreview.style.top = `${y}px`;
+  placementPreview.style.transform = "translate(-50%, -100%)";
+}, { passive: true });
 
   renderView();
   console.log("Game loaded – island map with markers");
