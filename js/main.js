@@ -938,7 +938,7 @@ document.addEventListener("DOMContentLoaded", async function() {
   if (!list) return;
 console.log("Planting click detected - mode active, checking bounds");
   const rect = list.getBoundingClientRect();
-  console.log("Click:", e.clientX, e.clientY, "Zone rect:", rect.left, rect.top, rect.right, re
+  console.log("Click:", e.clientX, e.clientY, "Zone rect:", rect.left, rect.top, rect.right, rect.bottom);
   if (
     e.clientX < rect.left ||
     e.clientX > rect.right ||
