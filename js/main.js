@@ -508,26 +508,42 @@ function showSeedPacks() {
 
   // Add click handlers after modal appears
   setTimeout(() => {
-    document.querySelectorAll('.seed-option').forEach(option => {
-      option.addEventListener('click', () => {
-        const type = option.dataset.type;
-        const rarity = option.dataset.rarity;
+  document.querySelectorAll('.seed-option').forEach(option => {
+    option.addEventListener('click', () => {
+      const type = option.dataset.type;
+      const rarity = option.dataset.rarity;
 
-        // Enter planting mode
-        plantingMode = true;
-        selectedSeed = { type, rarity };
+      // Enter planting mode
+      plantingMode = true;
+      selectedSeed = { type, rarity };
 
-        // Show hint
-        showMessage("Planting Mode", "Tap anywhere on the zone to place your seed!", 3000);
+      // Show hint
+      showMessage("Planting Mode", "Tap anywhere on the zone to place your seed!", 3000);
 
-        // Close all open modals
-        document.querySelectorAll('div[style*="position: fixed; inset: 0"]').forEach(m => m.remove());
+      // Close all open modals
+      document.querySelectorAll('div[style*="position: fixed; inset: 0"]').forEach(m => m.remove());
 
-        // Optional: change cursor to indicate placement
-        document.body.style.cursor = "crosshair";
-      });
+      // Change cursor
+      document.body.style.cursor = "crosshair";
+
+      // Create preview (NOW inside scope where type & rarity exist)
+      if (placementPreview) placementPreview.remove();
+      placementPreview = document.createElement("div");
+      placementPreview.className = "native-item planted-item";
+      placementPreview.style.opacity = "0.5";
+      placementPreview.style.pointerEvents = "none";
+      placementPreview.style.position = "absolute";
+      placementPreview.style.zIndex = "1000";
+      placementPreview.innerHTML = `
+        <div class="stage-emoji" style="margin-bottom:8px;">🌱</div>
+        <div class="entity-name" style="font-weight:600;">${rarity} ${type.replace(/-/g, ' ')}</div>
+      `;
+      document.body.appendChild(placementPreview);
+
+      console.log(`Preview created for ${rarity} ${type}`);
     });
-  }, 100);
+  });
+}, 100);
 }
 
 // ─── Render ──────────────────────────────────────────────────────────────────────
@@ -1023,6 +1039,12 @@ document.addEventListener("click", async function(e) {
 
   // Force re-render to show new plant immediately
   renderView();
+  
+  // Clean up preview
+if (placementPreview) {
+  placementPreview.remove();
+  placementPreview = null;
+}
 });
 
 // Also support touchend for mobile
