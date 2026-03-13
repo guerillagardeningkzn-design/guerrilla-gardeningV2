@@ -111,7 +111,7 @@ el.style.left = plant.left || `${Math.random() * 80 + 10}%`;
 el.style.top = plant.top || `${Math.random() * 60 + 20}%`;
 
 // Apply visual offset (same as preview)
-el.style.transform = "translate(-25%, +75%)";   // ← add this line (or use plant.offsetX/Y if you added it)
+el.style.transform = "translate(-30%, +75%)";   // ← add this line (or use plant.offsetX/Y if you added it)
 
 el.style.zIndex = "6";
       list.appendChild(el);
@@ -693,7 +693,7 @@ el.style.left = plant.left || `${Math.random() * 80 + 10}%`;
 el.style.top = plant.top || `${Math.random() * 60 + 20}%`;
 
 // Apply visual offset (same as preview)
-el.style.transform = "translate(-25%, +75%)";   // ← add this line
+el.style.transform = "translate(-30%, +75%)";   // ← add this line
 
 el.style.zIndex = "6";
       list.appendChild(el);
