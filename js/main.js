@@ -1052,4 +1052,4 @@ renderView();
 
   renderView();
   console.log("Game loaded – island map with markers");
-});
+});  // ← Add this closing for DOMContentLoaded
