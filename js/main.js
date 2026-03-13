@@ -1,5 +1,8 @@
 import { loadPlayer, updatePlayer, savePlayer } from './player.js';
 import { zones } from '../data/zones.js';
+let plantingMode = false;           // true when user is placing a seed
+let selectedSeed = null;            // {type: "baby-palm", rarity: "uncommon"}
+let placementPreview = null;        // temporary DOM element shown while dragging
 
 console.log("Guerrilla Gardening - overworld map with golden UI");
 
@@ -466,7 +469,12 @@ function showSeedPacks() {
           totalSeeds += count;
           const displayName = parentId.replace(/-/g, ' ')
             .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-          seedSummary.push(`${displayName} (${rarity}): ${count}`);
+          seedSummary.push({
+            type: parentId,
+            rarity,
+            count,
+            display: `${displayName} (${rarity}) ×${count}`
+          });
         }
       });
     }
@@ -476,92 +484,50 @@ function showSeedPacks() {
   if (totalSeeds === 0) {
     html += '<p style="color: #ff9800;">No seeds harvested yet. Keep collecting from natives!</p>';
   } else {
-    html += '<p style="margin-bottom:16px;">Your collected seed varieties:</p>';
-    html += seedSummary.map(line => `<div class="gallery-item">${line}</div>`).join('');
+    html += '<p style="margin-bottom:16px;">Select a seed to plant:</p>';
+    html += seedSummary.map(seed => `
+      <div class="gallery-item seed-option" 
+           data-type="${seed.type}" 
+           data-rarity="${seed.rarity}"
+           style="cursor:pointer; padding:12px; margin:6px 0; background:rgba(76,175,80,0.15); border-radius:8px;">
+        ${seed.display}
+      </div>
+    `).join('');
     html += `<p style="margin-top:16px;font-weight:bold;">Total seeds: ${totalSeeds}</p>`;
   }
 
   html += `
-    <div style="margin-top:24px; text-align:center; padding:12px; background:rgba(255,255,255,0.08); border-radius:12px;">
-      <button id="test-plant-seed" style="padding:14px 32px; background:#2196F3; color:white; border:none;border-radius:999px; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 12px rgba(33,150,243,0.4);">
-        🌱 Plant Random Seed (debug)
-      </button>
-      <p style="font-size:0.85rem; color:#81C784; margin-top:8px;">
-        Must be in a zone — consumes 1 seed
+    <div style="margin-top:24px; text-align:center;">
+      <p style="font-size:0.9rem; color:#81C784;">
+        Select seed → close modal → tap anywhere in zone to plant
       </p>
     </div>
   `;
 
-  html += '<p style="font-size:0.9rem;color:#81C784;margin-top:20px;">(Rarity & DNA details coming soon — tap to plant in future updates)</p>';
-
   showMessage("Seed Packs", html, 0);
 
+  // Add click handlers after modal appears
   setTimeout(() => {
-    const btn = document.getElementById("test-plant-seed");
-    if (btn) {
-      btn.addEventListener("click", async () => {
-        if (!currentView.startsWith("zone:")) {
-          showMessage("Cannot Plant", "You must be inside a zone to plant seeds!", 4000);
-          return;
-        }
+    document.querySelectorAll('.seed-option').forEach(option => {
+      option.addEventListener('click', () => {
+        const type = option.dataset.type;
+        const rarity = option.dataset.rarity;
 
-        const zoneId = currentView.split(":")[1];
+        // Enter planting mode
+        plantingMode = true;
+        selectedSeed = { type, rarity };
 
-        const seedTypes = Object.keys(currentPlayer.inventory.seeds || {});
-        if (seedTypes.length === 0) {
-          showMessage("No Seeds", "Harvest some natives first to get seeds!", 3000);
-          return;
-        }
+        // Show hint
+        showMessage("Planting Mode", "Tap anywhere on the zone to place your seed!", 3000);
 
-        const chosenType = seedTypes[Math.floor(Math.random() * seedTypes.length)];
-        const rarities = currentPlayer.inventory.seeds[chosenType];
-        const availableRarities = Object.keys(rarities).filter(r => rarities[r] > 0);
-        if (availableRarities.length === 0) return;
+        // Close all open modals
+        document.querySelectorAll('div[style*="position: fixed; inset: 0"]').forEach(m => m.remove());
 
-        const chosenRarity = availableRarities[Math.floor(Math.random() * availableRarities.length)];
-
-        let maturationMs = await getPlantGrowthParams(chosenType, chosenRarity);
-
-        currentPlayer.inventory.seeds[chosenType][chosenRarity] -= 1;
-        if (currentPlayer.inventory.seeds[chosenType][chosenRarity] <= 0) {
-          delete currentPlayer.inventory.seeds[chosenType][chosenRarity];
-        }
-
-        const plant = {
-          id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-          entityId: chosenType,
-          rarity: chosenRarity,
-          plantedAt: Date.now(),
-          lastChecked: Date.now(),
-          progress: 0,
-          maturationMs: maturationMs,
-          // Add position once
-          left: Math.random() * 80 + 10 + '%',
-          top: Math.random() * 60 + 20 + '%'
-        };
-
-        if (!currentPlayer.planted[zoneId]) {
-          currentPlayer.planted[zoneId] = [];
-        }
-        currentPlayer.planted[zoneId].push(plant);
-
-        savePlayer(currentPlayer);
-
-        // Close current Seed Packs modal
-        const currentModal = document.querySelector('div[style*="position: fixed; inset: 0"]');
-        if (currentModal) currentModal.remove();
-
-        // Show success message (no re-open of Seed Packs)
-        showMessage(
-          "Seed Planted!",
-          `Planted 1× <b>${chosenRarity}</b> ${chosenType.replace(/-/g, ' ')} in ${zoneId}!<br><br>Re-open Seed Packs to plant more.`,
-          4000
-        );
-
-        renderView();
+        // Optional: change cursor to indicate placement
+        document.body.style.cursor = "crosshair";
       });
-    }
-  }, 150);
+    });
+  }, 100);
 }
 
 // ─── Render ──────────────────────────────────────────────────────────────────────
@@ -991,7 +957,135 @@ document.addEventListener("DOMContentLoaded", async function() {
       return;
     }
   });
+  
+  // ─── Planting mode ──────────────────────────────────────────────────────────────
+document.addEventListener("click", async function(e) {
+  if (!plantingMode) return;
 
+  // Only allow planting in a zone
+  if (!currentView.startsWith("zone:")) {
+    showMessage("Cannot Plant", "You must be inside a zone!", 3000);
+    plantingMode = false;
+    document.body.style.cursor = "default";
+    return;
+  }
+
+  const zoneId = currentView.split(":")[1];
+  const list = document.getElementById("entities-list");
+  if (!list) return;
+
+  // Get click position relative to the zone container
+  const rect = list.getBoundingClientRect();
+  const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
+  const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
+
+  // Clamp to reasonable area
+  const left = Math.max(5, Math.min(95, xPercent)) + "%";
+  const top  = Math.max(10, Math.min(90, yPercent)) + "%";
+
+  // Consume one seed
+  const { type, rarity } = selectedSeed;
+  currentPlayer.inventory.seeds[type][rarity] -= 1;
+  if (currentPlayer.inventory.seeds[type][rarity] <= 0) {
+    delete currentPlayer.inventory.seeds[type][rarity];
+    if (Object.keys(currentPlayer.inventory.seeds[type]).length === 0) {
+      delete currentPlayer.inventory.seeds[type];
+    }
+  }
+
+  // Create plant object
+  let maturationMs = await getPlantGrowthParams(type, rarity);
+
+  const plant = {
+    id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+    entityId: type,
+    rarity: rarity,
+    plantedAt: Date.now(),
+    lastChecked: Date.now(),
+    progress: 0,
+    maturationMs: maturationMs,
+    left: left,
+    top: top
+  };
+
+  if (!currentPlayer.planted[zoneId]) currentPlayer.planted[zoneId] = [];
+  currentPlayer.planted[zoneId].push(plant);
+
+  savePlayer(currentPlayer);
+
+  // Show feedback
+  showMessage("Planted!", `Planted ${rarity} ${type.replace(/-/g, ' ')}`, 2500);
+
+  // Exit planting mode
+  plantingMode = false;
+  selectedSeed = null;
+  document.body.style.cursor = "default";
+
+  // Force re-render to show new plant immediately
+  renderView();
+});
+
+// Also support touchend for mobile
+document.addEventListener("touchend", function(e) {
+  if (!plantingMode || e.touches.length > 0) return;
+  // Simulate click with touch position
+  const touch = e.changedTouches[0];
+  const simulatedEvent = {
+    clientX: touch.clientX,
+    clientY: touch.clientY,
+    preventDefault: () => {}
+  };
+  document.dispatchEvent(new MouseEvent("click", simulatedEvent));
+}, { passive: false });
+
+
+  // ─── Optional: preview plant while moving cursor ───────────────────────────────
+  let placementPreview = null;
+
+  const updatePreviewPosition = (e) => {
+    if (!plantingMode || !placementPreview) return;
+    const list = document.getElementById("entities-list");
+    if (!list) return;
+
+    const rect = list.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    placementPreview.style.left = `${x}px`;
+    placementPreview.style.top  = `${y}px`;
+    placementPreview.style.transform = "translate(-50%, -50%)";
+  };
+
+  document.addEventListener("mousemove", updatePreviewPosition);
+  document.addEventListener("touchmove", (e) => {
+    if (e.touches.length === 1) updatePreviewPosition(e.touches[0]);
+  }, { passive: true });
+
+  // Show preview when entering planting mode (add this inside showSeedPacks click handler)
+  // In showSeedPacks() → inside option.addEventListener('click', () => { ... }
+  // After: plantingMode = true; selectedSeed = { type, rarity };
+
+  // Add this:
+  if (placementPreview) placementPreview.remove();
+  placementPreview = document.createElement("div");
+  placementPreview.className = "native-item planted-item";
+  placementPreview.style.opacity = "0.5";
+  placementPreview.style.pointerEvents = "none";
+  placementPreview.style.position = "absolute";
+  placementPreview.style.zIndex = "1000";
+  placementPreview.innerHTML = `
+    <div class="stage-emoji" style="margin-bottom:8px;">🌱</div>
+    <div class="entity-name" style="font-weight:600;">${rarity} ${type.replace(/-/g, ' ')}</div>
+  `;
+  document.body.appendChild(placementPreview);
+
+  // And in the planting click handler (after planting), add:
+  if (placementPreview) {
+    placementPreview.remove();
+    placementPreview = null;
+  }
+  
+  
   renderView();
   console.log("Game loaded – island map with markers");
 });
