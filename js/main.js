@@ -107,9 +107,13 @@ function startGrowthAnimation(zoneId) {
         </div>
       `;
       el.style.position = "absolute";
-      el.style.left = plant.left || `${Math.random() * 80 + 10}%`;
-      el.style.top = plant.top || `${Math.random() * 60 + 20}%`;
-      el.style.zIndex = "6";
+el.style.left = plant.left || `${Math.random() * 80 + 10}%`;
+el.style.top = plant.top || `${Math.random() * 60 + 20}%`;
+
+// Apply visual offset (same as preview)
+el.style.transform = "translate(-25%, +75%)";   // ← add this line (or use plant.offsetX/Y if you added it)
+
+el.style.zIndex = "6";
       list.appendChild(el);
     });
     console.log(`[LIVE RENDER] Updated ${plantedInZone.length} plants in ${zoneId}`);
@@ -685,9 +689,13 @@ async function renderView() {
         </div>
       `;
       el.style.position = "absolute";
-      el.style.left = plant.left || `${Math.random() * 80 + 10}%`;
-      el.style.top = plant.top || `${Math.random() * 60 + 20}%`;
-      el.style.zIndex = "6";
+el.style.left = plant.left || `${Math.random() * 80 + 10}%`;
+el.style.top = plant.top || `${Math.random() * 60 + 20}%`;
+
+// Apply visual offset (same as preview)
+el.style.transform = "translate(-25%, +75%)";   // ← add this line
+
+el.style.zIndex = "6";
       list.appendChild(el);
     });
     updateCoinsDisplay();
