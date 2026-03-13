@@ -492,7 +492,7 @@ function showSeedPacks() {
         const type = option.dataset.type;
         const rarity = option.dataset.rarity;
 
-        // Enter planting mode
+        // Enter planting mode ONLY — do NOT plant yet
         plantingMode = true;
         selectedSeed = { type, rarity };
 
@@ -505,7 +505,7 @@ function showSeedPacks() {
         // Change cursor
         document.body.style.cursor = "crosshair";
 
-        // Create preview (NOW inside scope where type & rarity exist)
+        // Create preview
         if (placementPreview) placementPreview.remove();
         placementPreview = document.createElement("div");
         placementPreview.className = "native-item planted-item";
@@ -519,7 +519,7 @@ function showSeedPacks() {
         `;
         document.body.appendChild(placementPreview);
 
-        console.log(`Preview created for ${rarity} ${type}`);
+        console.log(`Entered planting mode for ${rarity} ${type}`);
       });
     });
   }, 100);
