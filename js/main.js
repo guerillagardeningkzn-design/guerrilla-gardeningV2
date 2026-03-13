@@ -1048,7 +1048,7 @@ renderView();
     const y = e.clientY - rect.top;
     placementPreview.style.left = `${x}px`;
     placementPreview.style.top = `${y}px`;
-    placementPreview.style.transform = "translate(-50%, +50%)";  // Better anchor: bottom-center under cursor
+    placementPreview.style.transform = "translate(-25%, +25%)";  // Better anchor: bottom-center under cursor
   });
 
   // Preview movement (touch)
@@ -1062,7 +1062,7 @@ renderView();
     const y = touch.clientY - rect.top;
     placementPreview.style.left = `${x}px`;
     placementPreview.style.top = `${y}px`;
-    placementPreview.style.transform = "translate(-50%, +50%)";
+    placementPreview.style.transform = "translate(-25%, +25%)";
   }, { passive: true });
 
   renderView();
