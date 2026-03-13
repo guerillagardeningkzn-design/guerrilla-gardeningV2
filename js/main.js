@@ -1,5 +1,6 @@
 import { loadPlayer, updatePlayer, savePlayer } from './player.js';
 import { zones } from '../data/zones.js';
+
 let plantingMode = false;           // true when user is placing a seed
 let selectedSeed = null;            // {type: "baby-palm", rarity: "uncommon"}
 let placementPreview = null;        // temporary DOM element shown while dragging
@@ -69,61 +70,48 @@ function startGrowthAnimation(zoneId) {
   if (growthInterval) clearInterval(growthInterval);
   growthInterval = setInterval(() => {
     if (currentView !== `zone:${zoneId}` || document.hidden) return;
-
-    // Update data model
     advancePlantGrowth(zoneId, true);
-
-    // Get the entities list container (this was missing!)
     const list = document.getElementById("entities-list");
-    if (!list) return; // safety if zone not fully loaded
-
-    // Re-render ONLY planted plants
+    if (!list) return;
     document.querySelectorAll('.planted-item').forEach(el => el.remove());
-
     const plantedInZone = currentPlayer.planted?.[zoneId] || [];
     plantedInZone.forEach(plant => {
       const uniqueId = `planted-${zoneId}-${plant.id}`;
       const el = document.createElement("div");
       el.id = uniqueId;
       el.className = "native-item planted-item";
-
       if (plant.progress >= 1) {
         el.style.cursor = "pointer";
         el.style.borderColor = "#FFD700";
         el.style.boxShadow = "0 0 15px #FFD700";
         el.title = "Tap to harvest!";
       }
-
       let stageEmoji = "🌱";
       let stageName = "Seed";
       let stageColor = "#81C784";
       if (plant.progress >= 0.25) { stageEmoji = "🌿"; stageName = "Sprout"; }
       if (plant.progress >= 0.60) { stageEmoji = "🌴"; stageName = "Young"; }
       if (plant.progress >= 1.00) { stageEmoji = "🌴✨"; stageName = "Mature"; stageColor = "#FFD700"; }
-
       el.innerHTML = `
-  <div class="stage-emoji" style="margin-bottom:8px;">
-    ${stageEmoji}
-  </div>
-  <div class="entity-name" style="font-weight:600;">
-    ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
-  </div>
-  <div class="planted-progress">
-    <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
-  </div>
-  <div class="progress-text" style="color: ${stageColor}; margin-top:8px;">
-    ${plant.progress >= 1 ? 'Ready to Harvest!' : stageName}
-  </div>
-`;
-
+        <div class="stage-emoji" style="margin-bottom:8px;">
+          ${stageEmoji}
+        </div>
+        <div class="entity-name" style="font-weight:600;">
+          ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
+        </div>
+        <div class="planted-progress">
+          <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
+        </div>
+        <div class="progress-text" style="color: ${stageColor}; margin-top:8px;">
+          ${plant.progress >= 1 ? 'Ready to Harvest!' : stageName}
+        </div>
+      `;
       el.style.position = "absolute";
       el.style.left = plant.left || `${Math.random() * 80 + 10}%`;
-      el.style.top  = plant.top  || `${Math.random() * 60 + 20}%`;
+      el.style.top = plant.top || `${Math.random() * 60 + 20}%`;
       el.style.zIndex = "6";
-
-      list.appendChild(el); // ← now list is defined
+      list.appendChild(el);
     });
-
     console.log(`[LIVE RENDER] Updated ${plantedInZone.length} plants in ${zoneId}`);
   }, 2000);
 }
@@ -259,8 +247,8 @@ var invasivesByZone = {
 };
 
 var nativesByZone = {
-  beach:    [{ id: "baby-palm", isExternal: true }],
-  forest:   [{ id: "baby-palm", isExternal: true }],
+  beach: [{ id: "baby-palm", isExternal: true }],
+  forest: [{ id: "baby-palm", isExternal: true }],
   mountain: [{ id: "baby-palm", isExternal: true }]
 };
 
@@ -319,18 +307,15 @@ function showClearModal(message) {
   `;
   modal.appendChild(inner);
   document.body.appendChild(modal);
-
   setTimeout(() => {
     modal.style.opacity = "1";
     inner.style.transform = "scale(1)";
   }, 50);
-
   inner.querySelector("#modal-ok-btn").onclick = () => {
     modal.style.opacity = "0";
     inner.style.transform = "scale(0.9)";
     setTimeout(() => modal.remove(), 400);
   };
-
   modal.onclick = (e) => {
     if (e.target === modal) {
       modal.style.opacity = "0";
@@ -357,21 +342,17 @@ function showMessage(title, message, durationMs = 0) {
     </div>
   `;
   document.body.appendChild(modal);
-
   requestAnimationFrame(() => {
     modal.style.opacity = "1";
     modal.querySelector("div").style.transform = "scale(1)";
   });
-
   const close = () => {
     modal.style.opacity = "0";
     modal.querySelector("div").style.transform = "scale(0.92)";
     setTimeout(() => modal.remove(), 400);
   };
-
   modal.querySelector(".close-msg-btn").onclick = close;
   modal.onclick = (e) => { if (e.target === modal) close(); };
-
   if (durationMs > 0) setTimeout(close, durationMs);
 }
 
@@ -404,7 +385,6 @@ function showRewardPopup(targetElement, coinsDelta, healthDelta, bonusText, dura
     pointer-events: none; transition: all 1.5s ease;
   `;
   document.body.appendChild(popup);
-
   requestAnimationFrame(() => { popup.style.opacity = "1"; });
   setTimeout(() => {
     popup.style.opacity = "0";
@@ -448,7 +428,6 @@ function showInventoryGallery() {
     </div>
   `;
   showMessage("Inventory", html, 0);
-
   setTimeout(() => {
     const btn = document.getElementById("open-seed-packs");
     if (btn) btn.addEventListener("click", showSeedPacks);
@@ -508,42 +487,42 @@ function showSeedPacks() {
 
   // Add click handlers after modal appears
   setTimeout(() => {
-  document.querySelectorAll('.seed-option').forEach(option => {
-    option.addEventListener('click', () => {
-      const type = option.dataset.type;
-      const rarity = option.dataset.rarity;
+    document.querySelectorAll('.seed-option').forEach(option => {
+      option.addEventListener('click', () => {
+        const type = option.dataset.type;
+        const rarity = option.dataset.rarity;
 
-      // Enter planting mode
-      plantingMode = true;
-      selectedSeed = { type, rarity };
+        // Enter planting mode
+        plantingMode = true;
+        selectedSeed = { type, rarity };
 
-      // Show hint
-      showMessage("Planting Mode", "Tap anywhere on the zone to place your seed!", 3000);
+        // Show hint
+        showMessage("Planting Mode", "Tap anywhere on the zone to place your seed!", 3000);
 
-      // Close all open modals
-      document.querySelectorAll('div[style*="position: fixed; inset: 0"]').forEach(m => m.remove());
+        // Close all open modals
+        document.querySelectorAll('div[style*="position: fixed; inset: 0"]').forEach(m => m.remove());
 
-      // Change cursor
-      document.body.style.cursor = "crosshair";
+        // Change cursor
+        document.body.style.cursor = "crosshair";
 
-      // Create preview (NOW inside scope where type & rarity exist)
-      if (placementPreview) placementPreview.remove();
-      placementPreview = document.createElement("div");
-      placementPreview.className = "native-item planted-item";
-      placementPreview.style.opacity = "0.5";
-      placementPreview.style.pointerEvents = "none";
-      placementPreview.style.position = "absolute";
-      placementPreview.style.zIndex = "1000";
-      placementPreview.innerHTML = `
-        <div class="stage-emoji" style="margin-bottom:8px;">🌱</div>
-        <div class="entity-name" style="font-weight:600;">${rarity} ${type.replace(/-/g, ' ')}</div>
-      `;
-      document.body.appendChild(placementPreview);
+        // Create preview (NOW inside scope where type & rarity exist)
+        if (placementPreview) placementPreview.remove();
+        placementPreview = document.createElement("div");
+        placementPreview.className = "native-item planted-item";
+        placementPreview.style.opacity = "0.5";
+        placementPreview.style.pointerEvents = "none";
+        placementPreview.style.position = "absolute";
+        placementPreview.style.zIndex = "1000";
+        placementPreview.innerHTML = `
+          <div class="stage-emoji" style="margin-bottom:8px;">🌱</div>
+          <div class="entity-name" style="font-weight:600;">${rarity} ${type.replace(/-/g, ' ')}</div>
+        `;
+        document.body.appendChild(placementPreview);
 
-      console.log(`Preview created for ${rarity} ${type}`);
+        console.log(`Preview created for ${rarity} ${type}`);
+      });
     });
-  });
-}, 100);
+  }, 100);
 }
 
 // ─── Render ──────────────────────────────────────────────────────────────────────
@@ -581,16 +560,13 @@ async function renderView() {
       renderView();
       return;
     }
-
     advancePlantGrowth(zoneId);
     startGrowthAnimation(zoneId);
-
     const health = currentPlayer.zoneHealth[zoneId] || 0;
     let bgPath = "assets/backgrounds/global/sky-overcast.jpg";
     if (zoneId === "beach") bgPath = "assets/backgrounds/beach/main-day.jpg";
     else if (zoneId === "forest") bgPath = "assets/backgrounds/forest/main-misty.jpg";
     else if (zoneId === "mountain") bgPath = "assets/backgrounds/mountain/main-rocky.jpg";
-
     container.innerHTML = `
       <img src="${bgPath}" class="zone-bg-img" alt="${zone.name} background">
       <div class="zone-content">
@@ -603,7 +579,6 @@ async function renderView() {
         <button id="back-to-map">Back to Map</button>
       </div>
     `;
-
     const list = document.getElementById("entities-list");
     const baseInvasives = invasivesByZone[zoneId] || [];
     const enrichedInvasives = await Promise.all(
@@ -615,7 +590,6 @@ async function renderView() {
         return { ...inv, type: "invasive" };
       })
     );
-
     const baseNatives = nativesByZone[zoneId] || [];
     const enrichedNatives = await Promise.all(
       baseNatives.map(async nat => {
@@ -626,16 +600,13 @@ async function renderView() {
         return { ...nat, type: "native" };
       })
     );
-
     const allEntities = enrichedInvasives.concat(enrichedNatives);
     list.innerHTML = "";
-
     allEntities.forEach(entity => {
       const el = document.createElement("div");
       el.className = entity.type === "native" ? "native-item" : "invasive-item";
       el.dataset.entityId = entity.id;
       el.dataset.type = entity.type;
-
       let imagePath = entity.icon || "";
       if (!imagePath) {
         const nameLower = (entity.name || entity.id || "").toLowerCase();
@@ -655,7 +626,6 @@ async function renderView() {
           imagePath = "assets/entities/default.png";
         }
       }
-
       el.innerHTML = `
         <img src="${imagePath}" class="entity-image" alt="${entity.name || entity.id}">
         <div class="entity-name">${entity.name || entity.id}</div>
@@ -663,7 +633,6 @@ async function renderView() {
       if (entity.tooltip) el.title = entity.tooltip;
       list.appendChild(el);
     });
-
     // Render planted growing plants (initial render)
     const plantedInZone = currentPlayer.planted?.[zoneId] || [];
     plantedInZone.forEach(plant => {
@@ -671,18 +640,15 @@ async function renderView() {
       const el = document.createElement("div");
       el.id = uniqueId;
       el.className = "native-item planted-item";
-
       if (plant.progress >= 1) {
         el.style.cursor = "pointer";
         el.style.borderColor = "#FFD700";
         el.style.boxShadow = "0 0 15px #FFD700";
         el.title = "Tap to harvest!";
       }
-
       let stageEmoji = "🌱";
       let stageName = "Seed";
       let stageColor = "#81C784";
-
       if (plant.progress >= 0.25) {
         stageEmoji = "🌿";
         stageName = "Sprout";
@@ -696,30 +662,26 @@ async function renderView() {
         stageName = "Mature";
         stageColor = "#FFD700";
       }
-
       el.innerHTML = `
-  <div class="stage-emoji" style="margin-bottom:8px;">
-    ${stageEmoji}
-  </div>
-  <div class="entity-name" style="font-weight:600;">
-    ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
-  </div>
-  <div class="planted-progress">
-    <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
-  </div>
-  <div class="progress-text" style="color: ${stageColor}; margin-top:8px;">
-    ${plant.progress >= 1 ? 'Ready to Harvest!' : stageName}
-  </div>
-`;
-
+        <div class="stage-emoji" style="margin-bottom:8px;">
+          ${stageEmoji}
+        </div>
+        <div class="entity-name" style="font-weight:600;">
+          ${plant.rarity} ${plant.entityId.replace(/-/g, ' ')}
+        </div>
+        <div class="planted-progress">
+          <div class="planted-progress-fill" style="width: ${(plant.progress * 100)}%;"></div>
+        </div>
+        <div class="progress-text" style="color: ${stageColor}; margin-top:8px;">
+          ${plant.progress >= 1 ? 'Ready to Harvest!' : stageName}
+        </div>
+      `;
       el.style.position = "absolute";
-      el.style.left = `${Math.random() * 80 + 10}%`;
-      el.style.top  = `${Math.random() * 60 + 20}%`;
+      el.style.left = plant.left || `${Math.random() * 80 + 10}%`;
+      el.style.top = plant.top || `${Math.random() * 60 + 20}%`;
       el.style.zIndex = "6";
-
       list.appendChild(el);
     });
-
     updateCoinsDisplay();
     updateHealthDisplay(health);
   }
@@ -766,7 +728,6 @@ document.addEventListener("DOMContentLoaded", async function() {
 
   document.addEventListener("click", async function(e) {
     const t = e.target;
-
     const marker = t.closest(".map-marker, [data-zone-id]");
     if (marker) {
       e.preventDefault();
@@ -785,67 +746,49 @@ document.addEventListener("DOMContentLoaded", async function() {
     const entityEl = t.closest(".invasive-item, .native-item, .planted-item");
     if (entityEl) {
       const zoneId = currentView.split(":")[1];
-
       if (entityEl.classList.contains("planted-item")) {
         const plantId = entityEl.id.split('-').slice(2).join('-');
         const plant = (currentPlayer.planted?.[zoneId] || []).find(p => p.id === plantId);
-
         if (!plant || plant.progress < 1) {
           showMessage("Not Ready", "This plant is not mature yet.", 3000);
           return;
         }
-
         if (entityEl.dataset.harvesting) return;
         entityEl.dataset.harvesting = "true";
-
         const coinsReward = 8 + (plant.rarity === "uncommon" ? 4 : 0) + (plant.rarity === "rare" ? 8 : 0);
         const healthReward = 12;
         const seedChance = 0.35;
-
         currentPlayer.coins += coinsReward;
         currentPlayer.zoneHealth[zoneId] = Math.min(100, (currentPlayer.zoneHealth[zoneId] || 0) + healthReward);
-
         let bonusText = `+${coinsReward} 🪙 +${healthReward}% 🌿`;
-
         if (Math.random() < seedChance) {
           const childRarity = generateChildRarity(plant.rarity, zoneId, []);
           if (!currentPlayer.inventory.seeds[plant.entityId]) currentPlayer.inventory.seeds[plant.entityId] = {};
           currentPlayer.inventory.seeds[plant.entityId][childRarity] = (currentPlayer.inventory.seeds[plant.entityId][childRarity] || 0) + 1;
           bonusText += ` +1 ${childRarity} seed 🌱`;
         }
-
         showRewardPopup(entityEl, coinsReward, healthReward, bonusText, 1800);
-
         currentPlayer.planted[zoneId] = currentPlayer.planted[zoneId].filter(p => p.id !== plant.id);
         if (currentPlayer.planted[zoneId]?.length === 0) delete currentPlayer.planted[zoneId];
-
         savePlayer(currentPlayer);
-
         entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
         entityEl.style.opacity = "0";
         entityEl.style.transform = "scale(0.5) rotate(10deg)";
         setTimeout(() => entityEl.remove(), 600);
-
         updateHealthDisplay(currentPlayer.zoneHealth[zoneId]);
         return;
       }
-
       const entityId = entityEl.dataset.entityId;
       const entityType = entityEl.dataset.type || "invasive";
-
       if (!entityId) return;
-
       let baseEntity;
       if (entityType === "native") {
         baseEntity = nativesByZone[zoneId]?.find(i => i.id === entityId);
       } else {
         baseEntity = invasivesByZone[zoneId]?.find(i => i.id === entityId);
       }
-
       if (!baseEntity) return;
-
       let entity = { ...baseEntity, type: entityType };
-
       if (baseEntity.isExternal) {
         const category = entityType === "native" ? "natives" : "invasives";
         const fullDef = await loadEntityDefinition(entityId, category);
@@ -855,7 +798,6 @@ document.addEventListener("DOMContentLoaded", async function() {
           entity.health = Number(fullDef.health) || baseEntity.health || (entityType === "native" ? 3 : 8);
         }
       }
-
       const condition = entity.mutable?.onDestroy?.condition;
       if (condition) {
         let hasTool = false;
@@ -872,19 +814,15 @@ document.addEventListener("DOMContentLoaded", async function() {
           return;
         }
       }
-
       if (entityType === "native") {
         const parentRarity = entity.dna?.templateDefaults?.rarity || "common";
         const childRarity = generateChildRarity(parentRarity, zoneId, []);
-
         if (!currentPlayer.inventory.seeds[entity.id]) {
           currentPlayer.inventory.seeds[entity.id] = {};
         }
         currentPlayer.inventory.seeds[entity.id][childRarity] =
           (currentPlayer.inventory.seeds[entity.id][childRarity] || 0) + 1;
-
         savePlayer(currentPlayer);
-
         showRewardPopup(
           entityEl,
           0,
@@ -892,21 +830,18 @@ document.addEventListener("DOMContentLoaded", async function() {
           `+1 ${childRarity} ${entity.name} Seed 🌱`,
           1600
         );
-
         entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
         entityEl.style.opacity = "0";
         entityEl.style.transform = "scale(0.4) rotate(5deg)";
         setTimeout(() => entityEl.remove(), 600);
         return;
       }
-
       const changes = {
         coins: currentPlayer.coins + (entity.coins || 5),
         zoneHealth: { ...currentPlayer.zoneHealth }
       };
       changes.zoneHealth[zoneId] = Math.min(100, (currentPlayer.zoneHealth[zoneId] || 0) + (entity.health || 8));
       updatePlayer(currentPlayer, changes);
-
       let bonusText = "";
       if (entity.mutable?.onDestroy?.drop?.length) {
         const bonusParts = [];
@@ -914,7 +849,6 @@ document.addEventListener("DOMContentLoaded", async function() {
           const dropEntity = dropRule.entity;
           const count = Number(dropRule.count) || 1;
           if (Math.random() >= (dropRule.chance ?? 1)) continue;
-
           if (dropEntity === "seed" || dropEntity === "seedling") {
             const parentRarity = entity.dna?.templateDefaults?.rarity || "common";
             const childRarity = generateChildRarity(parentRarity, zoneId, []);
@@ -931,27 +865,22 @@ document.addEventListener("DOMContentLoaded", async function() {
         }
         if (bonusParts.length > 0) bonusText = bonusParts.join("   ");
       }
-
       entityEl.style.transition = "opacity 0.6s ease, transform 0.6s ease";
       entityEl.style.opacity = "0";
       entityEl.style.transform = "scale(0.4) rotate(5deg)";
-
       setTimeout(() => {
         entityEl.remove();
         showRewardPopup(entityEl, entity.coins || 5, entity.health || 8, bonusText, 1600);
         updateCoinsDisplay();
         updateHealthDisplay(changes.zoneHealth[zoneId]);
-
         const progressFill = document.querySelector(".progress-fill");
         if (progressFill) progressFill.style.width = `${changes.zoneHealth[zoneId]}%`;
-
         const remaining = document.querySelectorAll(".invasive-item, .native-item");
         if (remaining.length === 0) {
           const zoneName = zones.find(z => z.id === zoneId)?.name || "Area";
           showClearModal(`${zoneName} cleared! 🌿`);
         }
       }, 600);
-
       savePlayer(currentPlayer);
       return;
     }
@@ -973,141 +902,126 @@ document.addEventListener("DOMContentLoaded", async function() {
       return;
     }
   });
-  
-  // ─── Planting mode ──────────────────────────────────────────────────────────────
-document.addEventListener("click", async function(e) {
-  if (!plantingMode) return;
 
-  // Only allow planting in a zone
-  if (!currentView.startsWith("zone:")) {
-    showMessage("Cannot Plant", "You must be inside a zone!", 3000);
-    plantingMode = false;
-    document.body.style.cursor = "default";
-    return;
-  }
+  // ─── Planting mode: click anywhere to plant ────────────────────────────────────
+  document.addEventListener("click", async function(e) {
+    if (!plantingMode) return;
 
-  const zoneId = currentView.split(":")[1];
-  const list = document.getElementById("entities-list");
-  if (!list) return;
-
-  // Get click position relative to the zone container
-  const rect = list.getBoundingClientRect();
-  const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
-  const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
-
-  // Clamp to reasonable area
-  const left = Math.max(5, Math.min(95, xPercent)) + "%";
-  const top  = Math.max(10, Math.min(90, yPercent)) + "%";
-
-  // Consume one seed
-  const { type, rarity } = selectedSeed;
-  currentPlayer.inventory.seeds[type][rarity] -= 1;
-  if (currentPlayer.inventory.seeds[type][rarity] <= 0) {
-    delete currentPlayer.inventory.seeds[type][rarity];
-    if (Object.keys(currentPlayer.inventory.seeds[type]).length === 0) {
-      delete currentPlayer.inventory.seeds[type];
+    // Only allow planting in a zone
+    if (!currentView.startsWith("zone:")) {
+      showMessage("Cannot Plant", "You must be inside a zone!", 3000);
+      plantingMode = false;
+      document.body.style.cursor = "default";
+      return;
     }
-  }
 
-  // Create plant object
-  let maturationMs = await getPlantGrowthParams(type, rarity);
-
-  const plant = {
-    id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-    entityId: type,
-    rarity: rarity,
-    plantedAt: Date.now(),
-    lastChecked: Date.now(),
-    progress: 0,
-    maturationMs: maturationMs,
-    left: left,
-    top: top
-  };
-
-  if (!currentPlayer.planted[zoneId]) currentPlayer.planted[zoneId] = [];
-  currentPlayer.planted[zoneId].push(plant);
-
-  savePlayer(currentPlayer);
-
-  // Show feedback
-  showMessage("Planted!", `Planted ${rarity} ${type.replace(/-/g, ' ')}`, 2500);
-
-  // Exit planting mode
-  plantingMode = false;
-  selectedSeed = null;
-  document.body.style.cursor = "default";
-
-  // Force re-render to show new plant immediately
-  renderView();
-  
-  // Clean up preview
-if (placementPreview) {
-  placementPreview.remove();
-  placementPreview = null;
-}
-});
-
-// Also support touchend for mobile
-document.addEventListener("touchend", function(e) {
-  if (!plantingMode || e.touches.length > 0) return;
-  // Simulate click with touch position
-  const touch = e.changedTouches[0];
-  const simulatedEvent = {
-    clientX: touch.clientX,
-    clientY: touch.clientY,
-    preventDefault: () => {}
-  };
-  document.dispatchEvent(new MouseEvent("click", simulatedEvent));
-}, { passive: false });
-
-
-  // ─── Optional: preview plant while moving cursor ───────────────────────────────
-  let placementPreview = null;
-
-  const updatePreviewPosition = (e) => {
-    if (!plantingMode || !placementPreview) return;
+    const zoneId = currentView.split(":")[1];
     const list = document.getElementById("entities-list");
     if (!list) return;
 
+    // Get click position relative to the zone container
+    const rect = list.getBoundingClientRect();
+    const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
+    const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
+
+    // Clamp to reasonable area (avoid edges)
+    const left = Math.max(5, Math.min(95, xPercent)) + "%";
+    const top  = Math.max(10, Math.min(90, yPercent)) + "%";
+
+    // Consume one seed
+    const { type, rarity } = selectedSeed;
+    if (!currentPlayer.inventory.seeds[type] || !currentPlayer.inventory.seeds[type][rarity]) {
+      showMessage("Error", "Seed no longer available!", 3000);
+      plantingMode = false;
+      document.body.style.cursor = "default";
+      return;
+    }
+
+    currentPlayer.inventory.seeds[type][rarity] -= 1;
+    if (currentPlayer.inventory.seeds[type][rarity] <= 0) {
+      delete currentPlayer.inventory.seeds[type][rarity];
+      if (Object.keys(currentPlayer.inventory.seeds[type]).length === 0) {
+        delete currentPlayer.inventory.seeds[type];
+      }
+    }
+
+    // Create plant object
+    let maturationMs = await getPlantGrowthParams(type, rarity);
+
+    const plant = {
+      id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+      entityId: type,
+      rarity: rarity,
+      plantedAt: Date.now(),
+      lastChecked: Date.now(),
+      progress: 0,
+      maturationMs: maturationMs,
+      left: left,
+      top: top
+    };
+
+    if (!currentPlayer.planted[zoneId]) currentPlayer.planted[zoneId] = [];
+    currentPlayer.planted[zoneId].push(plant);
+
+    savePlayer(currentPlayer);
+
+    // Show feedback
+    showMessage("Planted!", `Planted ${rarity} ${type.replace(/-/g, ' ')}`, 2500);
+
+    // Exit planting mode
+    plantingMode = false;
+    selectedSeed = null;
+    document.body.style.cursor = "default";
+
+    // Clean up preview
+    if (placementPreview) {
+      placementPreview.remove();
+      placementPreview = null;
+    }
+
+    // Force re-render to show new plant immediately
+    renderView();
+  });
+
+  // Support touchend for mobile (simulates click)
+  document.addEventListener("touchend", function(e) {
+    if (!plantingMode || e.touches.length > 0) return;
+    const touch = e.changedTouches[0];
+    const simulatedEvent = {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      preventDefault: () => {}
+    };
+    document.dispatchEvent(new MouseEvent("click", simulatedEvent));
+  }, { passive: false });
+
+  // ─── Optional: preview plant while moving cursor ───────────────────────────────
+  document.addEventListener("mousemove", (e) => {
+    if (!plantingMode || !placementPreview) return;
+    const list = document.getElementById("entities-list");
+    if (!list) return;
     const rect = list.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-
     placementPreview.style.left = `${x}px`;
     placementPreview.style.top  = `${y}px`;
     placementPreview.style.transform = "translate(-50%, -50%)";
-  };
+  });
 
-  document.addEventListener("mousemove", updatePreviewPosition);
   document.addEventListener("touchmove", (e) => {
-    if (e.touches.length === 1) updatePreviewPosition(e.touches[0]);
+    if (e.touches.length === 1 && plantingMode && placementPreview) {
+      const touch = e.touches[0];
+      const list = document.getElementById("entities-list");
+      if (!list) return;
+      const rect = list.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      placementPreview.style.left = `${x}px`;
+      placementPreview.style.top  = `${y}px`;
+      placementPreview.style.transform = "translate(-50%, -50%)";
+    }
   }, { passive: true });
 
-  // Show preview when entering planting mode (add this inside showSeedPacks click handler)
-  // In showSeedPacks() → inside option.addEventListener('click', () => { ... }
-  // After: plantingMode = true; selectedSeed = { type, rarity };
-
-  // Add this:
-  if (placementPreview) placementPreview.remove();
-  placementPreview = document.createElement("div");
-  placementPreview.className = "native-item planted-item";
-  placementPreview.style.opacity = "0.5";
-  placementPreview.style.pointerEvents = "none";
-  placementPreview.style.position = "absolute";
-  placementPreview.style.zIndex = "1000";
-  placementPreview.innerHTML = `
-    <div class="stage-emoji" style="margin-bottom:8px;">🌱</div>
-    <div class="entity-name" style="font-weight:600;">${rarity} ${type.replace(/-/g, ' ')}</div>
-  `;
-  document.body.appendChild(placementPreview);
-
-  // And in the planting click handler (after planting), add:
-  if (placementPreview) {
-    placementPreview.remove();
-    placementPreview = null;
-  }
-  
-  
   renderView();
   console.log("Game loaded – island map with markers");
 });
