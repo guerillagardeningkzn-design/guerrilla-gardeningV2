@@ -377,3 +377,44 @@ html {
   transition: width 1.9s ease-out;
   min-width: 1px; /* prevents disappearing at very low % */
 }
+
+/* Base entity size — scales with viewport width */
+.native-item,
+.invasive-item,
+.planted-item {
+  position: absolute;
+  width: clamp(60px, 12vw, 140px);          /* min 60px, preferred ~12% of viewport width, max 140px */
+  height: auto;                             /* let height follow aspect ratio */
+  aspect-ratio: 1 / 1;                      /* force square (or change to 3/4, 4/3 etc. if needed) */
+  transform: translate(-50%, -50%);         /* center on the position */
+  z-index: 6;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* Image inside entity fills container while keeping aspect ratio */
+.native-item img,
+.invasive-item img,
+.planted-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;                      /* keeps aspect ratio, no cropping */
+  display: block;
+}
+
+/* Optional: make planted progress bar scale too */
+.planted-progress {
+  width: 90%;                               /* slightly smaller than parent */
+  height: clamp(6px, 1.2vw, 12px);          /* scales height with screen */
+  margin: 8px auto 0;
+}
+
+/* Optional: scale emoji/text a bit */
+.stage-emoji {
+  font-size: clamp(2rem, 8vw, 3.5rem);
+}
+
+.progress-text,
+.entity-name {
+  font-size: clamp(0.7rem, 2.5vw, 1rem);
+}
