@@ -1,116 +1,39 @@
 {
   "type": "native",
   "name": "Baby Palm",
-  "icon": "assets/entities/natives/palm/baby-palm.png",
+  "icon": "plants/natives/palm/baby-palm.png",
   "coins": 2,
-  "health": 3,
-  "tooltip": "Young palm growing strong!",
-
+  "health": 1,
+  "tooltip": "a palm tree",
   "planting": {
     "energyCost": 8,
     "soilAmendments": {
       "sand": 1,
-      "clay": 0,
-      "fertilizer": 0
+      "clay": 2,
+      "fertilizer": 3
     },
-    "minMaturityToHarvest": "stage-3",
+    "minMaturityToHarvest": "stage-4",
     "harvestRemovesPlant": true,
     "canRegrow": false,
-    "regrowDelay": null
+    "regrowDelay": 24
   },
-
   "growth": {
     "stages": 4,
-    "baseMaturationTimeHours": 12,
+    "baseMaturationSeconds": 2700,
     "visualStages": [
-      "assets/entities/natives/palm/stage-1.png",
-      "assets/entities/natives/palm/stage-2.png",
-      "assets/entities/natives/palm/stage-3.png",
-      "assets/entities/natives/palm/stage-4.png"
-    ]
-  },
-
-  "dna": {
-    "templateDefaults": {
-      "rarity": "common",
-      "growthRate": 1.0,
-      "waterNeed": "medium",
-      "lightNeed": "full",
-      "nutrientNeed": "low",
-      "climateAffinity": {
-        "beach": 100,
-        "forest": 40,
-        "mountain": 10
-      },
-      "healthBonus": 1.2,
-      "coinMultiplier": 1.0,
-      "seedDropChance": 35,
-      "specialDropChance": 5,
-      "pestResistance": 25,
-      "droughtTolerance": 60,
-      "beautyScore": 4,
-      "allelopathy": 10,
-      "crossPollinationCompatibility": "low"
-    },
-
-    "mutationRanges": {
-      "growthRate": [-0.08, 0.12],
-      "waterNeed": ["very low", "low", "medium", "high"],
-      "lightNeed": ["shade", "partial", "full"],
-      "nutrientNeed": ["very low", "low", "medium"],
-      "healthBonus": [-0.10, 0.30],
-      "coinMultiplier": [-0.05, 0.20],
-      "seedDropChance": [-4, 10],
-      "pestResistance": [0, 12],
-      "droughtTolerance": [0, 15],
-      "beautyScore": [0, 1.5],
-      "allelopathy": [-5, 8]
-    },
-
-    "mutationBoostZones": ["forest"],
-    "mutationBoostItems": ["fertilizer", "special-soil"]
-  },
-
-  "mutable": {
-    "onDestroy": {
-      "condition": "playerHasItem:sickle",
-      "failMessage": "The young palm is too delicate — you need a sickle to harvest safely!",
-      "drop": [
-        {
-          "entity": "seed",
-          "count": 1,
-          "chance": 1.0,
-          "dnaInheritance": true,
-          "mutationEnabled": true
-        },
-        {
-          "entity": "seedling",
-          "count": 1,
-          "chance": 0.15,
-          "dnaInheritance": true,
-          "mutationEnabled": true
-        }
-      ]
-    },
-
-    "onInteract": {
-      "dialogTree": [
-        {
-          "message": "This young palm needs care...",
-          "choices": [
-            { "text": "Leave it growing", "next": 1 },
-            { "text": "Harvest a seed (with sickle)", "next": 2 }
-          ]
-        },
-        { "message": "Good choice — let it grow strong." },
-        { "message": "You carefully take a seed..." }
-      ]
-    },
-
-    "onTimer": {
-      "every": "2h",
-      "spawn": "baby-palm",
-      "count": 1
+      "seed",
+      "seedling",
+      "young tree",
+      "adult"
+    ],
+    "labels": [
+      "A Small Seed",
+      "A Tiny Little Seedling, ready to grow1",
+      "A strong, vibrant young palm tree",
+      "Fully grown palm tree"
+    ],
+    "rarityModifiers": {
+      "common": 1.1
     }
   }
 }

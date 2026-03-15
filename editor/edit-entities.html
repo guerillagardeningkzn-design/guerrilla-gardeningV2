@@ -1,690 +1,213 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8" />
-<title>Guerrilla Gardening - Entity Template Editor</title>
-<style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #111;
-    color: white;
-    min-height: 100vh;
-    padding: 20px;
-    box-sizing: border-box;
-  }
-  h1 { margin: 0 0 20px; color: #4CAF50; }
-  .container { max-width: 900px; margin: 0 auto; }
-  .section {
-    background: #222;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    border: 1px solid #444;
-  }
-  label { display: block; margin: 12px 0 6px; font-size: 0.95rem; color: #ccc; }
-  input[type="text"], input[type="number"], select, textarea {
-    width: 100%;
-    padding: 10px;
-    background: #333;
-    border: 1px solid #555;
-    border-radius: 6px;
-    color: white;
-    font-size: 1rem;
-    box-sizing: border-box;
-  }
-  textarea { min-height: 100px; resize: vertical; }
-  button {
-    padding: 10px 20px;
-    margin: 8px 8px 8px 0;
-    border: none;
-    border-radius: 6px;
-    background: #4CAF50;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  button:hover { background: #66BB6A; }
-  button.danger { background: #c62828; }
-  button.danger:hover { background: #e53935; }
-  #icon-preview {
-    margin-top: 12px;
-    max-height: 180px;
-    overflow: hidden;
-    border: 1px dashed #555;
-    border-radius: 6px;
-    background: #000;
-    text-align: center;
-  }
-  #icon-preview img {
-    max-width: 100%;
-    max-height: 180px;
-    object-fit: contain;
-  }
-  #error, #success { font-size: 0.9rem; margin: 8px 0; min-height: 1.2em; }
-  #error { color: #ff7777; }
-  #success { color: #88ff88; }
-  #recent-files { margin-top: 12px; }
-  .recent-item {
-    padding: 8px;
-    background: #333;
-    margin: 4px 0;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9rem;
-  }
-  .recent-item:hover { background: #444; }
-  fieldset { border:1px solid #444; padding:16px; border-radius:6px; background:#1a1a1a; margin-top:24px; }
-  legend { padding:0 12px; font-weight:bold; color:#4CAF50; }
-  #mutable-validation { font-size:0.85rem; min-height:1.2em; margin-top:6px; }
-  #help-btn { background:#2196F3; font-size:0.85rem; padding:6px 12px; margin-left:8px; }
-  #help-btn:hover { background:#42A5F5; }
-  #overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    z-index: 999;
-  }
-  #help-modal {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #222;
-    padding: 24px;
-    border-radius: 12px;
-    border: 1px solid #444;
-    max-width: 80%;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: 0 0 20px rgba(0,0,0,0.8);
-    z-index: 1000;
-  }
-  #help-modal h3 { color: #4CAF50; margin-bottom: 16px; }
-  #help-modal pre { background: #333; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 0.9rem; }
-  #help-modal ul { margin-left: 20px; }
-  #close-help { background: #c62828; margin-top: 16px; float: right; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guerrilla Gardening - Entity Template Editor</title>
+  <link rel="stylesheet" href="css/editor.css">
 </head>
+
 <body>
 
-<div class="container">
-  <h1>Entity Template Editor</h1>
+  <div class="container">
+    <h1>Entity Template Editor</h1>
 
-  <div class="section">
-    <label>Repo Root Path (for local image preview)</label>
-    <input type="text" id="repo-root" placeholder="C:/Users/You/Projects/guerrilla-gardeningV2/" />
-    <button id="save-root">Save Root Path</button>
-    <div id="root-status" style="margin-top:8px; font-size:0.9rem;"></div>
-  </div>
+    <!-- Repo Root Path -->
+    <div class="section">
+      <label for="repo-root">Repo Root Path (for local image preview)</label>
+      <input type="text" id="repo-root" placeholder="C:/Users/eyeof/Documents/GitHub/guerrilla-gardeningV2/" />
+      <button id="save-root">Save Root Path</button>
+      <div id="root-status" class="status"></div>
+    </div>
 
-  <div class="section">
-    <h3>Create / Edit Entity Template</h3>
-    <div id="error" class="error"></div>
-    <div id="success"></div>
+    <!-- Main Editor Form -->
+    <div class="section">
+      <h3>Create / Edit Entity Template</h3>
+      <div id="error" class="error"></div>
+      <div id="success" class="success"></div>
 
-    <label>Type</label>
-    <select id="temp-type">
-      <option value="marker">Marker (island)</option>
-      <option value="invasive">Invasive</option>
-      <option value="pickup">Pickup</option>
-      <option value="transition">Zone Transition</option>
-      <option value="critter">Critter / NPC</option>
-      <option value="plant-spot">Plant Spot</option>
-      <option value="seed">Seed</option>
-    </select>
+      <!-- Category -->
+      <label for="entity-category">Category / Folder</label>
+      <select id="entity-category">
+        <option value="plants/natives">Plants – Native</option>
+        <option value="plants/invasives">Plants – Invasive</option>
+        <option value="critters" disabled>Critters / Animals</option>
+        <option value="fungi" disabled>Fungi / Mushrooms</option>
+        <option value="objects" disabled>Objects / Environment</option>
+        <option value="markers" disabled>Map Markers / POIs</option>
+        <option value="misc" disabled>Miscellaneous</option>
+      </select>
 
-    <label>Name *</label>
-    <input type="text" id="temp-name" placeholder="Invasive Seaweed" required />
+      <!-- Basic Info -->
+      <label for="temp-id">ID (filename, kebab-case)</label>
+      <input type="text" id="temp-id" placeholder="baby-palm" />
 
-    <label>Default Icon (relative path) *</label>
-    <input type="text" id="temp-icon" placeholder="assets/entities/invasives/seaweed/seaweed-01.png" required />
-    <button id="icon-upload-btn">Upload Image</button>
-    <input type="file" id="icon-upload" accept="image/*" style="display:none;" />
-    <div id="icon-preview"></div>
+      <label for="temp-name">Display Name</label>
+      <input type="text" id="temp-name" placeholder="Baby Palm" />
 
-    <label>Coins Dropped</label>
-    <input type="number" id="temp-coins" min="0" value="0" step="1" />
+      <label for="temp-icon">Icon Path (relative from assets/entities/)</label>
+      <input type="text" id="temp-icon" placeholder="plants/natives/palm/baby-palm.png" />
+      <div id="icon-preview"></div>
 
-    <label>Health Contribution</label>
-    <input type="number" id="temp-health" min="0" value="0" step="1" />
+      <label for="temp-tooltip">Tooltip / Description</label>
+      <textarea id="temp-tooltip" placeholder="A small palm seedling, ready to grow..."></textarea>
 
-    <label>Tooltip / Description</label>
-    <textarea id="temp-tooltip" placeholder="A slimy invader choking the coral..."></textarea>
+      <!-- Growth Section -->
+<div id="growth-section" class="conditional-section" style="display: none;">
+  <fieldset>
+    <legend>Growth Parameters
+      <button type="button" class="help-btn" data-context="growth">?</button>
+    </legend>
 
-    <fieldset>
-      <legend>Mutable Behaviors <button id="help-btn">Help</button></legend>
+    <!-- Base maturation with unit -->
+    <label for="growth-base-value">Base Maturation Time</label>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <input type="number" id="growth-base-value" min="1" value="45" step="1" style="width: 120px;" />
+      <select id="growth-unit">
+        <option value="seconds">Seconds</option>
+        <option value="minutes">Minutes</option>
+        <option value="hours" selected>Hours</option>
+        <option value="days">Days</option>
+      </select>
+    </div>
 
-      <label>On Destroy – Drop Items (JSON array)</label>
-      <textarea id="mutable-drop" rows="3" placeholder='[{"entity":"coin","count":3},{"entity":"leaf","chance":0.5}]'></textarea>
+    <!-- Number of stages -->
+    <label for="growth-stages">Number of Growth Stages</label>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <input type="number" id="growth-stages" min="1" value="5" step="1" style="width: 80px;" />
+      <button type="button" id="growth-add-stage">+ Add Stage</button>
+      <button type="button" id="growth-remove-stage">− Remove Last</button>
+    </div>
 
-      <label>On Destroy – Transform into entity</label>
-      <input type="text" id="mutable-transform-to" placeholder="plant-spot" />
+    <!-- Include rarity modifiers checkbox -->
+    <label style="margin-top: 16px;">
+      <input type="checkbox" id="include-rarity-modifiers" checked />
+      Include rarity modifiers (affects maturation speed per rarity)
+    </label>
 
-      <label>…and switch to map (optional)</label>
-      <input type="text" id="mutable-transform-map" placeholder="beach" />
+    <!-- Rarity modifiers table (shown if checkbox checked) -->
+    <div id="rarity-modifiers-wrapper" style="margin-top: 16px;">
+      <label>Rarity Modifiers</label>
+      <div id="rarity-modifiers-container"></div>
+      <button type="button" id="add-rarity-modifier">+ Add Rarity Modifier</button>
+    </div>
 
-      <label>On Interact – Dialog Tree (JSON array)</label>
-      <textarea id="mutable-dialog" rows="4" placeholder='[
-  {"message": "Hello", "choices": [{"text": "Yes", "next": 1}, {"text": "No", "next": 2}]},
-  {"message": "Here you go!"},
-  {"message": "Okay, bye."}
-]'></textarea>
+    <!-- Dynamic stages list -->
+    <div id="growth-stages-container" style="margin-top: 24px;">
+      <label>Visual Stages & Labels</label>
+      <!-- Stages will be added here dynamically -->
+    </div>
+  </fieldset>
+</div>
 
-      <label>On Interact – Give player item</label>
-      <input type="text" id="mutable-give-item" placeholder="seed" />
+      <!-- Harvest Rewards -->
+      <div id="harvest-section" class="conditional-section" style="display: none;">
+        <fieldset>
+          <legend>Harvest Rewards
+            <button type="button" class="help-btn" data-context="harvest-rewards">?</button>
+          </legend>
 
-      <label>Advanced or custom behaviors (JSON – overrides above if keys conflict)</label>
-      <textarea id="temp-mutable" rows="5" placeholder='{
-  "onTimer": {"every": "1h", "spawn": "butterfly"},
-  "onCondition": {"if": "zoneHealth > 80", "give": "rare-seed"}
-}'></textarea>
-      <div id="mutable-validation"></div>
-    </fieldset>
+          <label for="harvest-coins">Coins on Harvest</label>
+          <input type="number" id="harvest-coins" min="0" value="2" step="1" />
 
-    <div style="margin-top:20px;">
-      <button id="save-template">Save Template</button>
-      <button id="clear-form">Reset Form</button>
-      <button id="load-template-btn">Load Existing Template</button>
-      <input type="file" id="load-template" accept=".json" style="display:none;" />
+          <label for="harvest-health">Health Bonus on Harvest (%)</label>
+          <input type="number" id="harvest-health" min="0" value="3" step="1" />
+        </fieldset>
+      </div>
+
+      <!-- Planting Rules -->
+      <div id="planting-section" class="conditional-section" style="display: none;">
+        <fieldset>
+          <legend>Planting Rules
+            <button type="button" class="help-btn" data-context="planting-rules">?</button>
+          </legend>
+
+          <label for="planting-energy">Energy Cost to Plant</label>
+          <input type="number" id="planting-energy" min="0" value="8" step="1" />
+
+          <label>Soil Amendments Required</label>
+          <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+            <div>
+              <label for="soil-sand">Sand</label>
+              <input type="number" id="soil-sand" min="0" value="1" step="1" style="width:80px;" />
+            </div>
+            <div>
+              <label for="soil-clay">Clay</label>
+              <input type="number" id="soil-clay" min="0" value="0" step="1" style="width:80px;" />
+            </div>
+            <div>
+              <label for="soil-fertilizer">Fertilizer</label>
+              <input type="number" id="soil-fertilizer" min="0" value="0" step="1" style="width:80px;" />
+            </div>
+          </div>
+
+          <label for="planting-min-maturity">Minimum Maturity to Harvest</label>
+          <select id="planting-min-maturity">
+            <option value="stage-1">Stage 1</option>
+            <option value="stage-2">Stage 2</option>
+            <option value="stage-3" selected>Stage 3</option>
+            <option value="stage-4">Stage 4</option>
+            <option value="mature">Mature (final stage)</option>
+          </select>
+
+          <label>
+            <input type="checkbox" id="planting-removes" checked />
+            Harvest removes the plant (no regrowth possible)
+          </label>
+
+          <label>
+            <input type="checkbox" id="planting-regrow" />
+            Can regrow after harvest
+          </label>
+
+          <div id="regrow-delay-wrapper" style="display: none; margin-top: 12px;">
+            <label for="planting-regrow-delay">Regrow Delay (hours)</label>
+            <input type="number" id="planting-regrow-delay" min="0" value="24" step="1" />
+          </div>
+        </fieldset>
+      </div>
+      <!-- Advanced JSON Preview Toggle -->
+      <div style="margin-top: 16px;">
+        <label>
+          <input type="checkbox" id="show-json-preview" />
+          Advanced JSON Preview (edit directly)
+        </label>
+        <div id="json-preview-container" style="display: none; margin-top: 12px;">
+          <textarea id="json-preview" rows="10"
+            style="width:100%; font-family: monospace; background:#0f0f0f; color:#eee; padding:12px; border:1px solid #444; border-radius:6px;"></textarea>
+          <div id="json-sync-warning" style="color:#ff9800; font-size:0.9rem; margin-top:8px; display:none;">
+            Warning: Manual JSON edits may overwrite structured fields.
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 24px;">
+        <button id="save-template">Save Template</button>
+        <button id="load-template-btn">Load Template (JSON)</button>
+        <input type="file" id="load-template" accept=".json" style="display:none;" />
+      </div>
+    </div>
+
+    <!-- Recent Files -->
+    <div class="section">
+      <h3>Recent Files</h3>
+      <div id="recent-files"></div>
     </div>
   </div>
 
-  <div class="section">
-    <h3>Recent Icons</h3>
-    <div id="recent-files"></div>
+  <!-- Help Modal -->
+  <div id="help-overlay" class="help-overlay"></div>
+  <div id="help-modal" class="help-modal">
+    <div class="help-header">
+      <h3 id="help-title">Help</h3>
+      <button id="close-help" class="danger">Close</button>
+    </div>
+    <div id="help-content" class="help-content"></div>
   </div>
-</div>
 
-<div id="overlay" onclick="closeHelp()"></div>
-<div id="help-modal">
-  <h3>Advanced Mutable Behaviors JSON</h3>
-
-  <p>This textarea lets you define custom or complex behaviors that extend or override the structured fields. Use valid JSON object format. Keys are events/actions, values are objects with details.</p>
-
-  <p><strong>Basic Syntax</strong>:</p>
-  <pre>{
-  "onEvent": {
-    "action": "value",
-    "anotherAction": {"key": "detail"}
-  }
-}</pre>
-
-  <p><strong>Common Events</strong>:</p>
-  <ul>
-    <li>"onDestroy": Triggers when entity is destroyed/removed</li>
-    <li>"onInteract": Triggers on player tap</li>
-    <li>"onTimer": Time-based (e.g., growth)</li>
-    <li>"onCondition": Conditional checks</li>
-  </ul>
-
-  <p><strong>Common Actions</strong>:</p>
-  <ul>
-    <li>"drop": Array of items to drop (overrides structured drop field)</li>
-    <li>"transform": Object with "to" (new entity) and optional "map" (switch map)</li>
-    <li>"dialogTree": Array of dialog nodes (overrides structured dialog)</li>
-    <li>"giveItem": String of item to add to inventory (overrides structured give)</li>
-    <li>"spawn": String of entity to spawn</li>
-    <li>"every": String like "1h" for timers</li>
-    <li>"if": String condition like "zoneHealth > 80"</li>
-  </ul>
-
-  <p><strong>Dialog Tree Examples – Ready to Copy-Paste</strong></p>
-
-  <p><strong>1. Simple linear dialog</strong></p>
-  <pre id="dlg1">[
-  {"message": "The ancient tree whispers..."},
-  {"message": "Protect the island, young gardener."},
-  {"message": "Take this seed as thanks."}
-]</pre>
-  <button onclick="copyToClipboard('dlg1')">Copy</button>
-
-  <p><strong>2. One question with two endings</strong></p>
-  <pre id="dlg2">[
-  {
-    "message": "Do you want to help restore the beach?",
-    "choices": [
-      {"text": "Yes, show me how!", "next": 1},
-      {"text": "Not now", "next": 2}
-    ]
-  },
-  {"message": "Great! Here's a watering can."},
-  {"message": "Come back when you're ready."}
-]</pre>
-  <button onclick="copyToClipboard('dlg2')">Copy</button>
-
-  <p><strong>3. Branching with item reward</strong></p>
-  <pre id="dlg3">[
-  {
-    "message": "The forest is choked with vines...",
-    "choices": [
-      {"text": "I'll clear them!", "next": 1, "giveItem": "shovel"},
-      {"text": "I can't right now", "next": 2}
-    ]
-  },
-  {"message": "Thank you! Take this shovel and start cutting."},
-  {"message": "The vines grow stronger each day... good luck."}
-]</pre>
-  <button onclick="copyToClipboard('dlg3')">Copy</button>
-
-  <p><strong>4. Multi-step conversation</strong></p>
-  <pre id="dlg4">[
-  {
-    "message": "Who goes there?",
-    "choices": [
-      {"text": "Just a gardener", "next": 1},
-      {"text": "A warrior!", "next": 3},
-      {"text": "Leave me alone", "next": 2}
-    ]
-  },
-  {"message": "Ah, a friend of the earth. Take this leaf."},
-  {"message": "As you wish..."},
-  {
-    "message": "A warrior? Prove it — defeat the thistle!",
-    "choices": [
-      {"text": "Challenge accepted!", "next": 4},
-      {"text": "Maybe later", "next": 2}
-    ]
-  },
-  {"message": "Return when the thistle is gone."}
-]</pre>
-  <button onclick="copyToClipboard('dlg4')">Copy</button>
-
-  <p><strong>5. Complex conditional NPC dialog</strong></p>
-  <pre id="dlg5">[
-  {
-    "message": "Have you cleared the beach yet?",
-    "choices": [
-      {
-        "text": "Yes!",
-        "condition": "zoneHealth.beach > 70",
-        "next": 1,
-        "giveItem": "rare-seed"
-      },
-      {
-        "text": "Not yet",
-        "next": 2
-      }
-    ]
-  },
-  {"message": "Wonderful! Here's a rare seed for your efforts."},
-  {"message": "Come back when the beach is healthier."}
-]</pre>
-  <button onclick="copyToClipboard('dlg5')">Copy</button>
-
-  <p><strong>Tips for dialog trees</strong>:</p>
-  <ul>
-    <li>"message": What is said</li>
-    <li>"choices": Array of player options</li>
-    <li>"text": What player sees</li>
-    <li>"next": Index of next node (0 = first message)</li>
-    <li>Optional: "giveItem", "condition", etc. inside choices</li>
-    <li>No choices = linear dialog (click to continue)</li>
-  </ul>
-
-  <p><strong>Validation & Errors</strong>:</p>
-  <ul>
-    <li>Invalid JSON in advanced area is ignored (warning shown)</li>
-    <li>Use jsonlint.com if syntax is tricky</li>
-    <li>Game must implement support for new keys (e.g., "condition")</li>
-  </ul>
-
-  <button id="close-help">Close</button>
-</div>
-
-<script>
-// ─── State ──────────────────────────────────────────────────────────────────────
-let currentEditingId = null;
-let repoRoot = localStorage.getItem('repoRoot') || '';
-let recentFiles = JSON.parse(localStorage.getItem('recentFiles') || '[]');
-
-// ─── Path Normalization ────────────────────────────────────────────────────────
-function normalizeToRelative(rawPath) {
-  if (!rawPath) return '';
-  let path = rawPath.trim();
-  path = path.replace(/^["']+/, '').replace(/["']+$/, '');
-  path = path.replace(/^file:\/{2,3}/i, '');
-  path = path.replace(/\\/g, '/');
-
-  if (repoRoot) {
-    const normalizedRoot = repoRoot.replace(/\\/g, '/').replace(/\/+$/, '');
-    if (path.includes(normalizedRoot)) {
-      path = path.split(normalizedRoot)[1] || path;
-      path = path.replace(/^[/\\]+/, '');
-    }
-  }
-
-  if (!path.startsWith('assets/') && path.includes('assets')) {
-    path = 'assets/' + path.split('assets')[1].replace(/^[/\\]+/, '');
-  }
-
-  return path;
-}
-
-function updateRootStatus() {
-  const status = document.getElementById("root-status");
-  status.textContent = repoRoot ? `Root set: ${repoRoot}` : "No root set – previews may not work";
-  status.style.color = repoRoot ? "#8f8" : "#f88";
-}
-
-// ─── Save Repo Root ────────────────────────────────────────────────────────────
-document.getElementById("save-root").addEventListener("click", () => {
-  let val = document.getElementById("repo-root").value.trim();
-  val = val.replace(/\\/g, '/').replace(/\/+$/, '');
-  localStorage.setItem('repoRoot', val);
-  repoRoot = val;
-  updateRootStatus();
-});
-
-// ─── Recent Files ──────────────────────────────────────────────────────────────
-function addToRecent(path) {
-  path = normalizeToRelative(path);
-  if (!path) return;
-  recentFiles = recentFiles.filter(p => p !== path);
-  recentFiles.unshift(path);
-  recentFiles = recentFiles.slice(0, 10);
-  localStorage.setItem('recentFiles', JSON.stringify(recentFiles));
-  renderRecentFiles();
-}
-
-function renderRecentFiles() {
-  const container = document.getElementById("recent-files");
-  container.innerHTML = "";
-  recentFiles.forEach(path => {
-    const item = document.createElement("div");
-    item.className = "recent-item";
-    item.textContent = path;
-    item.title = "Click to load into icon field";
-    item.addEventListener("click", () => {
-      document.getElementById("temp-icon").value = path;
-      loadImagePreview(path);
-    });
-    container.appendChild(item);
-  });
-}
-
-// ─── Load Image Preview ────────────────────────────────────────────────────────
-function loadImagePreview(relativePath) {
-  const preview = document.getElementById("icon-preview");
-  preview.innerHTML = "";
-  if (!relativePath) return;
-
-  let fullUrl = relativePath;
-  if (repoRoot && !relativePath.startsWith('http') && !relativePath.startsWith('data:')) {
-    fullUrl = `file:///${repoRoot}/${relativePath}`;
-  }
-
-  const img = document.createElement("img");
-  img.src = fullUrl;
-  img.alt = "Icon preview";
-  img.style.maxWidth = "100%";
-  img.style.maxHeight = "180px";
-  img.style.objectFit = "contain";
-
-  img.onerror = () => {
-    preview.innerHTML = `<p style="color:#f88; padding:10px;">Cannot load preview<br>(check path or repo root)</p>`;
-  };
-
-  preview.appendChild(img);
-}
-
-// ─── Live Normalization + Preview + Recent on Icon Field ──────────────────────
-const iconInput = document.getElementById("temp-icon");
-
-["input", "change", "paste"].forEach(eventType => {
-  iconInput.addEventListener(eventType, (e) => {
-    if (eventType === "paste") {
-      setTimeout(processIconInput, 0);
-    } else {
-      processIconInput();
-    }
-  });
-});
-
-function processIconInput() {
-  const raw = iconInput.value;
-  const cleaned = normalizeToRelative(raw);
-  if (cleaned !== raw) {
-    iconInput.value = cleaned;
-  }
-  loadImagePreview(cleaned);
-  addToRecent(cleaned);
-}
-
-// ─── Upload Image ──────────────────────────────────────────────────────────────
-document.getElementById("icon-upload-btn").addEventListener("click", () => {
-  document.getElementById("icon-upload").click();
-});
-
-document.getElementById("icon-upload").addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const previewUrl = URL.createObjectURL(file);
-  document.getElementById("icon-preview").innerHTML = `<img src="${previewUrl}" alt="preview">`;
-
-  let relative = normalizeToRelative(file.path || file.name);
-  if (!relative.includes('assets/')) {
-    relative = `assets/entities/uploaded/${file.name}`;
-  }
-
-  iconInput.value = relative;
-  addToRecent(relative);
-});
-
-// ─── Live Validation for Advanced Textarea ────────────────────────────────────
-document.getElementById("temp-mutable").addEventListener("input", () => {
-  const ta = document.getElementById("temp-mutable");
-  const msg = document.getElementById("mutable-validation");
-  const text = ta.value.trim();
-  if (!text) {
-    msg.textContent = "";
-    return;
-  }
-  try {
-    JSON.parse(text);
-    msg.textContent = "Advanced JSON valid ✓";
-    msg.style.color = "#88ff88";
-  } catch (err) {
-    msg.textContent = "Invalid JSON: " + err.message;
-    msg.style.color = "#ff7777";
-  }
-});
-
-// ─── Help Modal ────────────────────────────────────────────────────────────────
-function openHelp() {
-  document.getElementById("overlay").style.display = "block";
-  document.getElementById("help-modal").style.display = "block";
-}
-
-function closeHelp() {
-  document.getElementById("overlay").style.display = "none";
-  document.getElementById("help-modal").style.display = "none";
-}
-
-document.getElementById("help-btn").addEventListener("click", openHelp);
-document.getElementById("close-help").addEventListener("click", closeHelp);
-
-// ─── Save Template ─────────────────────────────────────────────────────────────
-document.getElementById("save-template").addEventListener("click", () => {
-  const name = document.getElementById("temp-name").value.trim();
-  const icon = normalizeToRelative(document.getElementById("temp-icon").value.trim());
-
-  if (!name || !icon) {
-    document.getElementById("error").textContent = "Name and Icon path are required.";
-    return;
-  }
-
-  document.getElementById("error").textContent = "";
-
-  // Collect structured mutable
-  const mutable = {
-    onDestroy: {
-      drop: safeParse(document.getElementById("mutable-drop").value),
-      transform: {
-        to: document.getElementById("mutable-transform-to").value.trim() || undefined,
-        map: document.getElementById("mutable-transform-map").value.trim() || undefined
-      }
-    },
-    onInteract: {
-      dialogTree: safeParse(document.getElementById("mutable-dialog").value),
-      giveItem: document.getElementById("mutable-give-item").value.trim() || undefined
-    }
-  };
-
-  // Parse advanced JSON and merge (advanced overrides)
-  let advanced = {};
-  const advancedText = document.getElementById("temp-mutable").value.trim();
-  if (advancedText) {
-    try {
-      advanced = JSON.parse(advancedText);
-      mergeDeep(mutable, advanced);
-    } catch (err) {
-      document.getElementById("mutable-validation").textContent = "Advanced JSON invalid – ignored.";
-      document.getElementById("mutable-validation").style.color = "#ff7777";
-    }
-  }
-
-  const template = {
-    type: document.getElementById("temp-type").value,
-    name,
-    icon,
-    coins: parseInt(document.getElementById("temp-coins").value) || 0,
-    health: parseInt(document.getElementById("temp-health").value) || 0,
-    tooltip: document.getElementById("temp-tooltip").value.trim(),
-    mutable
-  };
-
-  // Auto-suggest filename
-  let suggested = name.toLowerCase().replace(/[^a-z0-9]/gi, '-') + '.json';
-  suggested = prompt("Save template as:", suggested);
-
-  if (!suggested) return;
-
-  const blob = new Blob([JSON.stringify(template, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = suggested;
-  a.click();
-  URL.revokeObjectURL(url);
-
-  document.getElementById("success").textContent = "Saved as " + suggested;
-  setTimeout(() => document.getElementById("success").textContent = "", 4000);
-});
-
-// ─── Reset Form ────────────────────────────────────────────────────────────────
-document.getElementById("clear-form").addEventListener("click", () => {
-  document.getElementById("temp-type").value = "invasive";
-  document.getElementById("temp-name").value = "";
-  document.getElementById("temp-icon").value = "";
-  document.getElementById("temp-coins").value = "0";
-  document.getElementById("temp-health").value = "0";
-  document.getElementById("temp-tooltip").value = "";
-  document.getElementById("mutable-drop").value = "";
-  document.getElementById("mutable-transform-to").value = "";
-  document.getElementById("mutable-transform-map").value = "";
-  document.getElementById("mutable-dialog").value = "";
-  document.getElementById("mutable-give-item").value = "";
-  document.getElementById("temp-mutable").value = "";
-  document.getElementById("icon-preview").innerHTML = "";
-  document.getElementById("error").textContent = "";
-  document.getElementById("success").textContent = "Form reset.";
-  document.getElementById("mutable-validation").textContent = "";
-  setTimeout(() => document.getElementById("success").textContent = "", 2000);
-});
-
-// ─── Load Existing Template ────────────────────────────────────────────────────
-document.getElementById("load-template-btn").addEventListener("click", () => {
-  document.getElementById("load-template").click();
-});
-
-document.getElementById("load-template").addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    try {
-      const template = JSON.parse(ev.target.result);
-
-      document.getElementById("temp-type").value = template.type || "invasive";
-      document.getElementById("temp-name").value = template.name || "";
-      document.getElementById("temp-icon").value = template.icon || "";
-      document.getElementById("temp-coins").value = template.coins || 0;
-      document.getElementById("temp-health").value = template.health || 0;
-      document.getElementById("temp-tooltip").value = template.tooltip || "";
-
-      // Populate structured mutable
-      const m = template.mutable || {};
-      document.getElementById("mutable-drop").value = JSON.stringify(m.onDestroy?.drop || [], null, 2);
-      document.getElementById("mutable-transform-to").value = m.onDestroy?.transform?.to || "";
-      document.getElementById("mutable-transform-map").value = m.onDestroy?.transform?.map || "";
-      document.getElementById("mutable-dialog").value = JSON.stringify(m.onInteract?.dialogTree || [], null, 2);
-      document.getElementById("mutable-give-item").value = m.onInteract?.giveItem || "";
-
-      // Advanced mutable
-      const advanced = { ...m };
-      delete advanced.onDestroy;
-      delete advanced.onInteract;
-      document.getElementById("temp-mutable").value = Object.keys(advanced).length > 0 ? JSON.stringify(advanced, null, 2) : "";
-
-      processIconInput();
-
-      document.getElementById("success").textContent = `Loaded: ${file.name}`;
-      setTimeout(() => document.getElementById("success").textContent = "", 4000);
-      document.getElementById("error").textContent = "";
-      document.getElementById("mutable-validation").textContent = "";
-    } catch (err) {
-      document.getElementById("error").textContent = "Invalid template JSON: " + err.message;
-      document.getElementById("success").textContent = "";
-      console.error("Load error:", err);
-    }
-  };
-  reader.readAsText(file);
-});
-
-// ─── Safe Parse ────────────────────────────────────────────────────────────────
-function safeParse(text, defaultValue = []) {
-  if (!text.trim()) return defaultValue;
-  try {
-    const parsed = JSON.parse(text);
-    return parsed;
-  } catch {
-    return defaultValue;
-  }
-}
-
-// ─── Merge Deep ────────────────────────────────────────────────────────────────
-function mergeDeep(target, source) {
-  for (const key in source) {
-    if (source.hasOwnProperty(key)) {
-      if (typeof source[key] === 'object' && source[key] !== null && !Array.isArray(source[key])) {
-        target[key] = mergeDeep(target[key] || {}, source[key]);
-      } else {
-        target[key] = source[key];
-      }
-    }
-  }
-  return target;
-}
-
-// ─── Copy to Clipboard Helper ─────────────────────────────────────────────────
-function copyToClipboard(elementId) {
-  const text = document.getElementById(elementId).textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    alert("Copied to clipboard!");
-  }).catch(err => {
-    console.error("Copy failed", err);
-    alert("Copy failed – please select and copy manually.");
-  });
-}
-
-// ─── Init ──────────────────────────────────────────────────────────────────────
-updateRootStatus();
-renderRecentFiles();
-</script>
+  <!-- Scripts -->
+  <script src="js/editor.js"></script>
 </body>
+
 </html>
